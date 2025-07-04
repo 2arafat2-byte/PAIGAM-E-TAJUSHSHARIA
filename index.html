@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Page Title</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <header>
-            <h3>PAIGAME E TAJUSHSHARIA</h3>
-            <img src="https://i.postimg.cc/sDX4q4kv/25b4c3b7-e48a-472c-aef4-777b5ba2be19-removalai-preview.png">
-            <nav>
-                <a href="DAILYQUIZ.html">DAILY QUIZ</a>
-            </nav>
-        </header>
-    </body>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Quiz</title>
+</head>
+<body>
+  <h2 id="question">Loading...</h2>
+
+  <script>
+    const questions = {
+      "2025-07-04": "Ye test question hai: Aaj 4 July hai?",
+      "2025-07-05": "Ye 5 July ka question hai"
+    };
+
+    const today = new Date().toISOString().split("T")[0];
+    const todayQuestion = questions[today] || "Aaj ka question set nahi hua";
+
+    document.getElementById("question").innerText = todayQuestion;
+  </script>
+</body>
 </html>
