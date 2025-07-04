@@ -1,132 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Quiz | Islamic Knowledge</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>Daily Quiz</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Inter', sans-serif;
-    }
     body {
-      background: linear-gradient(135deg, #f5f7fa, #e2eafc);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 30px;
-    }
-    .quiz-wrapper {
-      background: #ffffff;
-      width: 100%;
+      font-family: Arial, sans-serif;
       max-width: 600px;
-      padding: 30px 25px;
-      border-radius: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      margin: auto;
+      padding: 20px;
     }
-    .quiz-wrapper h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      font-size: 28px;
-      color: #2c3e50;
+    h2 {
+      color: #333;
     }
-    .quiz-wrapper p {
-      font-weight: 600;
-      margin-bottom: 15px;
-      color: #34495e;
-    }
-    textarea, input {
+    input, textarea, button {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 20px;
+      margin: 10px 0;
+      padding: 8px;
       border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 15px;
-    }
-    button {
-      background: #3498db;
-      color: #fff;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      width: 100%;
-      cursor: pointer;
-      transition: 0.3s ease;
-    }
-    button:hover {
-      background: #2980b9;
+      border-radius: 5px;
     }
     #msg {
-      text-align: center;
-      font-weight: bold;
-      margin-top: 15px;
       color: green;
-    }
-    footer {
-      text-align: center;
-      font-size: 13px;
-      margin-top: 25px;
-      color: #777;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="quiz-wrapper">
-    <h1>📖 Daily Islamic Quiz</h1>
-    <p id="question">Loading question...</p>
+  <h2 id="question">Loading today's question...</h2>
 
-    <form id="quizForm">
-      <label for="answer">🖊️ Aapka Jawab</label>
-      <textarea id="answer" placeholder="Yahan apna jawab likhein..." required></textarea>
+  <form id="quizForm">
+    <input type="text" id="name" placeholder="Your Name" required />
+    <input type="text" id="phone" placeholder="Your Phone Number" required />
+    <input type="text" id="address" placeholder="Your Address" required />
+    <textarea id="answer" placeholder="Your Answer" required></textarea>
+    <button type="submit">Submit Answer</button>
+  </form>
 
-      <label for="name">🙍‍♂️ Pura Naam</label>
-      <input type="text" id="name" placeholder="Apka naam yahan likhein" required>
+  <p id="msg"></p>
 
-      <label for="phone">📞 Phone Number</label>
-      <input type="text" id="phone" placeholder="10 digit number" required>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-      <label for="address">🏠 Pata</label>
-      <textarea id="address" placeholder="Apna complete address yahan likhein" required></textarea>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
+      authDomain: "dailyquiz-8149b.firebaseapp.com",
+      projectId: "dailyquiz-8149b",
+      storageBucket: "dailyquiz-8149b.appspot.com",
+      messagingSenderId: "814257864320",
+      appId: "1:814257864320:web:98e911b3ca5a643407b065"
+    };
 
-      <button type="submit">✅ Submit Karein</button>
-    </form>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    <p id="msg"></p>
-    <footer>© 2025 DailyQuiz. All rights reserved.</footer>
-  </div>
-     <script>
-  // 💡 Daily questions yahan likhne hain (placeholder style me)
-  const questions = {
-    "2025-07-04": "Ques 1: Enter question here",
-    "2025-07-05": "Ques 2: Enter question here",
-    "2025-07-06": "Ques 3: Enter question here",
-    "2025-07-07": "Ques 4: Enter question here"
-    // 👆 Aur bhi dates add karte jao jab zarurat ho
-  };
+    const questions = {
+      "2025-07-04": "Ques 1: Enter question here",
+      "2025-07-05": "Ques 2: Enter question here",
+      "2025-07-06": "Ques 3: Enter question here"
+    };
 
-  // 📅 Aaj ki date nikaalna local format me (YYYY-MM-DD)
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const todayFormatted = `${yyyy}-${mm}-${dd}`;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayFormatted = `${yyyy}-${mm}-${dd}`;
 
-  // ❓ Aaj ka sawal show karo (ya fallback)
-  const questionText = questions[todayFormatted] || "❌ Aaj ka sawaal abhi tay nahi hua.";
-  document.getElementById("question").innerText = questionText;
+    const questionText = questions[todayFormatted] || "❌ Aaj ka sawal abhi tay nahi hua.";
+    document.getElementById("question").innerText = questionText;
 
-  // 📩 Form submit (demo message)
-  document.getElementById("quizForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    document.getElementById("msg").innerText = "✅ Aapka jawab submit ho gaya (demo version)";
-    this.reset();
-  });
-</script>
+    document.getElementById("quizForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const phone = document.getElementById("phone").value;
+      const address = document.getElementById("address").value;
+      const answer = document.getElementById("answer").value;
+
+      try {
+        await addDoc(collection(db, "quiz_answers"), {
+          name,
+          phone,
+          address,
+          answer,
+          date: todayFormatted,
+          question: questionText
+        });
+
+        document.getElementById("msg").innerText = "✅ Answer submitted successfully!";
+        this.reset();
+      } catch (error) {
+        document.getElementById("msg").innerText = "❌ Error submitting answer: " + error;
+      }
+    });
+  </script>
 </body>
 </html>
