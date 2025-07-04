@@ -1,44 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Daily Quiz</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: auto;
-      padding: 20px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    h2 {
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .quiz-container {
+      background: #ffffff;
+      padding: 30px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+    .quiz-container h2 {
+      font-size: 22px;
+      margin-bottom: 15px;
       color: #333;
     }
-    input, textarea, button {
+    .quiz-container input,
+    .quiz-container textarea {
       width: 100%;
+      padding: 10px;
       margin: 10px 0;
-      padding: 8px;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .quiz-container button {
+      width: 100%;
+      background-color: #007bff;
+      color: #fff;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    .quiz-container button:hover {
+      background-color: #0056b3;
     }
     #msg {
+      margin-top: 10px;
       color: green;
       font-weight: bold;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h2 id="question">Loading today's question...</h2>
+  <div class="quiz-container">
+    <h2 id="question">Loading today's question...</h2>
+    <form id="quizForm">
+      <input type="text" id="name" placeholder="Your Name" required>
+      <input type="text" id="phone" placeholder="Phone Number" required>
+      <input type="text" id="address" placeholder="Address" required>
+      <textarea id="answer" placeholder="Your Answer" required></textarea>
+      <button type="submit">Submit Answer</button>
+    </form>
+    <p id="msg"></p>
+  </div>
 
-  <form id="quizForm">
-    <input type="text" id="name" placeholder="Your Name" required />
-    <input type="text" id="phone" placeholder="Your Phone Number" required />
-    <input type="text" id="address" placeholder="Your Address" required />
-    <textarea id="answer" placeholder="Your Answer" required></textarea>
-    <button type="submit">Submit Answer</button>
-  </form>
-
-  <p id="msg"></p>
-
-  <!-- Firebase SDKs -->
+  <!-- Firebase Code -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -72,7 +108,6 @@
 
     document.getElementById("quizForm").addEventListener("submit", async function (e) {
       e.preventDefault();
-
       const name = document.getElementById("name").value;
       const phone = document.getElementById("phone").value;
       const address = document.getElementById("address").value;
@@ -91,7 +126,7 @@
         document.getElementById("msg").innerText = "✅ Answer submitted successfully!";
         this.reset();
       } catch (error) {
-        document.getElementById("msg").innerText = "❌ Error submitting answer: " + error;
+        document.getElementById("msg").innerText = "❌ Error: " + error;
       }
     });
   </script>
