@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eef2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    p {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    #message {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Daily Quiz</h2>
+    <p id="question">Loading question...</p>
+    <form id="quizForm">
+      <textarea id="answer" placeholder="Write your answer here..." required></textarea>
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="text" id="phone" placeholder="Phone Number" required>
+      <textarea id="address" placeholder="Address" required></textarea>
+      <button type="submit">Submit Answer</button>
+    </form>
+    <p id="message"></p>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
+      authDomain: "dailyquiz-8149b.firebaseapp.com",
+      projectId: "dailyquiz-8149b",
+      storageBucket: "dailyquiz-8149b.firebasestorage.app",
+      messagingSenderId: "814257864320",
+      appId: "1:814257864320:web:98e911b3ca5a643407b065",
+      measurementId: "G-R0276LW792"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 💡 Just update this with more dates later
+    const questions = {
+      "2025-07-04": "Aaj ka sawal hai: Madina me sabse pehle kis ghazwa ka aghaz hua?",
+      "2025-07-05": "Aaj ka sawal hai: Quran me kul kitni ayat hai?"
+    };
+
+    const today = new Date().toISOString().split("T")[0]; // 👈 gives 2025-07-04
+    const todayQuestion = questions[today] || "Aaj ka sawaal abhi tay nahi hua.";
+    document.getElementById("question").innerText = todayQuestion;
+
+    const quizForm = document.getElementById("quizForm");
+    const message = document.getElementById("message");
+
+    quizForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const answer = document.getElementById("answer").value.trim();
+
+      const docId = `${today}_${phone}`;
+
+      try {
+        const doc = await db.collection("quiz_answers").doc(docId).get();
+        if (doc.exists) {
+          message.innerText = "Aap aaj ka answer already de chuke hain.";
+          message.style.color = "red";
+          return;
+        }
+
+        await db.collection("quiz_answers").doc(docId).set({
+          name,
+          phone,
+          address,
+          question: todayQuestion,
+          answer,
+          date: today,
+          timestamp: new Date()
+        });
+
+        message.innerText = "Shukriya! Aapka jawab save ho gaya hai.";
+        message.style.color = "green";
+        quizForm.reset();
+      } catch (err) {
+        console.error("Error:", err);
+        message.innerText = "Kuch galat ho gaya. Baad me dobara koshish karein.";
+        message.style.color = "red";
+      }
+    });
+  </script>
+</body>
+</html>
