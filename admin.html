@@ -1,18 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 50px;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: auto;
+    }
+    #login-btn, #logout-btn {
+      padding: 10px 20px;
+      background: #4285F4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    #logout-btn {
+      background: #d9534f;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <h2>Only Admins Allowed</h2>
-  <button id="loginBtn">Login with Google</button>
-  <p id="status"></p>
+  <div class="card">
+    <h2>🔐 Admin Login</h2>
+    <button id="login-btn">Sign in with Google</button>
+    <button id="logout-btn" style="display:none;">Logout</button>
+    <p id="status">Please sign in to access admin content.</p>
+    <div id="admin-content" style="display:none;">
+      <h3>✅ Welcome Admin!</h3>
+      <p>Yahan aap submissions dekh sakte ho ya manage kar sakte ho (future setup).</p>
+    </div>
+  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-
+  <script>
+    // ✅ Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
       authDomain: "dailyquiz-8149b.firebaseapp.com",
@@ -22,37 +63,50 @@
       appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
 
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // ✅ Allowed admin emails
     const allowedEmails = [
-      "arrahmanallamalquraan123@gmail.com" // ← yahan apna email likhiye
+      "2arafat2-byte@gmail.com", // 🔁 Replace or add more emails here
+      "anotheradmin@example.com"
     ];
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    const loginBtn = document.getElementById("loginBtn");
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
     const status = document.getElementById("status");
+    const adminContent = document.getElementById("admin-content");
 
-    loginBtn.addEventListener("click", async () => {
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const email = result.user.email;
+    loginBtn.onclick = () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(error => {
+        status.innerText = "❌ Sign-in error: " + error.message;
+      });
+    };
 
+    logoutBtn.onclick = () => {
+      auth.signOut();
+    };
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        const email = user.email;
         if (allowedEmails.includes(email)) {
-          status.innerText = "✅ Access granted to: " + email;
-          window.location.href = "admin-dashboard.html"; // redirect to dashboard
+          status.innerText = `✅ Logged in as ${email}`;
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+          adminContent.style.display = "block";
         } else {
-          status.innerText = "❌ Access denied for: " + email;
+          status.innerText = `❌ Access denied for ${email}`;
+          logoutBtn.style.display = "inline-block";
+          loginBtn.style.display = "none";
+          adminContent.style.display = "none";
         }
-      } catch (error) {
-        status.innerText = "❌ Error: " + error.message;
-      }
-    });
-
-    // Optional: Auto check if already signed in
-    onAuthStateChanged(auth, (user) => {
-      if (user && allowedEmails.includes(user.email)) {
-        window.location.href = "admin-dashboard.html";
+      } else {
+        status.innerText = "Please sign in to access admin content.";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        adminContent.style.display = "none";
       }
     });
   </script>
