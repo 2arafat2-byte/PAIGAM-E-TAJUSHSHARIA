@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🔐 Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f1f1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    #login-btn {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    #admin-content {
+      display: none;
+      margin-top: 20px;
+    }
+    .denied {
+      color: red;
+    }
+    .allowed {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🛡️ Admin Panel</h2>
+    <button id="login-btn">🔐 Login with Google</button>
+    <p id="status"></p>
+    <div id="admin-content">
+      <p class="allowed">✅ Welcome, Admin!</p>
+      <!-- Yahan aap admin-only content rakh sakte hain -->
+      <p>You can now access the admin data.</p>
+    </div>
+  </div>
+
+  <script>
+    // 🔒 Sirf yehi emails allowed hain
+    const allowedEmails = [
+      "aapkaemail@gmail.com",
+      "example123@gmail.com"
+    ];
+
+    // ✅ Firebase config (aapka khud ka)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
+      authDomain: "dailyquiz-8149b.firebaseapp.com",
+      projectId: "dailyquiz-8149b",
+    };
+
+    // 🔧 Firebase initialize
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const loginBtn = document.getElementById("login-btn");
+    const statusText = document.getElementById("status");
+    const adminContent = document.getElementById("admin-content");
+
+    loginBtn.addEventListener("click", () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          const user = result.user;
+          if (allowedEmails.includes(user.email)) {
+            statusText.textContent = `✅ Access granted to ${user.email}`;
+            adminContent.style.display = "block";
+            loginBtn.style.display = "none";
+          } else {
+            statusText.innerHTML = `❌ Access Denied for ${user.email}`;
+            statusText.classList.add("denied");
+          }
+        })
+        .catch((error) => {
+          console.error("Login Error:", error);
+          statusText.textContent = "❌ Error during login.";
+        });
+    });
+  </script>
+</body>
+</html>
