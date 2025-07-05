@@ -76,7 +76,7 @@
     <p id="msg"></p>
   </div>
 
-  <!-- Firebase Code with Duplicate Check -->
+  <!-- Firebase Code with Duplicate Check and Debugging -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
     import {
@@ -133,6 +133,16 @@
         submitBtn.innerText = "🚀 Submit Answer";
         return;
       }
+
+      // 🔍 Debug: Show what data is being sent
+      console.log({
+        name,
+        phone,
+        address,
+        answer,
+        date: todayFormatted,
+        question: questionText
+      });
 
       try {
         // 🔁 Check for existing submission
