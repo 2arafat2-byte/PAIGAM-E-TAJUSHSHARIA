@@ -76,7 +76,7 @@
     <p id="msg"></p>
   </div>
 
-  <!-- Firebase Code -->
+  <!-- Firebase & Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -104,16 +104,28 @@
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     const todayFormatted = `${yyyy}-${mm}-${dd}`;
-
     const questionText = questions[todayFormatted] || "❌ Aaj ka sawal abhi tay nahi hua.";
     document.getElementById("question").innerText = questionText;
 
     document.getElementById("quizForm").addEventListener("submit", async function (e) {
       e.preventDefault();
-      const name = document.getElementById("name").value;
-      const phone = document.getElementById("phone").value;
-      const address = document.getElementById("address").value;
-      const answer = document.getElementById("answer").value;
+
+      const submitBtn = this.querySelector("button");
+      submitBtn.disabled = true;
+      submitBtn.innerText = "⏳ Submitting...";
+
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const answer = document.getElementById("answer").value.trim();
+      const msgEl = document.getElementById("msg");
+
+      if (!name || !phone || !address || !answer) {
+        msgEl.innerText = "⚠️ Please fill out all fields.";
+        submitBtn.disabled = false;
+        submitBtn.innerText = "🚀 Submit Answer";
+        return;
+      }
 
       try {
         await addDoc(collection(db, "quiz_answers"), {
@@ -124,11 +136,14 @@
           date: todayFormatted,
           question: questionText
         });
-        document.getElementById("msg").innerText = "✅ Answer submitted successfully!";
+        msgEl.innerText = "✅ Answer submitted successfully!";
         this.reset();
       } catch (error) {
-        document.getElementById("msg").innerText = "❌ Error: " + error;
+        msgEl.innerText = "❌ Error: " + error.message;
       }
+
+      submitBtn.disabled = false;
+      submitBtn.innerText = "🚀 Submit Answer";
     });
   </script>
 </body>
