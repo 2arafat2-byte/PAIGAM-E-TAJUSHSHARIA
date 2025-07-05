@@ -76,10 +76,17 @@
     <p id="msg"></p>
   </div>
 
-  <!-- Firebase & Script -->
+  <!-- Firebase Code with Duplicate Check -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      where,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
@@ -128,6 +135,22 @@
       }
 
       try {
+        // 🔁 Check for existing submission
+        const q = query(
+          collection(db, "quiz_answers"),
+          where("phone", "==", phone),
+          where("date", "==", todayFormatted)
+        );
+        const existing = await getDocs(q);
+
+        if (!existing.empty) {
+          msgEl.innerText = "⚠️ Aapne aaj ka answer already submit kar diya hai!";
+          submitBtn.disabled = false;
+          submitBtn.innerText = "🚀 Submit Answer";
+          return;
+        }
+
+        // ✅ Submit answer
         await addDoc(collection(db, "quiz_answers"), {
           name,
           phone,
@@ -136,6 +159,7 @@
           date: todayFormatted,
           question: questionText
         });
+
         msgEl.innerText = "✅ Answer submitted successfully!";
         this.reset();
       } catch (error) {
