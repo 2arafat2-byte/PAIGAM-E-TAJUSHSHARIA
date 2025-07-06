@@ -2,83 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🎯 Daily Quiz Challenge</title>
+  <title>Set Daily Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
     body {
-      background: #eef2f5;
       font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      background: #f0f4f8;
+      padding: 20px;
+      text-align: center;
     }
-    .container {
+    form {
       background: white;
       padding: 20px;
-      border-radius: 12px;
+      max-width: 400px;
+      margin: auto;
+      border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 95%;
-      max-width: 450px;
     }
-    h2 {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    label, input, select {
-      display: block;
+    input, textarea, select, button {
       width: 100%;
+      padding: 10px;
       margin: 10px 0;
-      font-size: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
     }
     button {
-      background: #28a745;
+      background: #007bff;
       color: white;
       border: none;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 6px;
       cursor: pointer;
     }
     button:hover {
-      background: #218838;
+      background: #0056b3;
     }
-    #msg {
+    #status {
       margin-top: 10px;
-      text-align: center;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2 id="question">🧠 Question</h2>
-    <form id="quizForm">
-      <label for="name">👤 Name:</label>
-      <input type="text" id="name" required />
+  <h2>📅 Set Daily Quiz</h2>
 
-      <label for="phone">📞 Phone:</label>
-      <input type="text" id="phone" required />
+  <form id="quiz-form">
+    <input type="date" id="quiz-date" required />
+    <textarea id="question" placeholder="Enter your question" required></textarea>
+    <input type="text" id="optionA" placeholder="Option A" required />
+    <input type="text" id="optionB" placeholder="Option B" required />
+    <input type="text" id="optionC" placeholder="Option C" required />
+    <input type="text" id="optionD" placeholder="Option D" required />
+    <select id="correct" required>
+      <option value="">Select correct option</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
+    </select>
+    <button type="submit">💾 Save Question</button>
+  </form>
 
-      <label for="address">📍 Address:</label>
-      <input type="text" id="address" required />
+  <p id="status"></p>
 
-      <label for="answer">📝 Choose Answer:</label>
-      <select id="answer" required>
-        <option value="">Select an option</option>
-      </select>
-
-      <button type="submit">🚀 Submit</button>
-    </form>
-    <p id="msg"></p>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import {
-      getFirestore, collection, addDoc, query, where, getDocs
-    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
       authDomain: "dailyquiz-8149b.firebaseapp.com",
@@ -88,174 +76,42 @@
       appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    const questions = {
-      "2025-07-04": {
-        q: "Question 1: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "a"
-      },
-      "2025-07-05": {
-        q: "Question 2: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "b"
-      },
-      "2025-07-06": {
-        q: "Question 3: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "c"
-      },
-      "2025-07-07": {
-        q: "Question 4: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "d"
-      },
-      "2025-07-08": {
-        q: "Question 5: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "a"
-      },
-      "2025-07-09": {
-        q: "Question 6: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "b"
-      },
-      "2025-07-10": {
-        q: "Question 7: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "c"
-      },
-      "2025-07-11": {
-        q: "Question 8: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "d"
-      },
-      "2025-07-12": {
-        q: "Question 9: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "a"
-      },
-      "2025-07-13": {
-        q: "Question 10: Enter question here",
-        options: {
-          a: "Option A",
-          b: "Option B",
-          c: "Option C",
-          d: "Option D"
-        },
-        correct: "b"
-      }
-    };
-
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const todayKey = `${yyyy}-${mm}-${dd}`;
-    const todayData = questions[todayKey];
-
-    const questionEl = document.getElementById("question");
-    const selectEl = document.getElementById("answer");
-
-    if (todayData) {
-      questionEl.innerText = todayData.q;
-
-      for (let key in todayData.options) {
-        const opt = document.createElement("option");
-        opt.value = key;
-        opt.textContent = `${key.toUpperCase()}: ${todayData.options[key]}`;
-        selectEl.appendChild(opt);
-      }
-    } else {
-      questionEl.innerText = "❌ Aaj ka sawal abhi set nahi hua.";
-      selectEl.innerHTML = `<option value="">No options available</option>`;
-    }
-
-    document.getElementById("quizForm").addEventListener("submit", async function (e) {
+    document.getElementById("quiz-form").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const address = document.getElementById("address").value.trim();
-      const answer = document.getElementById("answer").value;
-      const msgEl = document.getElementById("msg");
 
-      if (!todayData) {
-        msgEl.innerText = "❌ Aaj ka sawal set nahi hai.";
+      const date = document.getElementById("quiz-date").value;
+      const question = document.getElementById("question").value.trim();
+      const optionA = document.getElementById("optionA").value.trim();
+      const optionB = document.getElementById("optionB").value.trim();
+      const optionC = document.getElementById("optionC").value.trim();
+      const optionD = document.getElementById("optionD").value.trim();
+      const correct = document.getElementById("correct").value;
+      const status = document.getElementById("status");
+
+      if (!date || !question || !optionA || !optionB || !optionC || !optionD || !correct) {
+        status.innerText = "❌ Please fill all fields!";
         return;
       }
 
-      const q = query(
-        collection(db, "quiz_answers"),
-        where("phone", "==", phone),
-        where("date", "==", todayKey)
-      );
-      const existing = await getDocs(q);
-      if (!existing.empty) {
-        msgEl.innerText = "⚠️ Aapne aaj ka answer pehle hi diya hai!";
-        return;
+      try {
+        await db.collection("quiz_questions").doc(date).set({
+          question,
+          options: {
+            A: optionA,
+            B: optionB,
+            C: optionC,
+            D: optionD
+          },
+          correct
+        });
+        status.innerText = "✅ Question saved successfully!";
+        this.reset(); // ✅ Reset the whole form
+      } catch (error) {
+        status.innerText = "❌ Error: " + error.message;
       }
-
-      const isCorrect = answer === todayData.correct;
-
-      await addDoc(collection(db, "quiz_answers"), {
-        name,
-        phone,
-        address,
-        answer,
-        date: todayKey,
-        question: todayData.q,
-        correct: isCorrect
-      });
-
-      msgEl.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
-      this.reset();
     });
   </script>
 </body>
