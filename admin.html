@@ -2,58 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel</title>
+  <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
     body {
+      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f0f0;
-      text-align: center;
-      padding: 50px;
+      background: #f5f7fa;
+    }
+    .navbar {
+      background: #003366;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar h2 {
+      margin: 0;
+    }
+    .btn {
+      background: #ff5e57;
+      color: white;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .container {
+      padding: 20px;
     }
     .card {
       background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      max-width: 400px;
-      margin: auto;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
     }
-    #login-btn, #logout-btn {
-      padding: 10px 20px;
-      background: #4285F4;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 20px;
+    .card h3 {
+      margin-top: 0;
+      color: #003366;
     }
-    #logout-btn {
-      background: #d9534f;
+    .entry {
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
     }
-    #status {
-      margin-top: 20px;
-      font-weight: bold;
+    .entry:last-child {
+      border-bottom: none;
+    }
+    .entry strong {
+      color: #333;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🔐 Admin Login</h2>
-    <button id="login-btn">Sign in with Google</button>
-    <button id="logout-btn" style="display:none;">Logout</button>
-    <p id="status">Please sign in to access admin content.</p>
-    <div id="admin-content" style="display:none;">
-      <h3>✅ Welcome Admin!</h3>
-      <p>Yahan aap submissions dekh sakte ho ya manage kar sakte ho (future setup).</p>
-    </div>
+  <div class="navbar">
+    <h2>📊 Admin Panel</h2>
+    <button id="logout-btn" class="btn" style="display:none;">Logout</button>
+  </div>
+
+  <div class="container">
+    <p id="status">Checking admin access...</p>
+    <div id="data-area" style="display:none;"></div>
   </div>
 
   <script>
-    // ✅ Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
       authDomain: "dailyquiz-8149b.firebaseapp.com",
@@ -65,50 +82,72 @@
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // ✅ Allowed admin emails
     const allowedEmails = [
       "arrahmanallamalquraan123@gmail.com",
       "imranraza12738@gmail.com"
     ];
 
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("status");
-    const adminContent = document.getElementById("admin-content");
-
-    loginBtn.onclick = () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(error => {
-        status.innerText = "❌ Sign-in error: " + error.message;
-      });
-    };
-
-    logoutBtn.onclick = () => {
-      auth.signOut();
-    };
-
     auth.onAuthStateChanged(user => {
-      if (user) {
-        const email = user.email;
-        if (allowedEmails.includes(email)) {
-          status.innerText = `✅ Logged in as ${email}`;
-          loginBtn.style.display = "none";
-          logoutBtn.style.display = "inline-block";
-          adminContent.style.display = "block";
-        } else {
-          status.innerText = `❌ Access denied for ${email}`;
-          logoutBtn.style.display = "inline-block";
-          loginBtn.style.display = "none";
-          adminContent.style.display = "none";
-        }
+      if (user && allowedEmails.includes(user.email)) {
+        document.getElementById("status").innerText = `✅ Logged in as ${user.email}`;
+        document.getElementById("logout-btn").style.display = "inline-block";
+        loadSubmissions();
+      } else if (user) {
+        document.getElementById("status").innerText = `❌ Access denied for ${user.email}`;
+        auth.signOut();
       } else {
-        status.innerText = "Please sign in to access admin content.";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
-        adminContent.style.display = "none";
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(error => {
+          document.getElementById("status").innerText = "❌ Error: " + error.message;
+        });
       }
     });
+
+    document.getElementById("logout-btn").onclick = () => {
+      auth.signOut();
+      location.reload();
+    };
+
+    async function loadSubmissions() {
+      const container = document.getElementById("data-area");
+      container.style.display = "block";
+      container.innerHTML = "";
+
+      const querySnapshot = await db.collection("quiz_answers").orderBy("date", "desc").get();
+      const grouped = {};
+
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        const date = data.date || "unknown";
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push(data);
+      });
+
+      for (const date in grouped) {
+        const card = document.createElement("div");
+        card.className = "card";
+        const title = document.createElement("h3");
+        title.innerText = `📅 ${date}`;
+        card.appendChild(title);
+
+        grouped[date].forEach(entry => {
+          const div = document.createElement("div");
+          div.className = "entry";
+          div.innerHTML = `
+            <strong>Name:</strong> ${entry.name}<br>
+            <strong>Phone:</strong> ${entry.phone}<br>
+            <strong>Address:</strong> ${entry.address}<br>
+            <strong>Answer:</strong> ${entry.answer}<br>
+            <strong>Question:</strong> ${entry.question}
+          `;
+          card.appendChild(div);
+        });
+
+        container.appendChild(card);
+      }
+    }
   </script>
 </body>
 </html>
