@@ -9,113 +9,64 @@
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f2f5;
+      background: #f0f0f0;
+      padding: 40px 20px;
+      text-align: center;
     }
-    .navbar {
-      background: #003366;
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: auto;
+    }
+    button {
+      padding: 10px 20px;
+      background: #4285F4;
       color: white;
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .navbar h2 {
-      margin: 0;
-      font-size: 22px;
-    }
-    .btn {
-      background: #007bff;
-      color: white;
-      padding: 8px 16px;
       border: none;
-      border-radius: 5px;
-      font-size: 14px;
+      border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
+      margin: 10px;
     }
-    .btn-red {
+    #logout-btn {
       background: #d9534f;
     }
-    .container {
-      padding: 20px;
-    }
     #status {
-      font-size: 16px;
-      margin-bottom: 15px;
+      margin-top: 15px;
       font-weight: bold;
-      color: #333;
     }
     table {
+      margin-top: 20px;
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      margin-top: 20px;
     }
     th, td {
-      padding: 12px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
+      padding: 8px;
+      border: 1px solid #ccc;
       font-size: 14px;
     }
     th {
-      background: #004080;
-      color: white;
+      background: #f8f8f8;
     }
-    tr:hover {
-      background-color: #f1f1f1;
-    }
-    #loadBtn {
-      margin-top: 20px;
-    }
-    @media (max-width: 768px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      thead {
-        display: none;
-      }
-      tr {
-        margin-bottom: 15px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        background: #fff;
-        padding: 10px;
-        border-radius: 8px;
-      }
-      td {
-        padding: 10px;
-        border: none;
-        position: relative;
-        padding-left: 50%;
-      }
-      td::before {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        width: 45%;
-        font-weight: bold;
-        white-space: nowrap;
-      }
-      td:nth-of-type(1)::before { content: "Date"; }
-      td:nth-of-type(2)::before { content: "Phone"; }
-      td:nth-of-type(3)::before { content: "Name"; }
-      td:nth-of-type(4)::before { content: "Answer"; }
-      td:nth-of-type(5)::before { content: "Question"; }
+    td:nth-child(6) {
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <h2>📊 Admin Panel</h2>
-    <button id="logout-btn" class="btn btn-red" style="display:none;">Logout</button>
+  <div class="card">
+    <h2>🔐 Admin Panel</h2>
+    <button id="login-btn">Sign in with Google</button>
+    <button id="logout-btn" style="display:none;">Logout</button>
+    <button id="loadBtn" style="display:none;">Jawabaat Dekho</button>
+    <p id="status">Please sign in to access admin content.</p>
   </div>
 
-  <div class="container">
-    <p id="status">Checking admin access...</p>
-    <button id="loadBtn" class="btn" style="display:none;">📥 Jawabat Dekho</button>
-    <div id="table-area" style="overflow-x: auto;"></div>
-  </div>
+  <div id="table-area"></div>
 
   <script>
     const firebaseConfig = {
@@ -136,30 +87,42 @@
       "imranraza12738@gmail.com"
     ];
 
-    auth.onAuthStateChanged(user => {
-      const status = document.getElementById("status");
-      const logoutBtn = document.getElementById("logout-btn");
-      const loadBtn = document.getElementById("loadBtn");
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const loadBtn = document.getElementById("loadBtn");
+    const status = document.getElementById("status");
 
-      if (user && allowedEmails.includes(user.email)) {
-        status.innerText = `✅ Logged in as ${user.email}`;
-        logoutBtn.style.display = "inline-block";
-        loadBtn.style.display = "inline-block";
-      } else if (user) {
-        status.innerText = `❌ Access denied for ${user.email}`;
-        auth.signOut();
+    loginBtn.onclick = () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => {
+        status.innerText = "❌ Sign-in error: " + err.message;
+      });
+    };
+
+    logoutBtn.onclick = () => auth.signOut();
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        const email = user.email;
+        if (allowedEmails.includes(email)) {
+          status.innerText = `✅ Logged in as ${email}`;
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+          loadBtn.style.display = "inline-block";
+        } else {
+          status.innerText = `❌ Access denied for ${email}`;
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+          loadBtn.style.display = "none";
+        }
       } else {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(error => {
-          status.innerText = "❌ Error: " + error.message;
-        });
+        status.innerText = "Please sign in to access admin content.";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        loadBtn.style.display = "none";
+        document.getElementById("table-area").innerHTML = "";
       }
     });
-
-    document.getElementById("logout-btn").onclick = () => {
-      auth.signOut();
-      location.reload();
-    };
 
     document.getElementById("loadBtn").onclick = async () => {
       const tableArea = document.getElementById("table-area");
@@ -173,6 +136,8 @@
               <th>Phone</th>
               <th>Name</th>
               <th>Answer</th>
+              <th>Correct</th>
+              <th>Result</th>
               <th>Question</th>
             </tr>
           </thead>
@@ -181,12 +146,18 @@
 
       snapshot.forEach(doc => {
         const data = doc.data();
+        const userAnswer = (data.answer || "").toString().trim().toLowerCase();
+        const correctAnswer = (data.correct || "").toString().trim().toLowerCase();
+        const result = userAnswer === correctAnswer ? "✅ Sahi" : "❌ Galat";
+
         tableHTML += `
           <tr>
             <td>${data.date || "-"}</td>
             <td>${data.phone || "-"}</td>
             <td>${data.name || "-"}</td>
             <td>${data.answer || "-"}</td>
+            <td>${data.correct || "-"}</td>
+            <td>${result}</td>
             <td>${data.question || "-"}</td>
           </tr>
         `;
