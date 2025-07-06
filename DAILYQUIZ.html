@@ -8,63 +8,75 @@
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f4f8;
-      padding: 20px;
-      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+      padding: 30px;
+      display: flex;
+      justify-content: center;
     }
-    form {
+    .card {
       background: white;
-      padding: 20px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       max-width: 400px;
-      margin: auto;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
     }
     input, textarea, select, button {
       width: 100%;
       padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
+      margin-top: 10px;
+      font-size: 15px;
+      border-radius: 6px;
       border: 1px solid #ccc;
-      font-size: 16px;
     }
     button {
       background: #007bff;
       color: white;
       border: none;
+      margin-top: 15px;
       cursor: pointer;
     }
     button:hover {
       background: #0056b3;
     }
     #status {
-      margin-top: 10px;
+      margin-top: 15px;
       font-weight: bold;
+      color: green;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h2>📅 Set Daily Quiz</h2>
-
-  <form id="quiz-form">
-    <input type="date" id="quiz-date" required />
-    <textarea id="question" placeholder="Enter your question" required></textarea>
-    <input type="text" id="optionA" placeholder="Option A" required />
-    <input type="text" id="optionB" placeholder="Option B" required />
-    <input type="text" id="optionC" placeholder="Option C" required />
-    <input type="text" id="optionD" placeholder="Option D" required />
-    <select id="correct" required>
-      <option value="">Select correct option</option>
-      <option value="A">A</option>
-      <option value="B">B</option>
-      <option value="C">C</option>
-      <option value="D">D</option>
+  <div class="card">
+    <h2>📅 Set Daily Quiz</h2>
+    <select id="date">
+      <option value="2025-07-06">07/06/2025</option>
+      <option value="2025-07-07">07/07/2025</option>
+      <option value="2025-07-08">07/08/2025</option>
+      <option value="2025-07-09">07/09/2025</option>
+      <option value="2025-07-10">07/10/2025</option>
+      <!-- aur dates add kar sakte ho -->
     </select>
-    <button type="submit">💾 Save Question</button>
-  </form>
-
-  <p id="status"></p>
+    <textarea id="question" placeholder="✏️ Type the question here"></textarea>
+    <input id="optionA" placeholder="Option A" />
+    <input id="optionB" placeholder="Option B" />
+    <input id="optionC" placeholder="Option C" />
+    <input id="optionD" placeholder="Option D" />
+    <select id="correct">
+      <option value="a">A</option>
+      <option value="b">B</option>
+      <option value="c">C</option>
+      <option value="d">D</option>
+    </select>
+    <button onclick="saveQuestion()">💾 Save Question</button>
+    <div id="status"></div>
+  </div>
 
   <script>
     const firebaseConfig = {
@@ -75,14 +87,11 @@
       messagingSenderId: "814257864320",
       appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    document.getElementById("quiz-form").addEventListener("submit", async function(e) {
-      e.preventDefault();
-
-      const date = document.getElementById("quiz-date").value;
+    async function saveQuestion() {
+      const date = document.getElementById("date").value;
       const question = document.getElementById("question").value.trim();
       const optionA = document.getElementById("optionA").value.trim();
       const optionB = document.getElementById("optionB").value.trim();
@@ -91,8 +100,9 @@
       const correct = document.getElementById("correct").value;
       const status = document.getElementById("status");
 
-      if (!date || !question || !optionA || !optionB || !optionC || !optionD || !correct) {
-        status.innerText = "❌ Please fill all fields!";
+      if (!question || !optionA || !optionB || !optionC || !optionD || !correct) {
+        status.style.color = "red";
+        status.innerText = "⚠️ Fill all fields!";
         return;
       }
 
@@ -100,19 +110,29 @@
         await db.collection("quiz_questions").doc(date).set({
           question,
           options: {
-            A: optionA,
-            B: optionB,
-            C: optionC,
-            D: optionD
+            a: optionA,
+            b: optionB,
+            c: optionC,
+            d: optionD
           },
           correct
         });
+
+        status.style.color = "green";
         status.innerText = "✅ Question saved successfully!";
-        this.reset(); // ✅ Reset the whole form
-      } catch (error) {
-        status.innerText = "❌ Error: " + error.message;
+
+        // Clear input fields manually
+        document.getElementById("question").value = "";
+        document.getElementById("optionA").value = "";
+        document.getElementById("optionB").value = "";
+        document.getElementById("optionC").value = "";
+        document.getElementById("optionD").value = "";
+        document.getElementById("correct").value = "a";
+      } catch (err) {
+        status.style.color = "red";
+        status.innerText = "❌ Error: " + err.message;
       }
-    });
+    }
   </script>
 </body>
 </html>
