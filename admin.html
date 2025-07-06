@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Dashboard</title>
+  <title>Admin Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -11,7 +11,7 @@
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #f5f7fa;
+      background: #f0f2f5;
     }
     .navbar {
       background: #003366;
@@ -23,51 +23,98 @@
     }
     .navbar h2 {
       margin: 0;
+      font-size: 22px;
     }
     .btn {
-      background: #ff5e57;
+      background: #007bff;
       color: white;
-      padding: 8px 15px;
+      padding: 8px 16px;
       border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      border-radius: 5px;
       font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-red {
+      background: #d9534f;
     }
     .container {
       padding: 20px;
     }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      margin-bottom: 20px;
-    }
-    .card h3 {
-      margin-top: 0;
-      color: #003366;
-    }
-    .entry {
-      border-bottom: 1px solid #eee;
-      padding: 10px 0;
-    }
-    .entry:last-child {
-      border-bottom: none;
-    }
-    .entry strong {
+    #status {
+      font-size: 16px;
+      margin-bottom: 15px;
+      font-weight: bold;
       color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #004080;
+      color: white;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    #loadBtn {
+      margin-top: 20px;
+    }
+    @media (max-width: 768px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead {
+        display: none;
+      }
+      tr {
+        margin-bottom: 15px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        background: #fff;
+        padding: 10px;
+        border-radius: 8px;
+      }
+      td {
+        padding: 10px;
+        border: none;
+        position: relative;
+        padding-left: 50%;
+      }
+      td::before {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 45%;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      td:nth-of-type(1)::before { content: "Date"; }
+      td:nth-of-type(2)::before { content: "Phone"; }
+      td:nth-of-type(3)::before { content: "Name"; }
+      td:nth-of-type(4)::before { content: "Answer"; }
+      td:nth-of-type(5)::before { content: "Question"; }
     }
   </style>
 </head>
 <body>
   <div class="navbar">
     <h2>📊 Admin Panel</h2>
-    <button id="logout-btn" class="btn" style="display:none;">Logout</button>
+    <button id="logout-btn" class="btn btn-red" style="display:none;">Logout</button>
   </div>
 
   <div class="container">
     <p id="status">Checking admin access...</p>
-    <div id="data-area" style="display:none;"></div>
+    <button id="loadBtn" class="btn" style="display:none;">📥 Jawabat Dekho</button>
+    <div id="table-area" style="overflow-x: auto;"></div>
   </div>
 
   <script>
@@ -90,17 +137,21 @@
     ];
 
     auth.onAuthStateChanged(user => {
+      const status = document.getElementById("status");
+      const logoutBtn = document.getElementById("logout-btn");
+      const loadBtn = document.getElementById("loadBtn");
+
       if (user && allowedEmails.includes(user.email)) {
-        document.getElementById("status").innerText = `✅ Logged in as ${user.email}`;
-        document.getElementById("logout-btn").style.display = "inline-block";
-        loadSubmissions();
+        status.innerText = `✅ Logged in as ${user.email}`;
+        logoutBtn.style.display = "inline-block";
+        loadBtn.style.display = "inline-block";
       } else if (user) {
-        document.getElementById("status").innerText = `❌ Access denied for ${user.email}`;
+        status.innerText = `❌ Access denied for ${user.email}`;
         auth.signOut();
       } else {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(error => {
-          document.getElementById("status").innerText = "❌ Error: " + error.message;
+          status.innerText = "❌ Error: " + error.message;
         });
       }
     });
@@ -110,44 +161,40 @@
       location.reload();
     };
 
-    async function loadSubmissions() {
-      const container = document.getElementById("data-area");
-      container.style.display = "block";
-      container.innerHTML = "";
+    document.getElementById("loadBtn").onclick = async () => {
+      const tableArea = document.getElementById("table-area");
+      const snapshot = await db.collection("quiz_answers").orderBy("date", "desc").get();
 
-      const querySnapshot = await db.collection("quiz_answers").orderBy("date", "desc").get();
-      const grouped = {};
+      let tableHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Phone</th>
+              <th>Name</th>
+              <th>Answer</th>
+              <th>Question</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
 
-      querySnapshot.forEach(doc => {
+      snapshot.forEach(doc => {
         const data = doc.data();
-        const date = data.date || "unknown";
-        if (!grouped[date]) grouped[date] = [];
-        grouped[date].push(data);
+        tableHTML += `
+          <tr>
+            <td>${data.date || "-"}</td>
+            <td>${data.phone || "-"}</td>
+            <td>${data.name || "-"}</td>
+            <td>${data.answer || "-"}</td>
+            <td>${data.question || "-"}</td>
+          </tr>
+        `;
       });
 
-      for (const date in grouped) {
-        const card = document.createElement("div");
-        card.className = "card";
-        const title = document.createElement("h3");
-        title.innerText = `📅 ${date}`;
-        card.appendChild(title);
-
-        grouped[date].forEach(entry => {
-          const div = document.createElement("div");
-          div.className = "entry";
-          div.innerHTML = `
-            <strong>Name:</strong> ${entry.name}<br>
-            <strong>Phone:</strong> ${entry.phone}<br>
-            <strong>Address:</strong> ${entry.address}<br>
-            <strong>Answer:</strong> ${entry.answer}<br>
-            <strong>Question:</strong> ${entry.question}
-          `;
-          card.appendChild(div);
-        });
-
-        container.appendChild(card);
-      }
-    }
+      tableHTML += `</tbody></table>`;
+      tableArea.innerHTML = tableHTML;
+    };
   </script>
 </body>
 </html>
