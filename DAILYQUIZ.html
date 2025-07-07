@@ -9,41 +9,54 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f2f2f2;
+      background: linear-gradient(to right, #eef2f3, #8e9eab);
       padding: 30px;
+      display: flex;
+      justify-content: center;
     }
     .card {
       background: white;
       padding: 30px;
-      border-radius: 10px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       max-width: 500px;
-      margin: auto;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      width: 100%;
+      animation: fadeIn 0.7s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     h2 {
+      text-align: center;
       color: #333;
     }
-    input, select {
+    input, textarea, select {
       width: 100%;
       padding: 10px;
       margin-top: 10px;
-      border-radius: 5px;
+      border-radius: 6px;
       border: 1px solid #ccc;
+      font-size: 15px;
     }
     button {
-      background: #28a745;
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
       color: white;
       border: none;
-      padding: 12px;
-      width: 100%;
-      border-radius: 5px;
-      margin-top: 20px;
+      border-radius: 8px;
       font-size: 16px;
-      cursor: pointer;
-    }
-    .message {
       margin-top: 15px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .status {
       text-align: center;
+      margin-top: 15px;
       font-weight: bold;
     }
   </style>
@@ -51,18 +64,16 @@
 <body>
   <div class="card">
     <h2>📅 Daily Quiz</h2>
-    <div id="question-area">Loading...</div>
+    <p id="question-text">Loading question...</p>
 
-    <input type="text" id="name" placeholder="Enter your name" />
-    <input type="text" id="phone" placeholder="Enter your phone number" />
-    <input type="text" id="address" placeholder="Enter your address" />
+    <div id="options-container"></div>
 
-    <select id="answer">
-      <option value="">-- Choose your answer --</option>
-    </select>
+    <input type="text" id="name" placeholder="👤 Aap ka naam" />
+    <input type="tel" id="phone" placeholder="📞 Phone number" />
+    <textarea id="address" placeholder="🏠 Address likhein..."></textarea>
 
-    <button onclick="submitAnswer()">Submit</button>
-    <div class="message" id="message"></div>
+    <button onclick="submitAnswer()">📤 Submit</button>
+    <p id="status" class="status"></p>
   </div>
 
   <script>
@@ -77,50 +88,69 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const today = new Date().toISOString().split("T")[0];
-    const questionArea = document.getElementById("question-area");
-    const answerSelect = document.getElementById("answer");
-    const message = document.getElementById("message");
+    const today = new Date().toISOString().slice(0, 10);
+    let correctAnswer = "";
+    let currentQuestion = "";
 
-    db.collection("quiz_questions").doc(today).get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        questionArea.innerHTML = `<p><strong>${data.question}</strong></p>`;
-        answerSelect.innerHTML = `
-          <option value="">-- Choose your answer --</option>
-          <option value="a">${data.options.a}</option>
-          <option value="b">${data.options.b}</option>
-          <option value="c">${data.options.c}</option>
-          <option value="d">${data.options.d}</option>
-        `;
-      } else {
-        questionArea.innerHTML = "No question set for today.";
-        answerSelect.style.display = "none";
+    async function loadQuestion() {
+      try {
+        const doc = await db.collection("quiz_questions").doc(today).get();
+        if (doc.exists) {
+          const data = doc.data();
+          currentQuestion = data.question;
+          correctAnswer = data.correct;
+
+          document.getElementById("question-text").innerText = "❓ " + currentQuestion;
+
+          const optionsHTML = Object.entries(data.options).map(([key, val]) => `
+            <label>
+              <input type="radio" name="answer" value="${key}" /> ${key.toUpperCase()}: ${val}
+            </label><br/>
+          `).join("");
+          document.getElementById("options-container").innerHTML = optionsHTML;
+        } else {
+          document.getElementById("question-text").innerText = "❌ No quiz found for today.";
+        }
+      } catch (e) {
+        document.getElementById("question-text").innerText = "❌ Error loading quiz.";
       }
-    });
+    }
 
-    function submitAnswer() {
+    loadQuestion();
+
+    async function submitAnswer() {
       const name = document.getElementById("name").value.trim();
       const phone = document.getElementById("phone").value.trim();
       const address = document.getElementById("address").value.trim();
-      const answer = document.getElementById("answer").value;
+      const selected = document.querySelector("input[name='answer']:checked");
 
-      if (!name || !phone || !address || !answer) {
-        message.style.color = "red";
-        message.innerText = "Please fill all fields!";
+      if (!name || !phone || !address || !selected) {
+        document.getElementById("status").innerText = "⚠️ Fill all fields and choose an answer!";
         return;
       }
 
-      db.collection("quiz_questions").doc(today).get().then(doc => {
-        const correct = doc.data().correct;
-        const isCorrect = (answer === correct);
-        db.collection("quiz_answers").add({
-          name, phone, address, answer, correct: isCorrect, date: today
-        }).then(() => {
-          message.style.color = "green";
-          message.innerText = "Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
+      const answer = selected.value;
+      const isCorrect = answer === correctAnswer;
+
+      try {
+        await db.collection("quiz_answers").add({
+          name,
+          phone,
+          address,
+          answer,
+          correct: isCorrect,
+          date: today
         });
-      });
+
+        document.getElementById("status").innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
+
+        // Optionally clear fields
+        document.getElementById("name").value = "";
+        document.getElementById("phone").value = "";
+        document.getElementById("address").value = "";
+      } catch (err) {
+        document.getElementById("status").innerText = "❌ Error: " + err.message;
+      }
     }
   </script>
 </body>
