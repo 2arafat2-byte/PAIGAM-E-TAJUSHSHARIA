@@ -2,73 +2,78 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Daily Quiz</title>
+  <title>🎯 Daily Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #eef2f3;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
       padding: 30px;
     }
-    .card {
+    .quiz-container {
       background: white;
-      padding: 30px;
+      padding: 25px;
       border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
       max-width: 500px;
-      margin: auto;
+      width: 100%;
     }
     h2 {
-      text-align: center;
       color: #333;
+      margin-bottom: 15px;
     }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input[type="radio"] {
-      margin-right: 10px;
-    }
-    input[type="tel"] {
+    input, select {
       width: 100%;
+      margin: 8px 0;
       padding: 10px;
-      margin-top: 15px;
-      font-size: 16px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
     button {
       width: 100%;
-      padding: 12px;
       background: #007bff;
       color: white;
-      font-size: 16px;
       border: none;
-      border-radius: 8px;
-      margin-top: 20px;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 6px;
       cursor: pointer;
+      margin-top: 10px;
     }
     button:hover {
       background: #0056b3;
     }
-    #msg {
+    #status {
       text-align: center;
-      margin-top: 15px;
+      margin-top: 10px;
       font-weight: bold;
-      color: green;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>📅 Daily Quiz</h2>
-    <form id="quiz-form" onsubmit="submitAnswer(event)">
-      <p id="question">Loading question...</p>
-      <div id="options"></div>
-      <input type="tel" id="phone" placeholder="📱 Enter your phone number" required />
-      <button type="submit">Submit</button>
+  <div class="quiz-container">
+    <h2 id="question">Loading question...</h2>
+    <form id="quizForm">
+      <input type="text" id="name" placeholder="👤 Your Name" required />
+      <input type="text" id="phone" placeholder="📞 Phone Number" required />
+      <input type="text" id="address" placeholder="📍 Address" required />
+
+      <select id="selectedOption" required>
+        <option value="">📌 Select your answer</option>
+        <option value="a" id="opt-a">A</option>
+        <option value="b" id="opt-b">B</option>
+        <option value="c" id="opt-c">C</option>
+        <option value="d" id="opt-d">D</option>
+      </select>
+
+      <button type="submit">🚀 Submit</button>
     </form>
-    <div id="msg"></div>
+    <div id="status"></div>
   </div>
 
   <script>
@@ -84,52 +89,75 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
-    const questionEl = document.getElementById("question");
-    const optionsEl = document.getElementById("options");
-    const msgEl = document.getElementById("msg");
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayFormatted = `${yyyy}-${mm}-${dd}`;
 
-    db.collection("quiz_questions").doc(today).get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        questionEl.innerText = data.question;
-        const opts = data.options;
-        for (let key in opts) {
-          optionsEl.innerHTML += `
-            <label><input type="radio" name="answer" value="${key}" required> ${opts[key]}</label>
-          `;
+    async function loadQuestion() {
+      try {
+        const doc = await db.collection("quiz_questions").doc(todayFormatted).get();
+        if (doc.exists) {
+          const data = doc.data();
+          document.getElementById("question").innerText = data.question;
+          document.getElementById("opt-a").innerText = "A. " + data.a;
+          document.getElementById("opt-b").innerText = "B. " + data.b;
+          document.getElementById("opt-c").innerText = "C. " + data.c;
+          document.getElementById("opt-d").innerText = "D. " + data.d;
+        } else {
+          document.getElementById("question").innerText = "❌ Aaj ka sawal abhi upload nahi hua.";
+          document.getElementById("quizForm").style.display = "none";
         }
-      } else {
-        questionEl.innerText = "❌ Aaj ka sawaal abhi tak upload nahi hua hai.";
+      } catch (err) {
+        document.getElementById("question").innerText = "❌ Error loading question.";
+      }
+    }
+
+    loadQuestion();
+
+    document.getElementById("quizForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const selectedOption = document.getElementById("selectedOption").value;
+      const statusEl = document.getElementById("status");
+
+      if (!name || !phone || !address || !selectedOption) {
+        statusEl.innerText = "⚠️ Please fill all fields.";
+        return;
+      }
+
+      try {
+        const existing = await db.collection("quiz_answers")
+          .where("phone", "==", phone)
+          .where("date", "==", todayFormatted)
+          .get();
+
+        if (!existing.empty) {
+          statusEl.innerText = "⚠️ Aapne aaj ka jawab pehle hi diya hai.";
+          return;
+        }
+
+        const quesDoc = await db.collection("quiz_questions").doc(todayFormatted).get();
+        const correctAnswer = quesDoc.exists ? quesDoc.data().correct : "";
+
+        await db.collection("quiz_answers").add({
+          name,
+          phone,
+          address,
+          selected: selectedOption,
+          correct: selectedOption === correctAnswer,
+          date: todayFormatted
+        });
+
+        statusEl.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
+        this.reset();
+      } catch (err) {
+        statusEl.innerText = "❌ Error: " + err.message;
       }
     });
-
-    function submitAnswer(e) {
-      e.preventDefault();
-      const selected = document.querySelector('input[name="answer"]:checked');
-      const phone = document.getElementById("phone").value.trim();
-      if (!selected || !phone) return;
-
-      const answer = selected.value;
-
-      db.collection("quiz_questions").doc(today).get().then(doc => {
-        const correct = doc.exists ? doc.data().correct : "";
-        const isCorrect = correct === answer;
-
-        return db.collection("quiz_answers").add({
-          date: today,
-          phone,
-          answer,
-          correct: isCorrect
-        });
-      }).then(() => {
-        document.getElementById("quiz-form").style.display = "none";
-        msgEl.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
-      }).catch(err => {
-        msgEl.style.color = "red";
-        msgEl.innerText = "❌ Error: " + err.message;
-      });
-    }
   </script>
 </body>
 </html>
