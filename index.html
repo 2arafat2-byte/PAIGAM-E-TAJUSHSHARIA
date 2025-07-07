@@ -2,172 +2,124 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Paighaam-e-Tajushsharia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
     }
-
     body {
+      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f0f0;
-      transition: background 0.3s, color 0.3s;
+      background: linear-gradient(120deg, #f0f8ff, #e6f7ff);
+      overflow-x: hidden;
     }
-
-    body.dark {
-      background: #121212;
-      color: white;
-    }
-
-    .intro {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 2.5rem;
-      z-index: 9999;
-      animation: fadeOut 5s forwards;
-      text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.5);
-    }
-
-    @keyframes fadeOut {
-      0% { opacity: 1; clip-path: circle(100%); }
-      50% { opacity: 1; clip-path: circle(50%); }
-      80% { opacity: 0.2; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
-      100% { opacity: 0; clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); }
-    }
-
     header {
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-
     .header-container {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      max-width: 700px;
-      width: 100%;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      text-align: center;
-      opacity: 0;
-      animation: appearSand 2s ease 5s forwards;
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
     }
-
-    @keyframes appearSand {
-      0% {
-        opacity: 0;
-        transform: scale(0.9);
-        filter: blur(10px);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-        filter: blur(0);
-      }
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      color: #333;
+      line-height: 1.4;
     }
-
-    .header-container img {
-      height: 60px;
-      margin-bottom: 10px;
+    h1 br {
+      display: none;
     }
-
-    .header-container h1 {
-      font-size: 30px;
-      margin-bottom: 20px;
+    img {
+      height: 50px;
+      margin-right: 15px;
     }
-
+    nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     .btn {
-      display: inline-block;
-      margin: 10px;
-      padding: 12px 24px;
       background: #007bff;
       color: white;
+      padding: 10px 16px;
+      border: none;
       border-radius: 8px;
       text-decoration: none;
-      font-weight: bold;
+      font-size: 15px;
       transition: background 0.3s;
     }
-
     .btn:hover {
       background: #0056b3;
     }
 
-    .dark-toggle {
+    /* Intro Animation */
+    .intro-text {
       position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #ddd;
-      color: #333;
-      border-radius: 20px;
-      padding: 6px 14px;
-      cursor: pointer;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 28px;
       font-weight: bold;
-      z-index: 10000;
+      text-align: center;
+      color: #444;
+      animation: fadeOutSand 4s forwards;
+      z-index: 9999;
+    }
+    @keyframes fadeOutSand {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); visibility: hidden; }
+    }
+    .page-content {
+      opacity: 0;
+      animation: fadeInPage 1s ease-out 4s forwards;
+    }
+    @keyframes fadeInPage {
+      to { opacity: 1; }
     }
 
-    body.dark .header-container {
-      background: #1e1e1e;
-    }
-
-    body.dark .btn {
-      background: #28a745;
-    }
-
-    body.dark .btn:hover {
-      background: #1e7e34;
-    }
-
-    body.dark .dark-toggle {
-      background: #333;
-      color: white;
+    @media (max-width: 600px) {
+      .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+      h1 br {
+        display: inline;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- 🔔 Intro Animation -->
-  <div class="intro">👑 Paighaam-e-Tajushsharia</div>
+  <div class="intro-text">📜 Paighaam-e-Tajushsharia</div>
 
-  <!-- 🌙 Dark Mode Toggle -->
-  <div class="dark-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</div>
+  <div class="page-content">
+    <header>
+      <div class="header-container">
+        <div style="display: flex; align-items: center;">
+          <img src="sandbox:/mnt/data/cleaned-crown.png" alt="Crown" />
+          <h1>📜 Paighaam-e-<br>Tajushsharia</h1>
+        </div>
+        <nav>
+          <a class="btn quiz" href="DAILYQUIZ.html">📅 Daily Quiz</a>
+          <a class="btn admin" href="admin.html">🛡 Admin Panel</a>
+          <a class="btn suwaal" href="sawaal.html">📨 Suwaal Bhejein</a>
+        </nav>
+      </div>
+    </header>
+  </div>
 
-  <!-- 🧠 Header Content -->
-  <header>
-    <div class="header-container">
-      <img src="cleaned-crown.png" alt="Crown" />
-      <h1>📜 Paighaam-e-<br>Tajushsharia</h1>
-      <nav>
-        <a class="btn quiz" href="DAILYQUIZ.html">📅 Daily Quiz</a>
-        <a class="btn admin" href="admin.html">🛡 Only for Admins</a>
-      </nav>
-    </div>
-  </header>
-
-  <script>
-    function toggleDarkMode() {
-      const body = document.body;
-      body.classList.toggle("dark");
-      localStorage.setItem("darkMode", body.classList.contains("dark"));
-    }
-
-    window.onload = () => {
-      if (localStorage.getItem("darkMode") === "true") {
-        document.body.classList.add("dark");
-      }
-    };
-  </script>
 </body>
 </html>
