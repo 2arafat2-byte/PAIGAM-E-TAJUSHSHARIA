@@ -9,113 +9,90 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #e3f2fd, #fce4ec);
-      padding: 30px;
+      background: #f4f6f8;
       margin: 0;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
     }
-
-    .card {
-      background: white;
-      max-width: 500px;
+    body.dark {
+      background: #121212;
+      color: white;
+    }
+    .quiz-container {
+      max-width: 600px;
       margin: auto;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      animation: fadeSlide 0.4s ease;
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
-
-    @keyframes fadeSlide {
-      from {opacity: 0; transform: translateY(30px);}
-      to {opacity: 1; transform: translateY(0);}
+    body.dark .quiz-container {
+      background: #1e1e1e;
     }
-
     h2 {
       text-align: center;
-      color: #333;
       margin-bottom: 20px;
     }
-
     label {
-      font-weight: bold;
-      margin-top: 15px;
       display: block;
+      margin: 15px 0 5px;
     }
-
     input, select {
       width: 100%;
       padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
       font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
     }
-
-    .options {
-      margin-top: 15px;
+    body.dark input, body.dark select {
+      background: #2c2c2c;
+      color: white;
+      border-color: #555;
     }
-
-    .option-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-      padding: 8px 12px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      transition: background 0.3s ease;
+    .options label {
+      display: block;
+      padding: 8px 10px;
+      margin: 8px 0;
+      background: #eee;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-
-    .option-item:hover {
-      background: #eef5ff;
-    }
-
-    .option-item input[type="radio"] {
+    .options input {
       margin-right: 10px;
-      transform: scale(1.3);
     }
-
+    .options label:hover {
+      background: #ddd;
+    }
+    body.dark .options label {
+      background: #333;
+    }
     button {
-      margin-top: 20px;
+      display: block;
       width: 100%;
       padding: 12px;
       font-size: 16px;
-      background: #2196f3;
+      margin-top: 20px;
+      background: #007bff;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background 0.3s ease;
     }
-
-    button:hover {
-      background: #1976d2;
-    }
-
     #message {
       margin-top: 15px;
       text-align: center;
       font-weight: bold;
-      color: green;
     }
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="quiz-container">
     <h2>📅 Daily Quiz</h2>
-    <div id="quiz-container">
-      <p id="question">Loading question...</p>
-      <div class="options" id="options"></div>
+    <div id="quiz-area">
+      <p>Loading question...</p>
     </div>
-
-    <label>Name</label>
-    <input type="text" id="name" placeholder="Your full name" />
-
-    <label>Phone</label>
-    <input type="tel" id="phone" placeholder="Your phone number" />
-
-    <label>Address</label>
-    <input type="text" id="address" placeholder="Your address" />
-
-    <button onclick="submitAnswer()">Submit</button>
     <div id="message"></div>
   </div>
 
@@ -128,77 +105,75 @@
       messagingSenderId: "814257864320",
       appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const questionElem = document.getElementById("question");
-    const optionsElem = document.getElementById("options");
+    const quizArea = document.getElementById("quiz-area");
     const message = document.getElementById("message");
 
-    const today = new Date().toISOString().split('T')[0];
+    function loadQuiz() {
+      const now = new Date();
+      const date = now.toISOString().split("T")[0];
+      const time = now.toTimeString().split(":").slice(0, 2).join(":");
+      const id = `${date}T${time}`;
 
-    let correctAnswer = "";
+      db.collection("quiz_questions").doc(id).get().then(doc => {
+        if (!doc.exists) {
+          quizArea.innerHTML = "<p>⚠️ Aaj ka quiz abhi uplabdh nahi hai.</p>";
+          return;
+        }
 
-    // Load today's quiz
-    db.collection("quiz_questions").doc(today).get().then(doc => {
-      if (doc.exists) {
         const data = doc.data();
-        correctAnswer = data.correct;
-        questionElem.innerText = data.question;
-        const options = data.options;
+        const q = data.question;
+        const opts = data.options;
 
-        optionsElem.innerHTML = `
-          <div class="option-item"><input type="radio" name="answer" value="a" /> ${options.a}</div>
-          <div class="option-item"><input type="radio" name="answer" value="b" /> ${options.b}</div>
-          <div class="option-item"><input type="radio" name="answer" value="c" /> ${options.c}</div>
-          <div class="option-item"><input type="radio" name="answer" value="d" /> ${options.d}</div>
+        quizArea.innerHTML = `
+          <form id="quiz-form">
+            <p><strong>Q:</strong> ${q}</p>
+            <div class="options">
+              <label><input type="radio" name="answer" value="a" required /> ${opts.a}</label>
+              <label><input type="radio" name="answer" value="b" required /> ${opts.b}</label>
+              <label><input type="radio" name="answer" value="c" required /> ${opts.c}</label>
+              <label><input type="radio" name="answer" value="d" required /> ${opts.d}</label>
+            </div>
+            <label>📛 Naam:</label>
+            <input type="text" id="name" required />
+            <label>📞 Phone:</label>
+            <input type="text" id="phone" required />
+            <label>🏡 Address:</label>
+            <input type="text" id="address" required />
+            <button type="submit">✅ Submit</button>
+          </form>
         `;
-      } else {
-        questionElem.innerText = "❌ No quiz set for today.";
-      }
-    }).catch(err => {
-      questionElem.innerText = "❌ Error loading quiz.";
-    });
 
-    async function submitAnswer() {
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const address = document.getElementById("address").value.trim();
-      const selected = document.querySelector("input[name='answer']:checked");
+        document.getElementById("quiz-form").onsubmit = function(e) {
+          e.preventDefault();
+          const answer = quizArea.querySelector("input[name='answer']:checked").value;
+          const name = document.getElementById("name").value;
+          const phone = document.getElementById("phone").value;
+          const address = document.getElementById("address").value;
+          const correct = data.correct === answer;
 
-      if (!name || !phone || !address || !selected) {
-        message.style.color = "red";
-        message.innerText = "⚠️ Fill all fields and select an answer!";
-        return;
-      }
-
-      const answer = selected.value;
-
-      // 🔐 Check if already submitted
-      const snapshot = await db.collection("quiz_answers")
-        .where("date", "==", today)
-        .where("phone", "==", phone)
-        .get();
-
-      if (!snapshot.empty) {
-        message.style.color = "red";
-        message.innerText = "❌ Aap already submit kar chuke hain!";
-        return;
-      }
-
-      // ✅ Save answer
-      db.collection("quiz_answers").add({
-        name,
-        phone,
-        address,
-        answer,
-        date: today,
-        correct: answer === correctAnswer
+          db.collection("quiz_answers").add({
+            date: date,
+            name, phone, address,
+            answer,
+            correct
+          }).then(() => {
+            message.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
+            quizArea.innerHTML = "";
+          }).catch(err => {
+            message.innerText = "❌ Error: " + err.message;
+          });
+        };
       });
+    }
 
-      message.style.color = "green";
-      message.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge";
+    loadQuiz();
+
+    // Optional: dark mode apply
+    if (localStorage.getItem("darkMode") === "true") {
+      document.body.classList.add("dark");
     }
   </script>
 </body>
