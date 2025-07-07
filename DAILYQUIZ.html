@@ -21,29 +21,24 @@
       padding: 30px;
       border-radius: 16px;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      animation: slideFade 0.5s ease-in-out;
+      animation: fadeSlide 0.4s ease;
     }
 
-    @keyframes slideFade {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    @keyframes fadeSlide {
+      from {opacity: 0; transform: translateY(30px);}
+      to {opacity: 1; transform: translateY(0);}
     }
 
     h2 {
       text-align: center;
       color: #333;
+      margin-bottom: 20px;
     }
 
     label {
-      display: block;
-      margin-top: 15px;
       font-weight: bold;
+      margin-top: 15px;
+      display: block;
     }
 
     input, select {
@@ -55,8 +50,27 @@
       font-size: 15px;
     }
 
-    .options label {
-      font-weight: normal;
+    .options {
+      margin-top: 15px;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+    }
+
+    .option-item:hover {
+      background: #eef5ff;
+    }
+
+    .option-item input[type="radio"] {
+      margin-right: 10px;
+      transform: scale(1.3);
     }
 
     button {
@@ -69,6 +83,7 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
 
     button:hover {
@@ -123,17 +138,21 @@
 
     const today = new Date().toISOString().split('T')[0];
 
+    let correctAnswer = "";
+
+    // Load today's quiz
     db.collection("quiz_questions").doc(today).get().then(doc => {
       if (doc.exists) {
         const data = doc.data();
+        correctAnswer = data.correct;
         questionElem.innerText = data.question;
         const options = data.options;
 
         optionsElem.innerHTML = `
-          <label><input type="radio" name="answer" value="a" /> ${options.a}</label><br>
-          <label><input type="radio" name="answer" value="b" /> ${options.b}</label><br>
-          <label><input type="radio" name="answer" value="c" /> ${options.c}</label><br>
-          <label><input type="radio" name="answer" value="d" /> ${options.d}</label><br>
+          <div class="option-item"><input type="radio" name="answer" value="a" /> ${options.a}</div>
+          <div class="option-item"><input type="radio" name="answer" value="b" /> ${options.b}</div>
+          <div class="option-item"><input type="radio" name="answer" value="c" /> ${options.c}</div>
+          <div class="option-item"><input type="radio" name="answer" value="d" /> ${options.d}</div>
         `;
       } else {
         questionElem.innerText = "❌ No quiz set for today.";
@@ -142,7 +161,7 @@
       questionElem.innerText = "❌ Error loading quiz.";
     });
 
-    function submitAnswer() {
+    async function submitAnswer() {
       const name = document.getElementById("name").value.trim();
       const phone = document.getElementById("phone").value.trim();
       const address = document.getElementById("address").value.trim();
@@ -150,30 +169,36 @@
 
       if (!name || !phone || !address || !selected) {
         message.style.color = "red";
-        message.innerText = "⚠️ Please fill all fields and select an answer!";
+        message.innerText = "⚠️ Fill all fields and select an answer!";
         return;
       }
 
       const answer = selected.value;
 
-      db.collection("quiz_questions").doc(today).get().then(doc => {
-        if (!doc.exists) return;
+      // 🔐 Check if already submitted
+      const snapshot = await db.collection("quiz_answers")
+        .where("date", "==", today)
+        .where("phone", "==", phone)
+        .get();
 
-        const correct = doc.data().correct;
-        const isCorrect = answer === correct;
+      if (!snapshot.empty) {
+        message.style.color = "red";
+        message.innerText = "❌ Aap already submit kar chuke hain!";
+        return;
+      }
 
-        db.collection("quiz_answers").add({
-          name,
-          phone,
-          address,
-          answer,
-          date: today,
-          correct: isCorrect
-        });
-
-        message.style.color = "green";
-        message.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge";
+      // ✅ Save answer
+      db.collection("quiz_answers").add({
+        name,
+        phone,
+        address,
+        answer,
+        date: today,
+        correct: answer === correctAnswer
       });
+
+      message.style.color = "green";
+      message.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge";
     }
   </script>
 </body>
