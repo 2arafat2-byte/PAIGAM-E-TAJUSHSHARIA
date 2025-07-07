@@ -7,60 +7,73 @@
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f7f9fc;
-      padding: 20px;
+      background: #eef2f7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
-    .quiz-card {
-      max-width: 500px;
-      background: white;
-      padding: 25px;
-      margin: auto;
+    .container {
+      background: #fff;
+      padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 90%;
     }
     h2 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       color: #333;
     }
     label {
       display: block;
-      margin-top: 15px;
-      font-weight: bold;
+      margin: 15px 0 5px;
+      font-weight: 600;
     }
-    input[type="text"], input[type="tel"] {
+    input[type="text"],
+    input[type="tel"] {
       width: 100%;
       padding: 10px;
-      border: 1px solid #ccc;
-      margin-top: 5px;
       border-radius: 6px;
+      border: 1px solid #ccc;
     }
     .option {
       margin-top: 10px;
+    }
+    .option input {
+      margin-right: 10px;
     }
     button {
       margin-top: 20px;
       padding: 12px;
       width: 100%;
-      background: #28a745;
+      background: #007bff;
       color: white;
       border: none;
       border-radius: 6px;
       font-size: 16px;
       cursor: pointer;
     }
+    button:hover {
+      background: #0056b3;
+    }
     #status {
       margin-top: 20px;
       font-weight: bold;
-      color: green;
       text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="quiz-card">
+  <div class="container">
     <h2>📘 Daily Quiz</h2>
     <form id="quizForm">
       <label>Naam:</label>
@@ -72,7 +85,7 @@
       <label>Address:</label>
       <input type="text" id="address" required />
 
-      <label id="question">Question loading...</label>
+      <label id="question">Loading question...</label>
 
       <div class="option"><input type="radio" name="answer" value="a" /> <span id="opt-a">Option A</span></div>
       <div class="option"><input type="radio" name="answer" value="b" /> <span id="opt-b">Option B</span></div>
@@ -91,61 +104,4 @@
       projectId: "dailyquiz-8149b",
       storageBucket: "dailyquiz-8149b.appspot.com",
       messagingSenderId: "814257864320",
-      appId: "1:814257864320:web:98e911b3ca5a643407b065"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    const today = new Date().toISOString().split("T")[0];
-
-    db.collection("quiz_questions").doc(today).get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        document.getElementById("question").innerText = data.question;
-        document.getElementById("opt-a").innerText = data.options.a;
-        document.getElementById("opt-b").innerText = data.options.b;
-        document.getElementById("opt-c").innerText = data.options.c;
-        document.getElementById("opt-d").innerText = data.options.d;
-      } else {
-        document.getElementById("question").innerText = "⚠️ Aaj ka sawal abhi set nahi hua hai.";
-      }
-    });
-
-    document.getElementById("quizForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const address = document.getElementById("address").value.trim();
-      const selected = document.querySelector('input[name="answer"]:checked');
-      const status = document.getElementById("status");
-
-      if (!selected) {
-        status.style.color = "red";
-        status.innerText = "⚠️ Pehle ek option select karein.";
-        return;
-      }
-
-      try {
-        const docSnap = await db.collection("quiz_questions").doc(today).get();
-        const correct = docSnap.exists ? docSnap.data().correct : null;
-
-        await db.collection("quiz_answers").add({
-          date: today,
-          name,
-          phone,
-          address,
-          answer: selected.value,
-          correct: selected.value === correct
-        });
-
-        status.style.color = "green";
-        status.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge";
-        document.getElementById("quizForm").reset();
-      } catch (err) {
-        status.style.color = "red";
-        status.innerText = "❌ Error: " + err.message;
-      }
-    });
-  </script>
-</body>
-</html>
+      appId: "1:814257864320:web:
