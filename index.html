@@ -2,172 +2,345 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Admin Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paighaam-e-Tajushsharia</title>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
     }
-
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f0f0;
-      transition: background 0.3s, color 0.3s;
+      margin: 0;
+      padding: 20px;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.5s, color 0.5s;
     }
 
-    body.dark {
-      background: #121212;
-      color: white;
+    :root {
+      --bg: #f4f6f8;
+      --card-bg: #ffffff;
+      --text: #000000;
     }
 
-    .intro {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 2.5rem;
-      z-index: 9999;
-      animation: fadeOut 5s forwards;
-      text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.5);
+    .dark {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --text: #ffffff;
     }
 
-    @keyframes fadeOut {
-      0% { opacity: 1; clip-path: circle(100%); }
-      50% { opacity: 1; clip-path: circle(50%); }
-      80% { opacity: 0.2; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
-      100% { opacity: 0; clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); }
+    .container {
+      max-width: 1000px;
+      margin: auto;
     }
 
-    header {
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .header-container {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      max-width: 700px;
-      width: 100%;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      text-align: center;
-      opacity: 0;
-      animation: appearSand 2s ease 5s forwards;
-    }
-
-    @keyframes appearSand {
-      0% {
-        opacity: 0;
-        transform: scale(0.9);
-        filter: blur(10px);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-        filter: blur(0);
-      }
-    }
-
-    .header-container img {
-      height: 60px;
-      margin-bottom: 10px;
-    }
-
-    .header-container h1 {
-      font-size: 30px;
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
 
-    .btn {
-      display: inline-block;
-      margin: 10px;
-      padding: 12px 24px;
-      background: #007bff;
-      color: white;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: background 0.3s;
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 15px;
     }
 
-    .btn:hover {
-      background: #0056b3;
-    }
-
-    .dark-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #ddd;
-      color: #333;
-      border-radius: 20px;
-      padding: 6px 14px;
+    button {
+      padding: 10px 18px;
+      margin: 5px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
-      font-weight: bold;
-      z-index: 10000;
+      transition: background 0.2s;
     }
 
-    body.dark .header-container {
-      background: #1e1e1e;
-    }
+    #login-btn { background: #007bff; color: white; }
+    #logout-btn { background: #dc3545; color: white; display: none; }
+    .top-btn { position: fixed; top: 10px; left: 10px; background: #343a40; color: white; }
 
-    body.dark .btn {
-      background: #28a745;
-    }
-
-    body.dark .btn:hover {
-      background: #1e7e34;
-    }
-
-    body.dark .dark-toggle {
-      background: #333;
+    .toggle-dark {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #6c757d;
       color: white;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .btn-group {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+      text-align: left;
+      word-break: break-word;
+    }
+
+    .action-btn {
+      font-size: 13px;
+      margin: 0 2px;
+      padding: 5px 10px;
+    }
+
+    #status {
+      text-align: center;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+
+    #intro-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+      background: #000;
+      color: white;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      font-family: 'Segoe UI', sans-serif;
+      animation: fadeOut 3s ease 3s forwards;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      td {
+        padding: 10px;
+        text-align: right;
+        border: none;
+        border-bottom: 1px solid #eee;
+      }
     }
   </style>
 </head>
 <body>
+  <div id="intro-animation">
+    📜 Paighaam-e-Tajushsharia
+  </div>
 
-  <!-- 🔔 Intro Animation -->
-  <div class="intro">👑 Paighaam-e-Tajushsharia</div>
+  <div class="container">
+    <button class="top-btn" onclick="viewSchedule()">📅 Scheduled</button>
+    <button class="toggle-dark" onclick="toggleDarkMode()">🌓 Toggle Theme</button>
 
-  <!-- 🌙 Dark Mode Toggle -->
-  <div class="dark-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</div>
+    <div class="card">
+      <h2>🔐 Admin Panel</h2>
+      <p id="status">Checking login...</p>
+      <div class="btn-group">
+        <button id="login-btn">Sign in with Google</button>
+        <button id="logout-btn">Logout</button>
+      </div>
 
-  <!-- 🧠 Header Content -->
-  <header>
-    <div class="header-container">
-      <img src="cleaned-crown.png" alt="Crown" />
-      <h1>📜 Paighaam-e-<br>Tajushsharia</h1>
-      <nav>
-        <a class="btn quiz" href="DAILYQUIZ.html">📅 Daily Quiz</a>
-        <a class="btn admin" href="admin.html">🛡 Only for Admins</a>
-      </nav>
+      <div id="admin-content" style="display:none;">
+        <div class="btn-group">
+          <button onclick="showAnswers()">📄 View Answers</button>
+          <button onclick="showSetForm()">📝 Set Quiz</button>
+        </div>
+
+        <div id="set-form" style="display:none;">
+          <h3>🗓️ Set Quiz</h3>
+          <input type="date" id="quiz-date" />
+          <input type="time" id="quiz-time" />
+          <textarea id="quiz-question" placeholder="Enter Question Here"></textarea>
+          <input type="text" id="opt-a" placeholder="Option A" />
+          <input type="text" id="opt-b" placeholder="Option B" />
+          <input type="text" id="opt-c" placeholder="Option C" />
+          <input type="text" id="opt-d" placeholder="Option D" />
+          <select id="correct-option">
+            <option value="">Correct Option</option>
+            <option value="a">A</option>
+            <option value="b">B</option>
+            <option value="c">C</option>
+            <option value="d">D</option>
+          </select>
+          <button onclick="saveQuiz()">💾 Save</button>
+          <p id="quiz-msg"></p>
+        </div>
+
+        <div id="answers-section" style="display:none;">
+          <h3>📋 Answers</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th><th>Name</th><th>Phone</th><th>Address</th><th>Answer</th><th>✔?</th>
+              </tr>
+            </thead>
+            <tbody id="answers-table"></tbody>
+          </table>
+        </div>
+
+        <div id="schedule-section" style="display:none;">
+          <h3>📅 Scheduled Questions</h3>
+          <table>
+            <thead>
+              <tr><th>Date & Time</th><th>Question</th><th>Action</th></tr>
+            </thead>
+            <tbody id="schedule-table"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-  </header>
+  </div>
 
   <script>
-    function toggleDarkMode() {
-      const body = document.body;
-      body.classList.toggle("dark");
-      localStorage.setItem("darkMode", body.classList.contains("dark"));
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
+      authDomain: "dailyquiz-8149b.firebaseapp.com",
+      projectId: "dailyquiz-8149b",
+      storageBucket: "dailyquiz-8149b.appspot.com",
+      messagingSenderId: "814257864320",
+      appId: "1:814257864320:web:98e911b3ca5a643407b065"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const status = document.getElementById("status");
+    const adminContent = document.getElementById("admin-content");
+
+    loginBtn.onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    logoutBtn.onclick = () => auth.signOut();
+
+    auth.onAuthStateChanged(user => {
+      if (user && allowedEmails.includes(user.email)) {
+        status.innerText = `✅ Welcome, ${user.email}`;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        adminContent.style.display = "block";
+      } else {
+        status.innerText = user ? `❌ Access Denied: ${user.email}` : "Please log in";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        adminContent.style.display = "none";
+      }
+    });
+
+    function showAnswers() {
+      document.getElementById("answers-section").style.display = "block";
+      document.getElementById("set-form").style.display = "none";
+      document.getElementById("schedule-section").style.display = "none";
+      const table = document.getElementById("answers-table");
+      table.innerHTML = "";
+      db.collection("quiz_answers").orderBy("date", "desc").get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const correct = d.correct ? "✅" : "❌";
+          table.innerHTML += `<tr><td>${d.date}</td><td>${d.name || '-'}</td><td>${d.phone || '-'}</td><td>${d.address || '-'}</td><td>${d.answer}</td><td>${correct}</td></tr>`;
+        });
+      });
     }
 
-    window.onload = () => {
-      if (localStorage.getItem("darkMode") === "true") {
-        document.body.classList.add("dark");
+    function showSetForm() {
+      document.getElementById("answers-section").style.display = "none";
+      document.getElementById("set-form").style.display = "block";
+      document.getElementById("schedule-section").style.display = "none";
+    }
+
+    function viewSchedule() {
+      document.getElementById("answers-section").style.display = "none";
+      document.getElementById("set-form").style.display = "none";
+      document.getElementById("schedule-section").style.display = "block";
+      const table = document.getElementById("schedule-table");
+      table.innerHTML = "";
+      db.collection("quiz_questions").orderBy(firebase.firestore.FieldPath.documentId()).get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          table.innerHTML += `
+            <tr>
+              <td>${doc.id.replace("T", " @ ")}</td>
+              <td>${data.question.slice(0, 50)}...</td>
+              <td><button class="action-btn" onclick="deleteQuiz('${doc.id}')">🗑 Delete</button></td>
+            </tr>`;
+        });
+      });
+    }
+
+    function saveQuiz() {
+      const date = document.getElementById("quiz-date").value;
+      const time = document.getElementById("quiz-time").value;
+      const id = `${date}T${time}`;
+      const question = document.getElementById("quiz-question").value;
+      const a = document.getElementById("opt-a").value;
+      const b = document.getElementById("opt-b").value;
+      const c = document.getElementById("opt-c").value;
+      const d = document.getElementById("opt-d").value;
+      const correct = document.getElementById("correct-option").value;
+      const msg = document.getElementById("quiz-msg");
+
+      if (!date || !time || !question || !a || !b || !c || !d || !correct) {
+        msg.innerText = "⚠️ Fill all fields!";
+        return;
       }
-    };
+
+      db.collection("quiz_questions").doc(id).set({
+        question,
+        options: { a, b, c, d },
+        correct
+      }).then(() => {
+        msg.innerText = "✅ Saved!";
+      }).catch(err => {
+        msg.innerText = "❌ " + err.message;
+      });
+    }
+
+    function deleteQuiz(id) {
+      if (confirm("Are you sure?")) {
+        db.collection("quiz_questions").doc(id).delete().then(() => {
+          viewSchedule();
+        });
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const intro = document.getElementById("intro-animation");
+      setTimeout(() => {
+        intro.style.display = "none";
+      }, 6000);
+    });
   </script>
 </body>
 </html>
