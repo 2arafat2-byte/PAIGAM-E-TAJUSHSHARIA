@@ -8,14 +8,17 @@
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f4f6f8;
       margin: 0;
       padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark {
+      background: #121212;
+      color: white;
     }
     .container {
       max-width: 1000px;
@@ -27,6 +30,10 @@
       padding: 25px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       margin-bottom: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark .card {
+      background: #1e1e1e;
     }
     h2, h3 {
       text-align: center;
@@ -39,10 +46,10 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.2s;
     }
     #login-btn { background: #007bff; color: white; }
     #logout-btn { background: #dc3545; color: white; display: none; }
+    #dark-toggle { background: #343a40; color: white; float: right; }
     #status { text-align: center; margin: 15px 0; font-weight: bold; }
     input, select, textarea {
       width: 100%;
@@ -52,9 +59,17 @@
       border: 1px solid #ccc;
       border-radius: 6px;
     }
+    body.dark input, body.dark select, body.dark textarea {
+      background: #2c2c2c;
+      color: white;
+      border-color: #555;
+    }
     .btn-group {
       text-align: center;
       margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     table {
       width: 100%;
@@ -67,34 +82,45 @@
       font-size: 14px;
       text-align: left;
     }
+    body.dark table, body.dark th, body.dark td {
+      background: #1e1e1e;
+      color: white;
+      border-color: #444;
+    }
     .action-btn {
       font-size: 13px;
       margin: 0 2px;
       padding: 5px 10px;
     }
     .top-btn {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background: #343a40;
+      background: #6c757d;
       color: white;
     }
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      td {
-        padding: 10px;
-        text-align: right;
-        border: none;
-        border-bottom: 1px solid #eee;
-      }
+    #intro {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      width: 100vw;
+      background: #000;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5rem;
+      z-index: 9999;
+      animation: fadeOut 3.5s ease-out forwards;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
     }
   </style>
 </head>
 <body>
+  <div id="intro">🕌 Paighaam-e-Tajushsharia</div>
+
   <div class="container">
-    <button class="top-btn" onclick="viewSchedule()">📅 Scheduled</button>
+    <button id="dark-toggle" onclick="toggleDarkMode()">🌓 Toggle Dark Mode</button>
     <div class="card">
       <h2>🔐 Admin Panel</h2>
       <p id="status">Checking login...</p>
@@ -105,6 +131,7 @@
 
       <div id="admin-content" style="display:none;">
         <div class="btn-group">
+          <button class="top-btn" onclick="viewSchedule()">📅 Scheduled</button>
           <button onclick="showAnswers()">📄 View Answers</button>
           <button onclick="showSetForm()">📝 Set Quiz</button>
         </div>
@@ -166,7 +193,6 @@
       messagingSenderId: "814257864320",
       appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -268,6 +294,16 @@
           viewSchedule();
         });
       }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+    }
+
+    // Load saved mode
+    if (localStorage.getItem("darkMode") === "true") {
+      document.body.classList.add("dark");
     }
   </script>
 </body>
