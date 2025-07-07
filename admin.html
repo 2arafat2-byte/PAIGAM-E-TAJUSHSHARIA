@@ -1,3 +1,4 @@
+<!-- admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,107 +9,36 @@
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f0f2f5;
-      margin: 0;
-      padding: 20px;
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 25px;
-      max-width: 900px;
-      margin: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    h2, h3 {
-      text-align: center;
-      color: #333;
-    }
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 10px 5px;
-    }
-    #login-btn { background: #007bff; color: white; }
-    #logout-btn { background: #dc3545; color: white; display: none; }
-    .btn-panel { text-align: center; margin-bottom: 20px; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-    #answers-section, #quiz-form { display: none; }
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      font-size: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button[type="submit"] {
-      background: #28a745;
-      color: white;
-    }
-    #quiz-msg {
-      text-align: center;
-      margin-top: 10px;
-      font-weight: bold;
-    }
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    .card { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2, h3 { text-align: center; }
+    input, textarea, select, button { width: 100%; margin: 10px 0; padding: 10px; font-size: 16px; }
+    button { background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .hide { display: none; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>🔐 Admin Panel</h2>
     <p id="status">Checking login...</p>
-    <div class="btn-panel">
-      <button id="login-btn" class="btn">Sign in with Google</button>
-      <button id="logout-btn" class="btn">Logout</button>
-    </div>
+    <button id="login-btn">Sign in with Google</button>
+    <button id="logout-btn" class="hide">Logout</button>
 
-    <div id="admin-content">
-      <div class="btn-panel">
-        <button class="btn" onclick="loadAnswers()">📄 Dekhein Jawabaat</button>
-        <button class="btn" onclick="toggleQuizForm()">📝 Set Daily Quiz</button>
-      </div>
-
-      <div id="answers-section">
-        <h3>📋 Submitted Answers</h3>
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Phone</th><th>Answer</th><th>Correct?</th></tr>
-          </thead>
-          <tbody id="answers-table"></tbody>
-        </table>
-      </div>
-
-      <div id="quiz-form">
-        <h3>🗓️ Set Daily Quiz</h3>
-        <form onsubmit="saveQuiz(event)">
-          <input type="date" id="quiz-date" required />
-          <textarea id="quiz-question" placeholder="Question" required></textarea>
-          <input type="text" id="opt-a" placeholder="Option A" required />
-          <input type="text" id="opt-b" placeholder="Option B" required />
-          <input type="text" id="opt-c" placeholder="Option C" required />
-          <input type="text" id="opt-d" placeholder="Option D" required />
-          <select id="correct-option" required>
-            <option value="">Select Correct Option</option>
-            <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
-          </select>
-          <button type="submit">💾 Save</button>
-        </form>
-        <p id="quiz-msg"></p>
-      </div>
+    <div id="admin-section" class="hide">
+      <h3>📅 Set Daily Quiz</h3>
+      <input type="date" id="quiz-date" />
+      <textarea id="quiz-question" placeholder="Enter question here"></textarea>
+      <input id="opt-a" placeholder="Option A" />
+      <input id="opt-b" placeholder="Option B" />
+      <input id="opt-c" placeholder="Option C" />
+      <input id="opt-d" placeholder="Option D" />
+      <select id="correct-opt">
+        <option value="">Select correct option</option>
+        <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
+      </select>
+      <button onclick="saveQuestion()">💾 Save</button>
+      <p id="msg"></p>
     </div>
   </div>
 
@@ -121,79 +51,69 @@
       messagingSenderId: "814257864320",
       appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    const allowedEmails = [
+    const allowed = [
       "arrahmanallamalquraan123@gmail.com",
       "imranraza12738@gmail.com"
     ];
 
-    const status = document.getElementById("status");
-    const adminContent = document.getElementById("admin-content");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
+    const status = document.getElementById("status");
+    const admin = document.getElementById("admin-section");
 
     loginBtn.onclick = () => {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(e => alert("❌ Login failed"));
+      auth.signInWithPopup(provider).catch(e => alert(e.message));
     };
-
     logoutBtn.onclick = () => auth.signOut();
 
     auth.onAuthStateChanged(user => {
-      if (user && allowedEmails.includes(user.email)) {
+      if (user && allowed.includes(user.email)) {
         status.innerText = `✅ Logged in as ${user.email}`;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
-        adminContent.style.display = "block";
+        loginBtn.classList.add("hide");
+        logoutBtn.classList.remove("hide");
+        admin.classList.remove("hide");
       } else {
-        status.innerText = user ? `❌ Access Denied for ${user.email}` : "Please sign in";
-        adminContent.style.display = "none";
+        status.innerText = user ? "❌ Access Denied" : "Please login";
+        admin.classList.add("hide");
+        loginBtn.classList.remove("hide");
+        logoutBtn.classList.add("hide");
       }
     });
 
-    function loadAnswers() {
-      document.getElementById("answers-section").style.display = "block";
-      document.getElementById("quiz-form").style.display = "none";
-      const table = document.getElementById("answers-table");
-      table.innerHTML = "";
-      db.collection("quiz_answers").orderBy("date", "desc").get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          const correct = d.correct ? "✅" : "❌";
-          table.innerHTML += `<tr><td>${d.date}</td><td>${d.phone}</td><td>${d.answer}</td><td>${correct}</td></tr>`;
-        });
-      });
-    }
-
-    function toggleQuizForm() {
-      document.getElementById("quiz-form").style.display = "block";
-      document.getElementById("answers-section").style.display = "none";
-    }
-
-    function saveQuiz(e) {
-      e.preventDefault();
+    function saveQuestion() {
       const date = document.getElementById("quiz-date").value;
-      const question = document.getElementById("quiz-question").value;
-      const a = document.getElementById("opt-a").value;
-      const b = document.getElementById("opt-b").value;
-      const c = document.getElementById("opt-c").value;
-      const d = document.getElementById("opt-d").value;
-      const correct = document.getElementById("correct-option").value;
+      const question = document.getElementById("quiz-question").value.trim();
+      const a = document.getElementById("opt-a").value.trim();
+      const b = document.getElementById("opt-b").value.trim();
+      const c = document.getElementById("opt-c").value.trim();
+      const d = document.getElementById("opt-d").value.trim();
+      const correct = document.getElementById("correct-opt").value;
+      const msg = document.getElementById("msg");
+
+      if (!date || !question || !a || !b || !c || !d || !correct) {
+        msg.innerText = "⚠️ Fill all fields!";
+        msg.style.color = "red";
+        return;
+      }
 
       db.collection("quiz_questions").doc(date).set({
-        question, a, b, c, d, correct
+        question,
+        options: { a, b, c, d },
+        correct
       }).then(() => {
-        document.getElementById("quiz-msg").innerText = "✅ Question saved!";
-        e.target.reset();
-      }).catch(err => {
-        document.getElementById("quiz-msg").innerText = "❌ Error: " + err.message;
+        msg.innerText = "✅ Saved!";
+        msg.style.color = "green";
+      }).catch(e => {
+        msg.innerText = "❌ " + e.message;
+        msg.style.color = "red";
       });
     }
   </script>
 </body>
 </html>
-
-
