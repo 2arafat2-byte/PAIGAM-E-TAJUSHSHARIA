@@ -2,80 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Set Daily Quiz</title>
+  <title>Daily Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f5f7fa;
+      background: #eef2f3;
       padding: 30px;
-      display: flex;
-      justify-content: center;
     }
     .card {
       background: white;
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: auto;
     }
     h2 {
-      margin-bottom: 20px;
+      text-align: center;
       color: #333;
     }
-    input, textarea, select, button {
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input[type="radio"] {
+      margin-right: 10px;
+    }
+    input[type="tel"] {
       width: 100%;
       padding: 10px;
-      margin-top: 10px;
-      font-size: 15px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      margin-top: 15px;
+      font-size: 16px;
     }
     button {
+      width: 100%;
+      padding: 12px;
       background: #007bff;
       color: white;
+      font-size: 16px;
       border: none;
-      margin-top: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
       cursor: pointer;
     }
     button:hover {
       background: #0056b3;
     }
-    #status {
+    #msg {
+      text-align: center;
       margin-top: 15px;
       font-weight: bold;
       color: green;
-      text-align: center;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>📅 Set Daily Quiz</h2>
-    <select id="date">
-      <option value="2025-07-06">07/06/2025</option>
-      <option value="2025-07-07">07/07/2025</option>
-      <option value="2025-07-08">07/08/2025</option>
-      <option value="2025-07-09">07/09/2025</option>
-      <option value="2025-07-10">07/10/2025</option>
-      <!-- aur dates add kar sakte ho -->
-    </select>
-    <textarea id="question" placeholder="✏️ Type the question here"></textarea>
-    <input id="optionA" placeholder="Option A" />
-    <input id="optionB" placeholder="Option B" />
-    <input id="optionC" placeholder="Option C" />
-    <input id="optionD" placeholder="Option D" />
-    <select id="correct">
-      <option value="a">A</option>
-      <option value="b">B</option>
-      <option value="c">C</option>
-      <option value="d">D</option>
-    </select>
-    <button onclick="saveQuestion()">💾 Save Question</button>
-    <div id="status"></div>
+    <h2>📅 Daily Quiz</h2>
+    <form id="quiz-form" onsubmit="submitAnswer(event)">
+      <p id="question">Loading question...</p>
+      <div id="options"></div>
+      <input type="tel" id="phone" placeholder="📱 Enter your phone number" required />
+      <button type="submit">Submit</button>
+    </form>
+    <div id="msg"></div>
   </div>
 
   <script>
@@ -87,51 +80,55 @@
       messagingSenderId: "814257864320",
       appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    async function saveQuestion() {
-      const date = document.getElementById("date").value;
-      const question = document.getElementById("question").value.trim();
-      const optionA = document.getElementById("optionA").value.trim();
-      const optionB = document.getElementById("optionB").value.trim();
-      const optionC = document.getElementById("optionC").value.trim();
-      const optionD = document.getElementById("optionD").value.trim();
-      const correct = document.getElementById("correct").value;
-      const status = document.getElementById("status");
+    const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+    const questionEl = document.getElementById("question");
+    const optionsEl = document.getElementById("options");
+    const msgEl = document.getElementById("msg");
 
-      if (!question || !optionA || !optionB || !optionC || !optionD || !correct) {
-        status.style.color = "red";
-        status.innerText = "⚠️ Fill all fields!";
-        return;
+    db.collection("quiz_questions").doc(today).get().then(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        questionEl.innerText = data.question;
+        const opts = data.options;
+        for (let key in opts) {
+          optionsEl.innerHTML += `
+            <label><input type="radio" name="answer" value="${key}" required> ${opts[key]}</label>
+          `;
+        }
+      } else {
+        questionEl.innerText = "❌ Aaj ka sawaal abhi tak upload nahi hua hai.";
       }
+    });
 
-      try {
-        await db.collection("quiz_questions").doc(date).set({
-          question,
-          options: {
-            a: optionA,
-            b: optionB,
-            c: optionC,
-            d: optionD
-          },
-          correct
+    function submitAnswer(e) {
+      e.preventDefault();
+      const selected = document.querySelector('input[name="answer"]:checked');
+      const phone = document.getElementById("phone").value.trim();
+      if (!selected || !phone) return;
+
+      const answer = selected.value;
+
+      db.collection("quiz_questions").doc(today).get().then(doc => {
+        const correct = doc.exists ? doc.data().correct : "";
+        const isCorrect = correct === answer;
+
+        return db.collection("quiz_answers").add({
+          date: today,
+          phone,
+          answer,
+          correct: isCorrect
         });
-
-        status.style.color = "green";
-        status.innerText = "✅ Question saved successfully!";
-
-        // Clear input fields manually
-        document.getElementById("question").value = "";
-        document.getElementById("optionA").value = "";
-        document.getElementById("optionB").value = "";
-        document.getElementById("optionC").value = "";
-        document.getElementById("optionD").value = "";
-        document.getElementById("correct").value = "a";
-      } catch (err) {
-        status.style.color = "red";
-        status.innerText = "❌ Error: " + err.message;
-      }
+      }).then(() => {
+        document.getElementById("quiz-form").style.display = "none";
+        msgEl.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
+      }).catch(err => {
+        msgEl.style.color = "red";
+        msgEl.innerText = "❌ Error: " + err.message;
+      });
     }
   </script>
 </body>
