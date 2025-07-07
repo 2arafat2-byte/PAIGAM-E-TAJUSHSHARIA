@@ -4,13 +4,150 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Paighaam-e-Tajushsharia</title>
-  <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark {
+      background: #121212;
+      color: white;
+    }
+
+    .intro {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5rem;
+      z-index: 9999;
+      animation: fadeOut 5s forwards;
+      text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.5);
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; clip-path: circle(100%); }
+      50% { opacity: 1; clip-path: circle(50%); }
+      80% { opacity: 0.2; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+      100% { opacity: 0; clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); }
+    }
+
+    header {
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .header-container {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      opacity: 0;
+      animation: appearSand 2s ease 5s forwards;
+    }
+
+    @keyframes appearSand {
+      0% {
+        opacity: 0;
+        transform: scale(0.9);
+        filter: blur(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+      }
+    }
+
+    .header-container img {
+      height: 60px;
+      margin-bottom: 10px;
+    }
+
+    .header-container h1 {
+      font-size: 30px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 12px 24px;
+      background: #007bff;
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: #0056b3;
+    }
+
+    .dark-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ddd;
+      color: #333;
+      border-radius: 20px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 10000;
+    }
+
+    body.dark .header-container {
+      background: #1e1e1e;
+    }
+
+    body.dark .btn {
+      background: #28a745;
+    }
+
+    body.dark .btn:hover {
+      background: #1e7e34;
+    }
+
+    body.dark .dark-toggle {
+      background: #333;
+      color: white;
+    }
+  </style>
 </head>
 <body>
+
+  <!-- 🔔 Intro Animation -->
+  <div class="intro">🏖️ Paighaam-e-Tajushsharia</div>
+
+  <!-- 🌙 Dark Mode Toggle -->
+  <div class="dark-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</div>
+
+  <!-- 🧠 Header Content -->
   <header>
     <div class="header-container">
-      <img src="sandbox:/mnt/data/cleaned-crown.png" alt="Crown" />
+      <img src="cleaned-crown.png" alt="Crown" />
       <h1>📜 Paighaam-e-<br>Tajushsharia</h1>
       <nav>
         <a class="btn quiz" href="DAILYQUIZ.html">📅 Daily Quiz</a>
@@ -18,5 +155,19 @@
       </nav>
     </div>
   </header>
+
+  <script>
+    function toggleDarkMode() {
+      const body = document.body;
+      body.classList.toggle("dark");
+      localStorage.setItem("darkMode", body.classList.contains("dark"));
+    }
+
+    window.onload = () => {
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark");
+      }
+    };
+  </script>
 </body>
 </html>
