@@ -2,78 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom right, #f0f2f5, #e0e7ff);
+      background: linear-gradient(145deg, #e6ecf5, #f5f8fc);
       padding: 30px;
+      display: flex;
+      justify-content: center;
     }
     .card {
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      max-width: 800px;
-      margin: auto;
-      padding: 30px;
-      transition: all 0.3s ease;
-    }
-    h2, h3 {
-      text-align: center;
-      color: #333;
-    }
-    button {
-      padding: 10px 20px;
-      background: #4a90e2;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      margin: 10px 5px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    button:hover {
-      background: #357abd;
-    }
-    input, select, textarea {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 25px;
       width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 15px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      max-width: 900px;
     }
-    .btns {
+    h2 {
       text-align: center;
       margin-bottom: 20px;
     }
-    #answers-table {
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-edit { background: #ffc107; color: black; }
+
+    table {
       width: 100%;
-      border-collapse: collapse;
       margin-top: 20px;
+      border-collapse: collapse;
+      overflow-x: auto;
     }
-    #answers-table th, #answers-table td {
-      padding: 10px;
-      border: 1px solid #ddd;
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      word-wrap: break-word;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .actions {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+    }
+    #status {
       text-align: center;
-    }
-    #quiz-form, #answers-section {
-      display: none;
-    }
-    .success {
-      color: green;
-      text-align: center;
-      margin-top: 10px;
-    }
-    .error {
-      color: red;
-      text-align: center;
-      margin-top: 10px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -81,51 +68,25 @@
   <div class="card">
     <h2>🔐 Admin Panel</h2>
     <p id="status">Checking login...</p>
-    <div class="btns">
-      <button id="login-btn">Sign in with Google</button>
-      <button id="logout-btn" style="display:none;">Logout</button>
+    <div style="text-align:center;">
+      <button class="btn-primary" onclick="login()">Login with Google</button>
+      <button class="btn-danger" onclick="logout()" style="display:none;" id="logoutBtn">Logout</button>
     </div>
-
-    <div id="admin-content" style="display:none;">
-      <div class="btns">
-        <button onclick="toggleQuizForm()">📅 Set Quiz</button>
-        <button onclick="loadAnswers()">📊 View Answers</button>
-      </div>
-
-      <!-- Quiz Setter -->
-      <div id="quiz-form">
-        <h3>📝 Set Daily Quiz</h3>
-        <input type="date" id="quiz-date" />
-        <input type="time" id="quiz-time" />
-        <textarea id="quiz-question" placeholder="Enter question here"></textarea>
-        <input type="text" id="opt-a" placeholder="Option A" />
-        <input type="text" id="opt-b" placeholder="Option B" />
-        <input type="text" id="opt-c" placeholder="Option C" />
-        <input type="text" id="opt-d" placeholder="Option D" />
-        <select id="correct-option">
-          <option value="">Correct Option?</option>
-          <option value="a">A</option>
-          <option value="b">B</option>
-          <option value="c">C</option>
-          <option value="d">D</option>
-        </select>
-        <button onclick="saveQuiz()">💾 Save Quiz</button>
-        <p id="quiz-msg" class="success"></p>
-      </div>
-
-      <!-- Answer Viewer -->
-      <div id="answers-section">
-        <h3>📋 Submitted Answers</h3>
-        <table id="answers-table">
-          <thead>
-            <tr>
-              <th>Date</th><th>Name</th><th>Phone</th><th>Address</th><th>Answer</th><th>Correct?</th>
-            </tr>
-          </thead>
-          <tbody id="answers-body"></tbody>
-        </table>
-      </div>
-    </div>
+    
+    <table id="answersTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>Answer</th>
+          <th>Correct?</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="answersBody"></tbody>
+    </table>
   </div>
 
   <script>
@@ -142,86 +103,81 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    const allowedEmails = [
+    const allowedAdmins = [
       "arrahmanallamalquraan123@gmail.com",
       "imranraza12738@gmail.com"
     ];
 
+    function login() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
     auth.onAuthStateChanged(user => {
       const status = document.getElementById("status");
-      if (user && allowedEmails.includes(user.email)) {
+      const logoutBtn = document.getElementById("logoutBtn");
+      const table = document.getElementById("answersTable");
+
+      if (user && allowedAdmins.includes(user.email)) {
         status.innerText = `✅ Welcome, ${user.email}`;
-        document.getElementById("login-btn").style.display = "none";
-        document.getElementById("logout-btn").style.display = "inline-block";
-        document.getElementById("admin-content").style.display = "block";
+        logoutBtn.style.display = "inline-block";
+        table.style.display = "table";
+        loadAnswers();
       } else {
-        status.innerText = user ? `❌ Not Authorized: ${user.email}` : "Please sign in.";
+        status.innerText = user ? `❌ Access Denied: ${user.email}` : "Please log in";
+        logoutBtn.style.display = "none";
+        table.style.display = "none";
       }
     });
 
-    document.getElementById("login-btn").onclick = () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(e => alert("Login Failed: " + e.message));
-    };
-
-    document.getElementById("logout-btn").onclick = () => auth.signOut();
-
-    function toggleQuizForm() {
-      document.getElementById("quiz-form").style.display = "block";
-      document.getElementById("answers-section").style.display = "none";
-    }
-
     function loadAnswers() {
-      document.getElementById("answers-section").style.display = "block";
-      document.getElementById("quiz-form").style.display = "none";
-      const tbody = document.getElementById("answers-body");
+      const tbody = document.getElementById("answersBody");
       tbody.innerHTML = "";
+
       db.collection("quiz_answers").orderBy("date", "desc").get().then(snapshot => {
         snapshot.forEach(doc => {
           const d = doc.data();
-          const correct = d.correct ? "✅" : "❌";
-          tbody.innerHTML += `
+          const isCorrect = d.correct ? "✅" : "❌";
+          const row = `
             <tr>
               <td>${d.date}</td>
               <td>${d.name}</td>
               <td>${d.phone}</td>
               <td>${d.address}</td>
               <td>${d.answer}</td>
-              <td>${correct}</td>
+              <td>${isCorrect}</td>
+              <td class="actions">
+                <button class="btn-edit" onclick="editAnswer('${doc.id}')">✏️</button>
+                <button class="btn-danger" onclick="deleteAnswer('${doc.id}')">🗑️</button>
+              </td>
             </tr>
           `;
+          tbody.innerHTML += row;
         });
       });
     }
 
-    function saveQuiz() {
-      const date = document.getElementById("quiz-date").value;
-      const time = document.getElementById("quiz-time").value;
-      const question = document.getElementById("quiz-question").value.trim();
-      const a = document.getElementById("opt-a").value.trim();
-      const b = document.getElementById("opt-b").value.trim();
-      const c = document.getElementById("opt-c").value.trim();
-      const d = document.getElementById("opt-d").value.trim();
-      const correct = document.getElementById("correct-option").value;
-
-      if (!date || !time || !question || !a || !b || !c || !d || !correct) {
-        document.getElementById("quiz-msg").innerText = "⚠️ Fill all fields!";
-        return;
+    function deleteAnswer(id) {
+      if (confirm("Are you sure you want to delete this answer?")) {
+        db.collection("quiz_answers").doc(id).delete().then(() => {
+          alert("❌ Deleted successfully.");
+          loadAnswers();
+        });
       }
+    }
 
-      const fullDateTime = `${date} ${time}`;
-
-      db.collection("quiz_questions").doc(date).set({
-        time,
-        question,
-        options: { a, b, c, d },
-        correct
-      }).then(() => {
-        document.getElementById("quiz-msg").innerText = "✅ Quiz saved!";
-        document.getElementById("quiz-form").reset(); // <-- error yaha avoid karna hoga
-      }).catch(err => {
-        document.getElementById("quiz-msg").innerText = "❌ Error: " + err.message;
-      });
+    function editAnswer(id) {
+      const newAnswer = prompt("Enter new answer value:");
+      if (newAnswer !== null && newAnswer.trim() !== "") {
+        db.collection("quiz_answers").doc(id).update({ answer: newAnswer }).then(() => {
+          alert("✏️ Answer updated.");
+          loadAnswers();
+        });
+      }
     }
   </script>
 </body>
