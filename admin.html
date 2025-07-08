@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Admin Panel | Paighaam-e-Tajushshariah</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,9 +46,7 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    button:hover {
-      opacity: 0.9;
-    }
+    button:hover { opacity: 0.9; }
     #login-btn { background: #007bff; color: white; }
     #logout-btn { background: #dc3545; color: white; display: none; }
     #status { text-align: center; margin: 15px 0; font-weight: bold; }
@@ -82,9 +80,7 @@
       font-size: 14px;
       text-align: left;
     }
-    body.dark th, body.dark td {
-      border-color: #555;
-    }
+    body.dark th, body.dark td { border-color: #555; }
     .action-btn {
       font-size: 13px;
       margin: 2px;
@@ -103,8 +99,6 @@
       left: auto;
       right: 10px;
     }
-
-    /* Intro Animation */
     .intro-text {
       position: fixed;
       top: 50%;
@@ -126,9 +120,7 @@
       opacity: 0;
       animation: fadeInPage 1s ease-out 4s forwards;
     }
-    @keyframes fadeInPage {
-      to { opacity: 1; }
-    }
+    @keyframes fadeInPage { to { opacity: 1; } }
     @media (max-width: 600px) {
       table, thead, tbody, th, td, tr {
         display: block;
@@ -156,13 +148,12 @@
           <button id="logout-btn">Logout</button>
         </div>
         <div id="admin-content" style="display:none;">
-          <!-- QUIZ SETTING FORM -->
           <div class="btn-group">
             <button onclick="showAnswers()">📄 View Answers</button>
             <button onclick="showSetForm()">📝 Set Quiz</button>
             <button onclick="showSuwaalat()">📨 Suwaalaat</button>
           </div>
-
+          <!-- SET QUIZ -->
           <div id="set-form" style="display:none;">
             <h3>🗓️ Set Quiz</h3>
             <input type="date" id="quiz-date" />
@@ -183,7 +174,7 @@
             <p id="quiz-msg"></p>
           </div>
 
-          <!-- ANSWER VIEWER -->
+          <!-- VIEW ANSWERS -->
           <div id="answers-section" style="display:none;">
             <h3>📋 Answers</h3>
             <table>
@@ -196,7 +187,7 @@
             </table>
           </div>
 
-          <!-- SCHEDULE TABLE -->
+          <!-- SCHEDULED QUESTIONS -->
           <div id="schedule-section" style="display:none;">
             <h3>📅 Scheduled Questions</h3>
             <table>
@@ -207,7 +198,7 @@
             </table>
           </div>
 
-          <!-- SUWAALAAT SECTION -->
+          <!-- SUWAALAT FROM USERS -->
           <div id="suwaalat-section" style="display:none;">
             <h3>📨 Received Suwaalaat</h3>
             <table>
@@ -217,6 +208,7 @@
               <tbody id="suwaalat-table"></tbody>
             </table>
 
+            <!-- Reply Form -->
             <div style="margin-top: 30px;" id="reply-section">
               <h3>🗣️ Reply to Suwaal</h3>
               <input type="text" id="reply-title" placeholder="Suwaal Title" readonly />
@@ -226,41 +218,29 @@
               <p id="reply-msg"></p>
             </div>
           </div>
-        </div> <!-- admin-content -->
+        </div> <!-- End of Admin Content -->
       </div>
     </div>
   </div>
   <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  const supabase = createClient(
-    "https://ifveebmmgsofqcjwgbzt.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  );
+  const supabaseUrl = 'https://ifveebmmgsofqcjwgbzt.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...'; // your anon/public key
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   const allowedEmails = [
-    "arrahmanallamalquraan123@gmail.com",
-    "imranraza12738@gmail.com"
+    'arrahmanallamalquraan123@gmail.com',
+    'imranraza12738@gmail.com'
   ];
 
-  const status = document.getElementById("status");
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
+  const status = document.getElementById("status");
   const adminContent = document.getElementById("admin-content");
 
-  async function checkLogin() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session && allowedEmails.includes(session.user.email)) {
-      showAdmin(session.user.email);
-    } else {
-      status.innerText = "Please log in";
-      loginBtn.style.display = "inline-block";
-    }
-  }
-
   loginBtn.onclick = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google" });
-    if (error) alert("Login Failed: " + error.message);
+    await supabase.auth.signInWithOAuth({ provider: 'google' });
   };
 
   logoutBtn.onclick = async () => {
@@ -268,43 +248,22 @@
     location.reload();
   };
 
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (session && allowedEmails.includes(session.user.email)) {
-      showAdmin(session.user.email);
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    const user = session?.user;
+    if (user && allowedEmails.includes(user.email)) {
+      status.innerText = `✅ Welcome, ${user.email}`;
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "inline-block";
+      adminContent.style.display = "block";
+    } else {
+      status.innerText = user ? `❌ Access Denied: ${user.email}` : "Please log in";
+      loginBtn.style.display = "inline-block";
+      logoutBtn.style.display = "none";
+      adminContent.style.display = "none";
     }
   });
 
-  function showAdmin(email) {
-    status.innerText = `✅ Welcome, ${email}`;
-    loginBtn.style.display = "none";
-    logoutBtn.style.display = "inline-block";
-    adminContent.style.display = "block";
-  }
-
-  // Toggle Sections
-  function showSetForm() {
-    toggle("set-form");
-  }
-  function showAnswers() {
-    toggle("answers-section");
-    loadAnswers();
-  }
-  function viewSchedule() {
-    toggle("schedule-section");
-    loadSchedule();
-  }
-  function showSuwaalat() {
-    toggle("suwaalat-section");
-    loadSuwaalat();
-  }
-  function toggle(id) {
-    ["set-form", "answers-section", "schedule-section", "suwaalat-section"].forEach(el => {
-      document.getElementById(el).style.display = (el === id) ? "block" : "none";
-    });
-  }
-
-  // SAVE QUIZ
-  async function saveQuiz() {
+  window.saveQuiz = async function () {
     const date = document.getElementById("quiz-date").value;
     const time = document.getElementById("quiz-time").value;
     const id = `${date}T${time}`;
@@ -321,97 +280,146 @@
       return;
     }
 
-    const { error } = await supabase.from("quiz_questions").upsert({
-      id,
-      question,
-      options: { a, b, c, d },
-      correct
-    });
-    msg.innerText = error ? "❌ " + error.message : "✅ Saved!";
-  }
+    const { error } = await supabase
+      .from("quiz_questions")
+      .upsert({
+        id: id,
+        question: question,
+        options: { a, b, c, d },
+        correct: correct
+      });
 
-  // LOAD SCHEDULE
-  async function loadSchedule() {
-    const { data, error } = await supabase.from("quiz_questions").select("*").order("id", { ascending: false });
+    msg.innerText = error ? `❌ ${error.message}` : "✅ Saved!";
+  };
+
+  window.viewSchedule = async function () {
+    showSection("schedule-section");
     const table = document.getElementById("schedule-table");
     table.innerHTML = "";
+
+    const { data, error } = await supabase
+      .from("quiz_questions")
+      .select("*")
+      .order("id", { ascending: false });
+
     if (data) {
-      data.forEach(item => {
+      data.forEach(row => {
         table.innerHTML += `
           <tr>
-            <td>${item.id.replace("T", " @ ")}</td>
-            <td>${item.question.slice(0, 50)}...</td>
-            <td><button onclick="deleteQuiz('${item.id}')">🗑 Delete</button></td>
+            <td>${row.id.replace("T", " @ ")}</td>
+            <td>${row.question.slice(0, 50)}...</td>
+            <td><button class="action-btn" onclick="deleteQuiz('${row.id}')">🗑 Delete</button></td>
           </tr>`;
       });
     }
-  }
+  };
 
-  async function deleteQuiz(id) {
-    if (!confirm("Are you sure?")) return;
-    await supabase.from("quiz_questions").delete().eq("id", id);
-    loadSchedule();
-  }
+  window.deleteQuiz = async function (id) {
+    if (confirm("Are you sure?")) {
+      await supabase.from("quiz_questions").delete().eq("id", id);
+      viewSchedule();
+    }
+  };
 
-  // LOAD ANSWERS
-  async function loadAnswers() {
-    const { data } = await supabase.from("quiz_answers").select("*").order("date", { ascending: false });
+  window.showAnswers = async function () {
+    showSection("answers-section");
     const table = document.getElementById("answers-table");
     table.innerHTML = "";
-    data.forEach(d => {
-      table.innerHTML += `<tr>
-        <td>${d.date}</td>
-        <td>${d.name}</td>
-        <td>${d.phone}</td>
-        <td>${d.address}</td>
-        <td>${d.answer}</td>
-        <td>${d.correct ? "✅" : "❌"}</td>
-      </tr>`;
-    });
-  }
 
-  // LOAD SUWAALAAT
-  async function loadSuwaalat() {
-    const { data } = await supabase.from("user_questions").select("*");
+    const { data } = await supabase
+      .from("quiz_answers")
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (data) {
+      data.forEach(ans => {
+        const correct = ans.correct ? "✅" : "❌";
+        table.innerHTML += `
+          <tr>
+            <td>${ans.date || '-'}</td>
+            <td>${ans.name || '-'}</td>
+            <td>${ans.phone || '-'}</td>
+            <td>${ans.address || '-'}</td>
+            <td>${ans.answer}</td>
+            <td>${correct}</td>
+          </tr>`;
+      });
+    }
+  };
+
+  window.showSuwaalat = async function () {
+    showSection("suwaalat-section");
     const table = document.getElementById("suwaalat-table");
     table.innerHTML = "";
-    data.forEach(d => {
-      table.innerHTML += `<tr>
-        <td>${d.title}</td>
-        <td>${d.name}</td>
-        <td>${d.phone}</td>
-        <td>${d.address}</td>
-        <td><button onclick="replyTo('${d.id}', '${d.title}')">✏️ Reply</button></td>
-      </tr>`;
-    });
-  }
 
-  window.replyTo = function(id, title) {
+    const { data } = await supabase.from("user_questions").select("*");
+
+    if (data) {
+      data.forEach(q => {
+        table.innerHTML += `
+          <tr>
+            <td>${q.title}</td>
+            <td>${q.name}</td>
+            <td>${q.phone}</td>
+            <td>${q.address}</td>
+            <td><button onclick="replyTo('${q.id}', '${q.title}')">✏️ Reply</button></td>
+          </tr>`;
+      });
+    }
+  };
+
+  window.replyTo = function (id, title) {
     document.getElementById("reply-title").value = title;
     document.getElementById("reply-title").dataset.id = id;
   };
 
-  window.submitReply = async function() {
-    const id = document.getElementById("reply-title").dataset.id;
+  window.submitReply = async function () {
+    const docId = document.getElementById("reply-title").dataset.id;
+    const title = document.getElementById("reply-title").value;
     const text = document.getElementById("text-reply").value.trim();
     const file = document.getElementById("audio-file").files[0];
     const msg = document.getElementById("reply-msg");
 
-    let reply = { title: document.getElementById("reply-title").value };
-    if (text) reply.text = text;
-
-    if (file) {
-      const fileName = `answers/${Date.now()}_${file.name}`;
-      const { data, error } = await supabase.storage.from("answers").upload(fileName, file);
-      if (error) return msg.innerText = "❌ " + error.message;
-
-      const { data: urlData } = supabase.storage.from("answers").getPublicUrl(fileName);
-      reply.audio = urlData.publicUrl;
+    if (!text && !file) {
+      msg.innerText = "⚠️ Enter text or upload audio!";
+      return;
     }
 
-    const { error: replyError } = await supabase.from("question_answers").upsert({ id, ...reply });
-    msg.innerText = replyError ? "❌ " + replyError.message : "✅ Reply Saved!";
+    let replyData = { title };
+    if (text) replyData.text = text;
+
+    if (file) {
+      const filename = `answers/${Date.now()}_${file.name}`;
+      const { data, error } = await supabase.storage
+        .from("answers")
+        .upload(filename, file);
+
+      if (error) {
+        msg.innerText = `❌ ${error.message}`;
+        return;
+      }
+
+      const { data: urlData } = await supabase
+        .storage
+        .from("answers")
+        .getPublicUrl(filename);
+
+      replyData.audio = urlData.publicUrl;
+    }
+
+    const { error } = await supabase
+      .from("question_answers")
+      .upsert({ id: docId, ...replyData });
+
+    msg.innerText = error ? `❌ ${error.message}` : "✅ Reply Saved!";
   };
 
-  checkLogin();
+  function showSection(id) {
+    ["answers-section", "set-form", "schedule-section", "suwaalat-section"].forEach(sec => {
+      document.getElementById(sec).style.display = "none";
+    });
+    document.getElementById(id).style.display = "block";
+  }
+
+  window.showSetForm = () => showSection("set-form");
 </script>
