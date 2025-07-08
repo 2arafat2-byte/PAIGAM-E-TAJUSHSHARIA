@@ -1,145 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
   <title>Suwaal Bhejein</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background: linear-gradient(120deg, #f5f7fa, #c3cfe2);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      animation: fadeIn 1s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .card {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      max-width: 500px;
-      width: 90%;
-      animation: slideUp 0.8s ease-out;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(40px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 25px;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 15px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      transition: box-shadow 0.2s;
-    }
-    input:focus, textarea:focus {
-      outline: none;
-      box-shadow: 0 0 5px #007bff;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      margin-top: 15px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    #status {
-      margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
-      color: green;
-      animation: fadeIn 0.8s ease-in;
-    }
-  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <div class="card">
-    <h2>📩 Suwaal Bhejein</h2>
-    <input id="name" type="text" placeholder="👤 Aapka Naam" />
-    <input id="phone" type="text" placeholder="📞 Phone Number" />
-    <input id="address" type="text" placeholder="🏠 Address" />
-    <input id="title" type="text" placeholder="📝 Suwaal ka Title" />
-    <textarea id="question" rows="5" placeholder="❓ Suwaal likhein yahan..."></textarea>
-    <button onclick="submitQuestion()">📤 Bhejein</button>
-    <div id="status"></div>
-  </div>
+  <h2>Apna Suwaal Bhejein</h2>
+  <form id="suwaal-form">
+    <input type="text" id="name" placeholder="Naam" required><br><br>
+    <input type="text" id="phone" placeholder="Phone Number" required><br><br>
+    <input type="text" id="address" placeholder="Address" required><br><br>
+    <textarea id="question" placeholder="Apka Suwaal" required></textarea><br><br>
+    <button type="submit">Bhejein</button>
+  </form>
+  <p id="msg"></p>
 
   <script>
+    // 🔑 Replace your Firebase config below
     const firebaseConfig = {
-      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
-      authDomain: "dailyquiz-8149b.firebaseapp.com",
-      projectId: "dailyquiz-8149b",
-      storageBucket: "dailyquiz-8149b.appspot.com",
-      messagingSenderId: "814257864320",
-      appId: "1:814257864320:web:98e911b3ca5a643407b065"
+      apiKey: "AIzaSyXXXXXXX",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abc123"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    async function submitQuestion() {
-      const name = document.getElementById("name").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const address = document.getElementById("address").value.trim();
-      const title = document.getElementById("title").value.trim();
-      const question = document.getElementById("question").value.trim();
-      const status = document.getElementById("status");
+    document.getElementById("suwaal-form").addEventListener("submit", function(e){
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const phone = document.getElementById("phone").value;
+      const address = document.getElementById("address").value;
+      const question = document.getElementById("question").value;
+      const msg = document.getElementById("msg");
 
-      if (!name || !phone || !address || !title || !question) {
-        status.style.color = "red";
-        status.innerText = "⚠️ Sab fields bharna zaroori hai!";
-        return;
-      }
-
-      try {
-        await db.collection("user_questions").add({
-          name,
-          phone,
-          address,
-          title,
-          question,
-          replyType: "",
-          replyText: "",
-          replyAudioURL: "",
-          replyTitle: "",
-          timestamp: new Date()
-        });
-        status.style.color = "green";
-        status.innerText = "✅ Suwaal bhej diya gaya!";
-        document.getElementById("name").value = "";
-        document.getElementById("phone").value = "";
-        document.getElementById("address").value = "";
-        document.getElementById("title").value = "";
-        document.getElementById("question").value = "";
-      } catch (err) {
-        status.style.color = "red";
-        status.innerText = "❌ Error: " + err.message;
-      }
-    }
+      db.collection("user_questions").add({
+        name: name,
+        phone: phone,
+        address: address,
+        question: question,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then(() => {
+        msg.innerText = "✅ Suwaal bhej diya gaya!";
+        document.getElementById("suwaal-form").reset();
+      })
+      .catch((error) => {
+        msg.innerText = "❌ Error: " + error.message;
+      });
+    });
   </script>
 </body>
 </html>
