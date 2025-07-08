@@ -2,301 +2,246 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f4f6f8;
       margin: 0;
+      background: #f7f7f7;
+      color: #333;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark {
+      background: #121212;
+      color: #eee;
+    }
+    header {
+      background: #007bff;
+      color: white;
       padding: 20px;
-      transition: background 0.3s;
+      text-align: center;
+      position: relative;
+    }
+    .dark header {
+      background: #1e1e1e;
     }
     .container {
       max-width: 1000px;
       margin: auto;
+      padding: 20px;
     }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 25px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    h2, h3 {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    button {
-      padding: 10px 18px;
+    .btn {
+      padding: 10px 14px;
       margin: 5px;
       font-size: 15px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.2s;
     }
-    #login-btn { background: #007bff; color: white; }
-    #logout-btn { background: #dc3545; color: white; display: none; }
-    #status { text-align: center; margin: 15px 0; font-weight: bold; }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+    .btn-primary {
+      background: #007bff;
+      color: white;
     }
-    .btn-group {
-      text-align: center;
-      margin-bottom: 20px;
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 15px;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 8px;
+      padding: 10px;
       font-size: 14px;
-      text-align: left;
     }
-    .action-btn {
-      font-size: 13px;
-      margin: 0 2px;
-      padding: 5px 10px;
+    .section {
+      margin-top: 30px;
     }
-    .top-btn {
-      position: fixed;
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .dark input, .dark select, .dark textarea {
+      background: #1f1f1f;
+      color: white;
+      border-color: #444;
+    }
+    .top-right {
+      position: absolute;
       top: 10px;
-      left: 10px;
-      background: #343a40;
-      color: white;
+      right: 10px;
     }
-    /* Dark Mode */
-    body.dark-mode {
-      background: #121212;
-      color: #f4f6f8;
+    .intro {
+      animation: fadeIn 1.5s ease-in-out;
     }
-    .dark-mode button {
-      background: #212121;
-      color: white;
-    }
-    .dark-mode .card {
-      background: #2b2b2b;
-    }
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      td {
-        padding: 10px;
-        text-align: right;
-        border: none;
-        border-bottom: 1px solid #eee;
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1 class="intro">🛡 Admin Panel - Paighaam-e-Tajushshariah</h1>
+    <div class="top-right">
+      <button class="btn btn-secondary" onclick="toggleDarkMode()">🌙</button>
+      <button class="btn btn-primary" id="login-btn">🔐 Login</button>
+      <button class="btn btn-danger" id="logout-btn" style="display:none;">Logout</button>
+    </div>
+  </header>
+
   <div class="container">
-    <button class="top-btn" onclick="viewSchedule()">📅 Scheduled</button>
-    <div class="card">
-      <h2>🔐 Admin Panel</h2>
-      <p id="status">Checking login...</p>
-      <div class="btn-group">
-        <button id="login-btn">Sign in with Google</button>
-        <button id="logout-btn">Logout</button>
-        <button onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    <p id="status">🔄 Checking login...</p>
+    
+    <div id="admin-area" style="display:none;">
+      <div>
+        <button class="btn btn-primary" onclick="showSetQuiz()">📝 Set Quiz</button>
+        <button class="btn btn-primary" onclick="showAnswers()">📄 View Answers</button>
+        <button class="btn btn-primary" onclick="showQuestions()">📅 Scheduled Questions</button>
+        <button class="btn btn-primary" onclick="showSuwaalat()">📨 User Suwaalat</button>
       </div>
 
-      <div id="admin-content" style="display:none;">
-        <div class="btn-group">
-          <button onclick="showAnswers()">📄 View Answers</button>
-          <button onclick="showSetForm()">📝 Set Quiz</button>
-        </div>
+      <div class="section" id="set-quiz" style="display:none;">
+        <h2>📝 Set New Quiz</h2>
+        <input type="date" id="q-date" />
+        <input type="time" id="q-time" />
+        <textarea id="q-text" placeholder="Enter Question"></textarea>
+        <input id="opt-a" placeholder="Option A" />
+        <input id="opt-b" placeholder="Option B" />
+        <input id="opt-c" placeholder="Option C" />
+        <input id="opt-d" placeholder="Option D" />
+        <select id="q-correct">
+          <option value="">Select Correct Option</option>
+          <option value="a">A</option>
+          <option value="b">B</option>
+          <option value="c">C</option>
+          <option value="d">D</option>
+        </select>
+        <button class="btn btn-primary" onclick="saveQuiz()">💾 Save</button>
+        <p id="quiz-msg"></p>
+      </div>
 
-        <!-- SET QUIZ -->
-        <div id="set-form" style="display:none;">
-          <h3>🗓️ Set Quiz</h3>
-          <input type="date" id="quiz-date" />
-          <input type="time" id="quiz-time" />
-          <textarea id="quiz-question" placeholder="Enter Question Here"></textarea>
-          <input type="text" id="opt-a" placeholder="Option A" />
-          <input type="text" id="opt-b" placeholder="Option B" />
-          <input type="text" id="opt-c" placeholder="Option C" />
-          <input type="text" id="opt-d" placeholder="Option D" />
-          <select id="correct-option">
-            <option value="">Correct Option</option>
-            <option value="a">A</option>
-            <option value="b">B</option>
-            <option value="c">C</option>
-            <option value="d">D</option>
-          </select>
-          <button onclick="saveQuiz()">💾 Save</button>
-          <p id="quiz-msg"></p>
-        </div>
+      <div class="section" id="answers" style="display:none;">
+        <h2>📋 All Answers</h2>
+        <table><thead>
+          <tr><th>Date</th><th>Name</th><th>Phone</th><th>Address</th><th>Answer</th><th>Correct</th></tr>
+        </thead><tbody id="answers-table"></tbody></table>
+      </div>
 
-        <!-- VIEW ANSWERS -->
-        <div id="answers-section" style="display:none;">
-          <h3>📋 Answers</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th><th>Name</th><th>Phone</th><th>Address</th><th>Answer</th><th>✔?</th>
-              </tr>
-            </thead>
-            <tbody id="answers-table"></tbody>
-          </table>
-        </div>
+      <div class="section" id="scheduled" style="display:none;">
+        <h2>📅 Scheduled Questions</h2>
+        <table><thead>
+          <tr><th>DateTime</th><th>Question</th><th>Action</th></tr>
+        </thead><tbody id="sched-table"></tbody></table>
+      </div>
 
-        <!-- SCHEDULED QUESTIONS -->
-        <div id="schedule-section" style="display:none;">
-          <h3>📅 Scheduled Questions</h3>
-          <table>
-            <thead>
-              <tr><th>Date & Time</th><th>Question</th><th>Action</th></tr>
-            </thead>
-            <tbody id="schedule-table"></tbody>
-          </table>
-        </div>
-
-        <!-- USER QUESTIONS -->
-        <div id="user-questions" style="display:none;">
-          <h3>📬 User Questions</h3>
-          <table>
-            <thead>
-              <tr><th>Question</th><th>Action</th></tr>
-            </thead>
-            <tbody id="user-questions-table"></tbody>
-          </table>
-        </div>
-
+      <div class="section" id="suwaalat" style="display:none;">
+        <h2>📨 User Suwaalat</h2>
+        <table><thead>
+          <tr><th>Name</th><th>Phone</th><th>Address</th><th>Suwaal</th><th>Reply</th></tr>
+        </thead><tbody id="suwaal-table"></tbody></table>
       </div>
     </div>
   </div>
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
-      authDomain: "dailyquiz-8149b.firebaseapp.com",
-      projectId: "dailyquiz-8149b",
-      storageBucket: "dailyquiz-8149b.appspot.com",
-      messagingSenderId: "814257864320",
-      appId: "1:814257864320:web:98e911b3ca5a643407b065"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_ID",
+      appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
+    const auth = firebase.auth();
+    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("status");
-    const adminContent = document.getElementById("admin-content");
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
 
-    loginBtn.onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-    logoutBtn.onclick = () => auth.signOut();
+    document.getElementById("login-btn").onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    document.getElementById("logout-btn").onclick = () => auth.signOut();
 
     auth.onAuthStateChanged(user => {
-      if (user && allowedEmails.includes(user.email)) {
-        status.innerText = `✅ Welcome, ${user.email}`;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
-        adminContent.style.display = "block";
+      if (user && allowed.includes(user.email)) {
+        document.getElementById("status").innerText = "✅ Welcome " + user.email;
+        document.getElementById("admin-area").style.display = "block";
+        document.getElementById("login-btn").style.display = "none";
+        document.getElementById("logout-btn").style.display = "inline-block";
       } else {
-        status.innerText = user ? `❌ Access Denied: ${user.email}` : "Please log in";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
-        adminContent.style.display = "none";
+        document.getElementById("status").innerText = "❌ Access Denied";
       }
     });
 
+    function showSetQuiz() {
+      hideAll(); document.getElementById("set-quiz").style.display = "block";
+    }
     function showAnswers() {
-      document.getElementById("answers-section").style.display = "block";
-      document.getElementById("set-form").style.display = "none";
-      document.getElementById("schedule-section").style.display = "none";
-      const table = document.getElementById("answers-table");
-      table.innerHTML = "";
-      db.collection("quiz_answers").orderBy("date", "desc").get().then(snapshot => {
-        snapshot.forEach(doc => {
+      hideAll(); document.getElementById("answers").style.display = "block";
+      const table = document.getElementById("answers-table"); table.innerHTML = "";
+      db.collection("quiz_answers").get().then(snap => {
+        snap.forEach(doc => {
           const d = doc.data();
-          const correct = d.correct ? "✅" : "❌";
-          table.innerHTML += `<tr><td>${d.date}</td><td>${d.name || '-'}</td><td>${d.phone || '-'}</td><td>${d.address || '-'}</td><td>${d.answer}</td><td>${correct}</td></tr>`;
+          table.innerHTML += `<tr><td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td><td>${d.address}</td><td>${d.answer}</td><td>${d.correct ? '✅':'❌'}</td></tr>`;
         });
       });
     }
-
-    function showSetForm() {
-      document.getElementById("answers-section").style.display = "none";
-      document.getElementById("set-form").style.display = "block";
-      document.getElementById("schedule-section").style.display = "none";
-    }
-
-    function viewSchedule() {
-      document.getElementById("answers-section").style.display = "none";
-      document.getElementById("set-form").style.display = "none";
-      document.getElementById("schedule-section").style.display = "block";
-      const table = document.getElementById("schedule-table");
-      table.innerHTML = "";
-      db.collection("quiz_questions").orderBy(firebase.firestore.FieldPath.documentId()).get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          table.innerHTML += `
-            <tr>
-              <td>${doc.id.replace("T", " @ ")}</td>
-              <td>${data.question.slice(0, 50)}...</td>
-              <td><button class="action-btn" onclick="deleteQuiz('${doc.id}')">🗑 Delete</button></td>
-            </tr>`;
+    function showQuestions() {
+      hideAll(); document.getElementById("scheduled").style.display = "block";
+      const t = document.getElementById("sched-table"); t.innerHTML = "";
+      db.collection("quiz_questions").get().then(snap => {
+        snap.forEach(doc => {
+          const q = doc.data();
+          t.innerHTML += `<tr><td>${doc.id.replace("T"," @ ")}</td><td>${q.question.slice(0, 50)}...</td><td><button onclick="delQuiz('${doc.id}')">🗑 Delete</button></td></tr>`;
         });
       });
     }
-
+    function showSuwaalat() {
+      hideAll(); document.getElementById("suwaalat").style.display = "block";
+      const t = document.getElementById("suwaal-table"); t.innerHTML = "";
+      db.collection("suwaalat").get().then(snap => {
+        snap.forEach(doc => {
+          const d = doc.data();
+          t.innerHTML += `<tr><td>${d.name}</td><td>${d.phone}</td><td>${d.address}</td><td>${d.question}</td><td><button>Reply</button></td></tr>`;
+        });
+      });
+    }
     function saveQuiz() {
-      const date = document.getElementById("quiz-date").value;
-      const time = document.getElementById("quiz-time").value;
-      const id = `${date}T${time}`;
-      const question = document.getElementById("quiz-question").value;
+      const date = document.getElementById("q-date").value;
+      const time = document.getElementById("q-time").value;
+      const id = date + "T" + time;
+      const q = document.getElementById("q-text").value;
       const a = document.getElementById("opt-a").value;
       const b = document.getElementById("opt-b").value;
       const c = document.getElementById("opt-c").value;
       const d = document.getElementById("opt-d").value;
-      const correct = document.getElementById("correct-option").value;
-      const msg = document.getElementById("quiz-msg");
-
-      if (!date || !time || !question || !a || !b || !c || !d || !correct) {
-        msg.innerText = "⚠️ Fill all fields!";
-        return;
-      }
-
-      db.collection("quiz_questions").doc(id).set({
-        question,
-        options: { a, b, c, d },
-        correct
-      }).then(() => {
-        msg.innerText = "✅ Saved!";
-      }).catch(err => {
-        msg.innerText = "❌ " + err.message;
-      });
+      const correct = document.getElementById("q-correct").value;
+      if (!q || !a || !b || !c || !d || !correct) return alert("Fill all fields!");
+      db.collection("quiz_questions").doc(id).set({ question: q, options: {a,b,c,d}, correct });
+      document.getElementById("quiz-msg").innerText = "✅ Saved!";
     }
-
-    function deleteQuiz(id) {
-      if (confirm("Are you sure?")) {
-        db.collection("quiz_questions").doc(id).delete().then(() => {
-          viewSchedule();
-        });
-      }
+    function delQuiz(id) {
+      if (confirm("Delete this quiz?")) db.collection("quiz_questions").doc(id).delete().then(showQuestions);
     }
-
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark-mode");
+    function hideAll() {
+      ["set-quiz","answers","scheduled","suwaalat"].forEach(id => document.getElementById(id).style.display = "none");
     }
   </script>
 </body>
