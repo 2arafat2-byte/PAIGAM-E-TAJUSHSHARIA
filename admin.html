@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -11,237 +11,298 @@
     * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', sans-serif;
+      background: #f2f5f9;
       margin: 0;
-      background: #f7f7f7;
-      color: #333;
-      transition: background 0.3s, color 0.3s;
-    }
-    body.dark {
-      background: #121212;
-      color: #eee;
-    }
-    header {
-      background: #007bff;
-      color: white;
-      padding: 20px;
-      text-align: center;
-      position: relative;
-    }
-    .dark header {
-      background: #1e1e1e;
+      padding: 0 20px;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1100px;
       margin: auto;
-      padding: 20px;
+      padding: 20px 0;
     }
-    .btn {
-      padding: 10px 14px;
+    h2, h3 { text-align: center; color: #333; margin: 20px 0; }
+
+    button {
+      padding: 10px 16px;
       margin: 5px;
       font-size: 15px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
     }
-    .btn-primary {
-      background: #007bff;
-      color: white;
+    #login-btn { background: #007bff; color: white; }
+    #logout-btn { background: #dc3545; color: white; display: none; }
+
+    .btn-group, .top-bar {
+      text-align: center;
+      margin-bottom: 15px;
     }
-    .btn-danger {
-      background: #dc3545;
-      color: white;
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
     }
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      font-size: 14px;
-    }
-    .section {
-      margin-top: 30px;
-    }
+
     input, select, textarea {
       width: 100%;
       padding: 10px;
-      margin-top: 10px;
+      margin-top: 8px;
+      font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
-    .dark input, .dark select, .dark textarea {
-      background: #1f1f1f;
-      color: white;
-      border-color: #444;
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
     }
-    .top-right {
-      position: absolute;
-      top: 10px;
-      right: 10px;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
     }
-    .intro {
-      animation: fadeIn 1.5s ease-in-out;
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      font-size: 14px;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    .reply-box {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-top: 8px;
+      border-radius: 8px;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1 class="intro">🛡 Admin Panel - Paighaam-e-Tajushshariah</h1>
-    <div class="top-right">
-      <button class="btn btn-secondary" onclick="toggleDarkMode()">🌙</button>
-      <button class="btn btn-primary" id="login-btn">🔐 Login</button>
-      <button class="btn btn-danger" id="logout-btn" style="display:none;">Logout</button>
-    </div>
-  </header>
-
   <div class="container">
-    <p id="status">🔄 Checking login...</p>
-    
-    <div id="admin-area" style="display:none;">
-      <div>
-        <button class="btn btn-primary" onclick="showSetQuiz()">📝 Set Quiz</button>
-        <button class="btn btn-primary" onclick="showAnswers()">📄 View Answers</button>
-        <button class="btn btn-primary" onclick="showQuestions()">📅 Scheduled Questions</button>
-        <button class="btn btn-primary" onclick="showSuwaalat()">📨 User Suwaalat</button>
+    <h2>🛡 Admin Panel</h2>
+    <div class="btn-group">
+      <button id="login-btn">🔐 Sign In with Google</button>
+      <button id="logout-btn">🚪 Logout</button>
+      <p id="status">Checking login...</p>
+    </div>
+
+    <div id="admin-content" style="display:none;">
+      <div class="top-bar">
+        <button onclick="showSetQuiz()">📝 Set Quiz</button>
+        <button onclick="showAnswers()">📄 User Answers</button>
+        <button onclick="showSuwaal()">📬 Suwaal Received</button>
+        <button onclick="showSchedule()">📅 Schedule</button>
       </div>
 
-      <div class="section" id="set-quiz" style="display:none;">
-        <h2>📝 Set New Quiz</h2>
-        <input type="date" id="q-date" />
-        <input type="time" id="q-time" />
-        <textarea id="q-text" placeholder="Enter Question"></textarea>
-        <input id="opt-a" placeholder="Option A" />
-        <input id="opt-b" placeholder="Option B" />
-        <input id="opt-c" placeholder="Option C" />
-        <input id="opt-d" placeholder="Option D" />
-        <select id="q-correct">
-          <option value="">Select Correct Option</option>
-          <option value="a">A</option>
-          <option value="b">B</option>
-          <option value="c">C</option>
-          <option value="d">D</option>
+      <!-- QUIZ SETTING -->
+      <div id="quiz-section" class="card" style="display:none;">
+        <h3>📝 Set New Quiz</h3>
+        <input type="date" id="quiz-date" />
+        <input type="time" id="quiz-time" />
+        <textarea id="quiz-question" placeholder="Question"></textarea>
+        <input type="text" id="opt-a" placeholder="Option A" />
+        <input type="text" id="opt-b" placeholder="Option B" />
+        <input type="text" id="opt-c" placeholder="Option C" />
+        <input type="text" id="opt-d" placeholder="Option D" />
+        <select id="correct-option">
+          <option value="">Correct Option</option>
+          <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
         </select>
-        <button class="btn btn-primary" onclick="saveQuiz()">💾 Save</button>
+        <button onclick="saveQuiz()">💾 Save Quiz</button>
         <p id="quiz-msg"></p>
       </div>
 
-      <div class="section" id="answers" style="display:none;">
-        <h2>📋 All Answers</h2>
-        <table><thead>
-          <tr><th>Date</th><th>Name</th><th>Phone</th><th>Address</th><th>Answer</th><th>Correct</th></tr>
-        </thead><tbody id="answers-table"></tbody></table>
+      <!-- ANSWERS -->
+      <div id="answers-section" class="card" style="display:none;">
+        <h3>📄 All User Answers</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Address</th><th>Answer</th><th>✔?</th></tr></thead>
+          <tbody id="answers-table"></tbody>
+        </table>
       </div>
 
-      <div class="section" id="scheduled" style="display:none;">
-        <h2>📅 Scheduled Questions</h2>
-        <table><thead>
-          <tr><th>DateTime</th><th>Question</th><th>Action</th></tr>
-        </thead><tbody id="sched-table"></tbody></table>
+      <!-- SCHEDULE -->
+      <div id="schedule-section" class="card" style="display:none;">
+        <h3>📅 Scheduled Questions</h3>
+        <table>
+          <thead><tr><th>Date/Time</th><th>Question</th><th>Action</th></tr></thead>
+          <tbody id="schedule-table"></tbody>
+        </table>
       </div>
 
-      <div class="section" id="suwaalat" style="display:none;">
-        <h2>📨 User Suwaalat</h2>
-        <table><thead>
-          <tr><th>Name</th><th>Phone</th><th>Address</th><th>Suwaal</th><th>Reply</th></tr>
-        </thead><tbody id="suwaal-table"></tbody></table>
+      <!-- SUWAAL -->
+      <div id="suwaal-section" class="card" style="display:none;">
+        <h3>📨 User Suwaal & Jawaab</h3>
+        <div id="suwaal-list"></div>
       </div>
     </div>
   </div>
 
   <script>
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_BUCKET",
-      messagingSenderId: "YOUR_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
+      authDomain: "dailyquiz-8149b.firebaseapp.com",
+      projectId: "dailyquiz-8149b",
+      storageBucket: "dailyquiz-8149b.appspot.com",
+      messagingSenderId: "814257864320",
+      appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
+
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
     const auth = firebase.auth();
-    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+    const db = firebase.firestore();
 
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark');
-    }
+    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    document.getElementById("login-btn").onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-    document.getElementById("logout-btn").onclick = () => auth.signOut();
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const status = document.getElementById("status");
+    const adminContent = document.getElementById("admin-content");
+
+    loginBtn.onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    logoutBtn.onclick = () => auth.signOut();
 
     auth.onAuthStateChanged(user => {
-      if (user && allowed.includes(user.email)) {
-        document.getElementById("status").innerText = "✅ Welcome " + user.email;
-        document.getElementById("admin-area").style.display = "block";
-        document.getElementById("login-btn").style.display = "none";
-        document.getElementById("logout-btn").style.display = "inline-block";
+      if (user && allowedEmails.includes(user.email)) {
+        status.innerText = `✅ Welcome, ${user.email}`;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        adminContent.style.display = "block";
       } else {
-        document.getElementById("status").innerText = "❌ Access Denied";
+        status.innerText = user ? `❌ Access Denied` : "Please log in";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        adminContent.style.display = "none";
       }
     });
 
     function showSetQuiz() {
-      hideAll(); document.getElementById("set-quiz").style.display = "block";
+      hideAll();
+      document.getElementById("quiz-section").style.display = "block";
     }
+
     function showAnswers() {
-      hideAll(); document.getElementById("answers").style.display = "block";
-      const table = document.getElementById("answers-table"); table.innerHTML = "";
-      db.collection("quiz_answers").get().then(snap => {
-        snap.forEach(doc => {
+      hideAll();
+      const table = document.getElementById("answers-table");
+      table.innerHTML = "";
+      document.getElementById("answers-section").style.display = "block";
+      db.collection("quiz_answers").orderBy("date", "desc").get().then(snapshot => {
+        snapshot.forEach(doc => {
           const d = doc.data();
-          table.innerHTML += `<tr><td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td><td>${d.address}</td><td>${d.answer}</td><td>${d.correct ? '✅':'❌'}</td></tr>`;
+          const correct = d.correct ? "✅" : "❌";
+          table.innerHTML += `<tr>
+            <td>${d.date}</td>
+            <td>${d.name}</td>
+            <td>${d.phone}</td>
+            <td>${d.address}</td>
+            <td>${d.answer}</td>
+            <td>${correct}</td>
+          </tr>`;
         });
       });
     }
-    function showQuestions() {
-      hideAll(); document.getElementById("scheduled").style.display = "block";
-      const t = document.getElementById("sched-table"); t.innerHTML = "";
-      db.collection("quiz_questions").get().then(snap => {
-        snap.forEach(doc => {
-          const q = doc.data();
-          t.innerHTML += `<tr><td>${doc.id.replace("T"," @ ")}</td><td>${q.question.slice(0, 50)}...</td><td><button onclick="delQuiz('${doc.id}')">🗑 Delete</button></td></tr>`;
+
+    function showSchedule() {
+      hideAll();
+      const table = document.getElementById("schedule-table");
+      table.innerHTML = "";
+      document.getElementById("schedule-section").style.display = "block";
+      db.collection("quiz_questions").get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          table.innerHTML += `<tr>
+            <td>${doc.id.replace("T", " @ ")}</td>
+            <td>${data.question.slice(0, 50)}...</td>
+            <td><button onclick="deleteQuiz('${doc.id}')">🗑 Delete</button></td>
+          </tr>`;
         });
       });
     }
-    function showSuwaalat() {
-      hideAll(); document.getElementById("suwaalat").style.display = "block";
-      const t = document.getElementById("suwaal-table"); t.innerHTML = "";
-      db.collection("suwaalat").get().then(snap => {
-        snap.forEach(doc => {
+
+    function showSuwaal() {
+      hideAll();
+      document.getElementById("suwaal-section").style.display = "block";
+      const container = document.getElementById("suwaal-list");
+      container.innerHTML = "";
+      db.collection("user_questions").orderBy("timestamp", "desc").get().then(snapshot => {
+        snapshot.forEach(doc => {
           const d = doc.data();
-          t.innerHTML += `<tr><td>${d.name}</td><td>${d.phone}</td><td>${d.address}</td><td>${d.question}</td><td><button>Reply</button></td></tr>`;
+          container.innerHTML += `
+            <div class="card">
+              <strong>🧑‍💼 ${d.name}</strong><br>
+              <small>📍 ${d.address} | 📞 ${d.phone}</small><br>
+              <p><strong>❓ Suwaal:</strong> ${d.question}</p>
+              <div class="reply-box">
+                <textarea placeholder="Type reply..." id="reply-${doc.id}"></textarea>
+                <button onclick="submitReply('${doc.id}')">📨 Send Reply</button>
+              </div>
+            </div>`;
         });
       });
     }
+
     function saveQuiz() {
-      const date = document.getElementById("q-date").value;
-      const time = document.getElementById("q-time").value;
-      const id = date + "T" + time;
-      const q = document.getElementById("q-text").value;
+      const date = document.getElementById("quiz-date").value;
+      const time = document.getElementById("quiz-time").value;
+      const question = document.getElementById("quiz-question").value;
       const a = document.getElementById("opt-a").value;
       const b = document.getElementById("opt-b").value;
       const c = document.getElementById("opt-c").value;
       const d = document.getElementById("opt-d").value;
-      const correct = document.getElementById("q-correct").value;
-      if (!q || !a || !b || !c || !d || !correct) return alert("Fill all fields!");
-      db.collection("quiz_questions").doc(id).set({ question: q, options: {a,b,c,d}, correct });
-      document.getElementById("quiz-msg").innerText = "✅ Saved!";
+      const correct = document.getElementById("correct-option").value;
+      const msg = document.getElementById("quiz-msg");
+
+      if (!date || !time || !question || !a || !b || !c || !d || !correct) {
+        msg.textContent = "⚠️ Fill all fields.";
+        msg.style.color = "red";
+        return;
+      }
+
+      const id = `${date}T${time}`;
+      db.collection("quiz_questions").doc(id).set({
+        question,
+        options: { a, b, c, d },
+        correct
+      }).then(() => {
+        msg.textContent = "✅ Quiz saved!";
+        msg.style.color = "green";
+      }).catch(err => {
+        msg.textContent = "❌ Error: " + err.message;
+        msg.style.color = "red";
+      });
     }
-    function delQuiz(id) {
-      if (confirm("Delete this quiz?")) db.collection("quiz_questions").doc(id).delete().then(showQuestions);
+
+    function deleteQuiz(id) {
+      if (confirm("Are you sure?")) {
+        db.collection("quiz_questions").doc(id).delete().then(() => {
+          showSchedule();
+        });
+      }
     }
+
+    function submitReply(id) {
+      const reply = document.getElementById(`reply-${id}`).value;
+      if (!reply) return alert("Reply cannot be empty!");
+      db.collection("suwaal_replies").doc(id).set({
+        reply,
+        timestamp: new Date()
+      }).then(() => {
+        alert("✅ Reply submitted!");
+        document.getElementById(`reply-${id}`).value = "";
+      });
+    }
+
     function hideAll() {
-      ["set-quiz","answers","scheduled","suwaalat"].forEach(id => document.getElementById(id).style.display = "none");
+      document.querySelectorAll('.card').forEach(e => e.style.display = 'none');
     }
   </script>
 </body>
