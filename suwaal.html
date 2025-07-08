@@ -1,57 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Suwaal Bhejein</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef3f8;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 500px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 12px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 15px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #msg {
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <h2>Apna Suwaal Bhejein</h2>
-  <form id="suwaal-form">
-    <input type="text" id="name" placeholder="Naam" required><br><br>
-    <input type="text" id="phone" placeholder="Phone Number" required><br><br>
-    <input type="text" id="address" placeholder="Address" required><br><br>
-    <textarea id="question" placeholder="Apka Suwaal" required></textarea><br><br>
-    <button type="submit">Bhejein</button>
-  </form>
-  <p id="msg"></p>
+  <div class="container">
+    <h2>📨 Apna Suwaal Bhejein</h2>
+    <input type="text" id="name" placeholder="Aapka Naam" />
+    <input type="text" id="phone" placeholder="Mobile Number" />
+    <input type="text" id="address" placeholder="Address" />
+    <textarea id="question" placeholder="Aapka Suwaal" rows="5"></textarea>
+    <button onclick="submitQuestion()">📤 Bhej Dein</button>
+    <p id="msg"></p>
+  </div>
 
   <script>
-    // 🔑 Replace your Firebase config below
     const firebaseConfig = {
-      apiKey: "AIzaSyXXXXXXX",
-      authDomain: "your-project.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abc123"
+      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
+      authDomain: "dailyquiz-8149b.firebaseapp.com",
+      projectId: "dailyquiz-8149b",
+      storageBucket: "dailyquiz-8149b.appspot.com",
+      messagingSenderId: "814257864320",
+      appId: "1:814257864320:web:98e911b3ca5a643407b065"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    document.getElementById("suwaal-form").addEventListener("submit", function(e){
-      e.preventDefault();
-      const name = document.getElementById("name").value;
-      const phone = document.getElementById("phone").value;
-      const address = document.getElementById("address").value;
-      const question = document.getElementById("question").value;
-      const msg = document.getElementById("msg");
+    function submitQuestion() {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const question = document.getElementById('question').value.trim();
+      const msg = document.getElementById('msg');
+
+      if (!name || !phone || !address || !question) {
+        msg.textContent = "⚠️ Har field bharna zaruri hai.";
+        msg.style.color = "red";
+        return;
+      }
 
       db.collection("user_questions").add({
-        name: name,
-        phone: phone,
-        address: address,
-        question: question,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        msg.innerText = "✅ Suwaal bhej diya gaya!";
-        document.getElementById("suwaal-form").reset();
-      })
-      .catch((error) => {
-        msg.innerText = "❌ Error: " + error.message;
+        name, phone, address, question,
+        timestamp: new Date()
+      }).then(() => {
+        msg.textContent = "✅ Aapka suwaal record ho gaya hai.";
+        msg.style.color = "green";
+        document.getElementById('name').value = "";
+        document.getElementById('phone').value = "";
+        document.getElementById('address').value = "";
+        document.getElementById('question').value = "";
+      }).catch(err => {
+        msg.textContent = "❌ Error: " + err.message;
+        msg.style.color = "red";
       });
-    });
+    }
   </script>
 </body>
 </html>
