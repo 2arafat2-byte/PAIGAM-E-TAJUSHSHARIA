@@ -5,17 +5,15 @@
   <title>Admin Panel | Paighaam-e-Tajushshariah</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f4f6f8;
       padding: 20px;
-      transition: background 0.4s, color 0.4s;
-    }
-    body.dark {
-      background: #1e1e1e;
-      color: #f1f1f1;
     }
     .container {
       max-width: 1000px;
@@ -28,10 +26,6 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
-    body.dark .card {
-      background: #2c2c2c;
-      color: #fff;
-    }
     h2, h3 {
       text-align: center;
       margin-bottom: 15px;
@@ -43,10 +37,6 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover {
-      opacity: 0.9;
     }
     #login-btn { background: #007bff; color: white; }
     #logout-btn { background: #dc3545; color: white; display: none; }
@@ -58,163 +48,88 @@
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
-      background: #fff;
-    }
-    body.dark input, body.dark select, body.dark textarea {
-      background: #3a3a3a;
-      color: #fff;
-      border: 1px solid #666;
-    }
-    .btn-group {
-      text-align: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .top-btn, .dark-toggle {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 999;
-      background: #343a40;
-      color: white;
-    }
-    .dark-toggle {
-      left: auto;
-      right: 10px;
-    }
-    .intro-text {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 28px;
-      font-weight: bold;
-      text-align: center;
-      color: #444;
-      animation: fadeOutSand 4s forwards;
-      z-index: 9999;
-    }
-    @keyframes fadeOutSand {
-      0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
-      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); visibility: hidden; }
-    }
-    .page-content {
-      opacity: 0;
-      animation: fadeInPage 1s ease-out 4s forwards;
-    }
-    @keyframes fadeInPage {
-      to { opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <div class="intro-text">📜 Paighaam-e-Tajushshariah</div>
-  <div class="page-content">
-    <button class="top-btn" onclick="viewSchedule()">📅 Schedule</button>
-    <button class="dark-toggle" onclick="toggleDark()">🌙</button>
-    <div class="container">
-      <div class="card">
-        <h2>🔐 Admin Panel</h2>
-        <p id="status">Checking login...</p>
-        <div class="btn-group">
-          <button id="login-btn">Sign in with Google</button>
-          <button id="logout-btn">Logout</button>
-        </div>
-        <div id="admin-content" style="display:none;">
-          <div class="btn-group">
-            <button onclick="showAnswers()">📄 View Answers</button>
-            <button onclick="showSetForm()">📝 Set Quiz</button>
-            <button onclick="showSuwaalat()">📨 Suwaalaat</button>
-          </div>
-<!-- SET QUIZ -->
-          <div id="set-form" style="display:none;">
-            <h3>🗓️ Set Quiz</h3>
-            <input type="date" id="quiz-date" />
-            <input type="time" id="quiz-time" />
-            <textarea id="quiz-question" placeholder="Enter Question Here"></textarea>
-            <input type="text" id="opt-a" placeholder="Option A" />
-            <input type="text" id="opt-b" placeholder="Option B" />
-            <input type="text" id="opt-c" placeholder="Option C" />
-            <input type="text" id="opt-d" placeholder="Option D" />
-            <select id="correct-option">
-              <option value="">Correct Option</option>
-              <option value="a">A</option>
-              <option value="b">B</option>
-              <option value="c">C</option>
-              <option value="d">D</option>
-            </select>
-            <button onclick="saveQuiz()">💾 Save</button>
-            <p id="quiz-msg"></p>
-          </div>
-
-          <!-- VIEW ANSWERS -->
-          <div id="answers-section" style="display:none;">
-            <h3>📋 Answers</h3>
-            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-              <thead>
-                <tr style="background:#ddd;">
-                  <th>Date</th>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Address</th>
-                  <th>Answer</th>
-                  <th>✔?</th>
-                </tr>
-              </thead>
-              <tbody id="answers-table"></tbody>
-            </table>
-          </div>
-
-          <!-- SCHEDULED QUESTIONS -->
-          <div id="schedule-section" style="display:none;">
-            <h3>📅 Scheduled Questions</h3>
-            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-              <thead>
-                <tr style="background:#ddd;">
-                  <th>Date & Time</th>
-                  <th>Question</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="schedule-table"></tbody>
-            </table>
-          </div>
-
-          <!-- SUWAALAT -->
-          <div id="suwaalat-section" style="display:none;">
-            <h3>📨 Received Suwaalaat</h3>
-            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-              <thead>
-                <tr style="background:#ddd;">
-                  <th>Title</th>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Address</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="suwaalat-table"></tbody>
-            </table>
-            <div style="margin-top: 30px;" id="reply-section">
-              <h3>🗣️ Reply to Suwaal</h3>
-              <input type="text" id="reply-title" placeholder="Suwaal Title" readonly />
-              <textarea id="text-reply" placeholder="Write your text reply here..."></textarea>
-              <input type="file" accept="audio/*" id="audio-file" />
-              <button onclick="submitReply()">📤 Submit Reply</button>
-              <p id="reply-msg"></p>
-            </div>
-          </div>
-        </div>
+  <div class="container">
+    <div class="card">
+      <h2>🔐 Admin Panel</h2>
+      <p id="status">Checking login...</p>
+      <div class="btn-group" style="text-align:center;">
+        <button id="login-btn">Sign in with Google</button>
+        <button id="logout-btn">Logout</button>
+      </div>
+      <div id="admin-content" style="display:none;">
+        <!-- Buttons and sections for quiz, answers, etc. will be here in part 2 -->
+        <p style="text-align:center;">Welcome Admin! ✨</p>
       </div>
     </div>
   </div>
+
+  <script type="module">
+    // ⛳️ Supabase init
+    const supabase = createClient(
+      "https://ifveebmmgsofqcjwgbzt.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    );
+
+    // ✅ Allowed Admin Emails
+    const allowedEmails = [
+      "arrahmanallamalquraan123@gmail.com",
+      "imranraza12738@gmail.com"
+    ];
+
+    // 🎯 Firebase Config
+    const firebaseConfig = {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const status = document.getElementById("status");
+    const adminContent = document.getElementById("admin-content");
+
+    loginBtn.onclick = () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(e => alert("Login failed: " + e.message));
+    };
+
+    logoutBtn.onclick = () => {
+      auth.signOut().then(() => location.reload());
+    };
+
+    auth.onAuthStateChanged(user => {
+      if (user && allowedEmails.includes(user.email)) {
+        status.innerText = `✅ Welcome, ${user.email}`;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        adminContent.style.display = "block";
+      } else {
+        status.innerText = user
+          ? `❌ Access Denied: ${user.email}`
+          : "Please log in";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        adminContent.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
+<!-- PART 2 CONTINUED FROM PREVIOUS -->
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const supabase = createClient(
     "https://ifveebmmgsofqcjwgbzt.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmdmVlYm1tZ3NvZnFjandnYnp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODEzMDYsImV4cCI6MjA2NzU1NzMwNn0.m3KPT5Az9PbWdvjfcosn5Y73LYs0m_4SCl9BHuQURaI"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   );
 
   const allowedEmails = [
@@ -256,6 +171,7 @@
     }
   });
 
+  // Save Quiz
   window.saveQuiz = async () => {
     const date = document.getElementById("quiz-date").value;
     const time = document.getElementById("quiz-time").value;
@@ -288,6 +204,7 @@
     msg.innerText = error ? "❌ " + error.message : "✅ Saved!";
   };
 
+  // View Schedule
   window.viewSchedule = async () => {
     toggleSections("schedule-section");
     const table = document.getElementById("schedule-table");
@@ -308,6 +225,7 @@
     });
   };
 
+  // Delete Quiz
   window.deleteQuiz = async (id) => {
     if (confirm("Are you sure?")) {
       await supabase.from("quiz_questions").delete().eq("id", id);
@@ -315,6 +233,7 @@
     }
   };
 
+  // View Answers
   window.showAnswers = async () => {
     toggleSections("answers-section");
     const table = document.getElementById("answers-table");
@@ -338,6 +257,7 @@
     });
   };
 
+  // Show Suwaalaat
   window.showSuwaalat = async () => {
     toggleSections("suwaalat-section");
     const table = document.getElementById("suwaalat-table");
@@ -357,11 +277,13 @@
     });
   };
 
+  // Reply To Suwaal
   window.replyTo = (id, title) => {
     document.getElementById("reply-title").value = title;
     document.getElementById("reply-title").dataset.id = id;
   };
 
+  // Submit Reply
   window.submitReply = async () => {
     const docId = document.getElementById("reply-title").dataset.id;
     const text = document.getElementById("text-reply").value.trim();
@@ -398,13 +320,147 @@
     msg.innerText = error ? "❌ " + error.message : "✅ Reply Saved!";
   };
 
+  // Toggle Sections
   function toggleSections(showId) {
     ["answers-section", "set-form", "schedule-section", "suwaalat-section"].forEach((id) => {
       document.getElementById(id).style.display = id === showId ? "block" : "none";
     });
   }
 
+  // Dark Mode Toggle
   window.toggleDark = () => {
     document.body.classList.toggle("dark");
   };
 </script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Quiz | Paighaam-e-Tajushshariah</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f8;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .option {
+      display: block;
+      margin-bottom: 12px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #fafafa;
+    }
+    input[type="text"], input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      padding: 12px;
+      width: 100%;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .msg {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📝 Daily Quiz</h2>
+    <div id="quiz-question">Loading question...</div>
+    <div id="quiz-options"></div>
+    <input type="text" id="name" placeholder="Your Name" />
+    <input type="tel" id="phone" placeholder="Phone Number" />
+    <input type="text" id="address" placeholder="Address" />
+    <button onclick="submitAnswer()">📤 Submit Answer</button>
+    <div class="msg" id="quiz-msg"></div>
+  </div>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  const supabase = createClient("https://ifveebmmgsofqcjwgbzt.supabase.co", "public-anon-key-here");
+
+  const today = new Date();
+  const dateStr = today.toISOString().split("T")[0];
+  const hour = today.getHours().toString().padStart(2, '0');
+  const currentId = `${dateStr}T${hour}:00`;
+
+  let currentQuiz = null;
+
+  async function loadQuiz() {
+    const { data, error } = await supabase.from("quiz_questions").select("*").eq("id", currentId).single();
+    if (error || !data) {
+      document.getElementById("quiz-question").innerText = "❌ Aaj ka quiz abhi set nahi hua hai.";
+      return;
+    }
+    currentQuiz = data;
+    document.getElementById("quiz-question").innerText = data.question;
+
+    const optsDiv = document.getElementById("quiz-options");
+    optsDiv.innerHTML = `
+      <label class="option"><input type="radio" name="ans" value="a" /> A. ${data.option_a}</label>
+      <label class="option"><input type="radio" name="ans" value="b" /> B. ${data.option_b}</label>
+      <label class="option"><input type="radio" name="ans" value="c" /> C. ${data.option_c}</label>
+      <label class="option"><input type="radio" name="ans" value="d" /> D. ${data.option_d}</label>
+    `;
+  }
+
+  async function submitAnswer() {
+    const name = document.getElementById("name").value;
+    const phone = document.getElementById("phone").value;
+    const address = document.getElementById("address").value;
+    const answer = document.querySelector('input[name="ans"]:checked')?.value;
+    const msg = document.getElementById("quiz-msg");
+
+    if (!name || !phone || !address || !answer) {
+      msg.innerText = "⚠️ Sab fields bharna zaroori hai.";
+      return;
+    }
+
+    const correct = answer === currentQuiz.correct;
+
+    const { error } = await supabase.from("quiz_answers").insert([{
+      date: dateStr,
+      name,
+      phone,
+      address,
+      answer,
+      correct
+    }]);
+
+    msg.innerText = error
+      ? "❌ Submission failed: " + error.message
+      : "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge";
+  }
+
+  loadQuiz();
+</script>
+</body>
+</html>
