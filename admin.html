@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -49,64 +48,60 @@
       <button id="login-btn">🔓 Sign in with Google</button>
       <button id="logout-btn" style="display:none;" onclick="logout()">🚪 Logout</button>
       <button onclick="toggleDarkMode()">🌓 Toggle Mode</button>
-    </div>
-
-    <div id="admin-panel" class="card">
-      <div>
-        <button onclick="showSection('quiz')">📝 Set Quiz</button>
-        <button onclick="showSection('answers')">📋 View Answers</button>
-        <button onclick="showSection('suwaal')">📨 Suwaalaat</button>
-      </div>
-
-      <div id="quiz" class="section">
-        <h3>Set Daily Quiz</h3>
-        <input type="date" id="quiz-date" />
-        <input type="time" id="quiz-time" />
-        <textarea id="quiz-question" placeholder="Question"></textarea>
-        <input type="text" id="opt-a" placeholder="Option A" />
-        <input type="text" id="opt-b" placeholder="Option B" />
-        <input type="text" id="opt-c" placeholder="Option C" />
-        <input type="text" id="opt-d" placeholder="Option D" />
-        <select id="correct-opt">
-          <option value="">Correct Option</option>
-          <option value="a">A</option>
-          <option value="b">B</option>
-          <option value="c">C</option>
-          <option value="d">D</option>
-        </select>
-        <button onclick="submitQuiz()">💾 Save</button>
-        <p id="quiz-msg"></p>
-      </div>
-
-      <div id="answers" class="section">
-        <h3>Submitted Answers</h3>
-        <table>
-          <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Answer</th><th>✔?</th></tr></thead>
-          <tbody id="answers-table"></tbody>
-        </table>
-      </div>
-
-      <div id="suwaal" class="section">
-        <h3>Suwaalaat</h3>
-        <table>
-          <thead><tr><th>Title</th><th>Name</th><th>Action</th></tr></thead>
-          <tbody id="suwaal-table"></tbody>
-        </table>
-
-        <div style="margin-top:20px">
-          <input type="text" id="reply-title" readonly />
-          <textarea id="text-reply" placeholder="Type reply..."></textarea>
-          <input type="file" id="audio-file" accept="audio/*" />
-          <input type="file" id="image-file" accept="image/*" />
-          <button onclick="submitReply()">📤 Send Reply</button>
-          <p id="reply-msg"></p>
-        </div>
-      </div>
-    </div>
+    </div><div id="admin-panel" class="card">
+  <div>
+    <button onclick="showSection('quiz')">📝 Set Quiz</button>
+    <button onclick="showSection('answers')">📋 View Answers</button>
+    <button onclick="showSection('suwaal')">📨 Suwaalaat</button>
   </div>
 
-  <!-- Firebase SDK (modular) -->
-  <script type="module">
+  <div id="quiz" class="section">
+    <h3>Set Daily Quiz</h3>
+    <input type="date" id="quiz-date" />
+    <input type="time" id="quiz-time" />
+    <textarea id="quiz-question" placeholder="Question"></textarea>
+    <input type="text" id="opt-a" placeholder="Option A" />
+    <input type="text" id="opt-b" placeholder="Option B" />
+    <input type="text" id="opt-c" placeholder="Option C" />
+    <input type="text" id="opt-d" placeholder="Option D" />
+    <select id="correct-opt">
+      <option value="">Correct Option</option>
+      <option value="a">A</option>
+      <option value="b">B</option>
+      <option value="c">C</option>
+      <option value="d">D</option>
+    </select>
+    <button onclick="submitQuiz()">💾 Save</button>
+    <p id="quiz-msg"></p>
+  </div>
+
+  <div id="answers" class="section">
+    <h3>Submitted Answers</h3>
+    <table>
+      <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Answer</th><th>✔?</th></tr></thead>
+      <tbody id="answers-table"></tbody>
+    </table>
+  </div>
+
+  <div id="suwaal" class="section">
+    <h3>Suwaalaat</h3>
+    <table>
+      <thead><tr><th>Title</th><th>Name</th><th>Action</th></tr></thead>
+      <tbody id="suwaal-table"></tbody>
+    </table>
+
+    <div style="margin-top:20px">
+      <input type="text" id="reply-title" readonly />
+      <textarea id="text-reply" placeholder="Type reply..."></textarea>
+      <input type="file" id="audio-file" accept="audio/*" />
+      <input type="file" id="image-file" accept="image/*" />
+      <button onclick="submitReply()">📤 Send Reply</button>
+      <p id="reply-msg"></p>
+    </div>
+  </div>
+</div>
+
+  </div>  <!-- Firebase SDK (modular) -->  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, collection, setDoc, doc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -139,14 +134,9 @@
       }
     });
 
-    document.getElementById("login-btn").onclick = () => {
-      signInWithPopup(auth, new GoogleAuthProvider());
-    };
+    document.getElementById("login-btn").onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
     window.logout = () => signOut(auth);
-
-    window.toggleDarkMode = () => {
-      document.body.classList.toggle("dark");
-    };
+    window.toggleDarkMode = () => document.body.classList.toggle("dark");
 
     window.showSection = id => {
       ["quiz", "answers", "suwaal"].forEach(sec => {
@@ -219,21 +209,21 @@
       const image = document.getElementById("image-file").files[0];
       const msg = document.getElementById("reply-msg");
 
-      if (!text && !audio && !image) {
-        msg.innerText = "⚠️ Text, audio ya image zaroori hai";
+      if (!id || (!text && !audio && !image)) {
+        msg.innerText = "⚠️ Fill at least one reply (text/audio/image)";
         return;
       }
 
       msg.innerText = "⏳ Uploading...";
 
-      const readFileAsBase64 = file => new Promise(resolve => {
+      const toBase64 = file => new Promise(resolve => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(file);
       });
 
-      let audioBase64 = audio ? await readFileAsBase64(audio) : "";
-      let imageBase64 = image ? await readFileAsBase64(image) : "";
+      let audioBase64 = audio ? await toBase64(audio) : "";
+      let imageBase64 = image ? await toBase64(image) : "";
 
       try {
         await setDoc(doc(db, "question_answers", id), {
@@ -242,9 +232,8 @@
         msg.innerText = "✅ Reply saved!";
       } catch (e) {
         console.error(e);
-        msg.innerText = "❌ Failed to save";
+        msg.innerText = "❌ Failed to save reply.";
       }
     };
-  </script>
-</body>
+  </script></body>
 </html>
