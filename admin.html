@@ -214,18 +214,18 @@
     }
 
     async function loadSuwaal() {
-      const table = document.getElementById("suwaal-table");
-      table.innerHTML = "";
-      const snap = await getDocs(collection(db, "user_questions"));
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        table.innerHTML += `<tr>
-          <td>${d.title}</td><td>${d.name}</td>
-          <td><button onclick="setReply('${docSnap.id}', '${d.title}')">✏️ Reply</button></td>
-        </tr>`;
-      });
-    }
-
+  const table = document.getElementById("suwaal-table");
+  table.innerHTML = "";
+  const snap = await db.collection("user_questions").orderBy("timestamp", "desc").get();
+  snap.forEach(doc => {
+    const d = doc.data();
+    table.innerHTML += `<tr>
+      <td>${d.title}</td>
+      <td>${d.name}<br><small>${d.phone || ''}<br>${d.address || ''}</small></td>
+      <td><button onclick="setReply('${doc.id}', '${d.title}')">✏️ Reply</button></td>
+    </tr>`;
+  });
+}
     window.setReply = (id, title) => {
       document.getElementById("reply-title").value = title;
       document.getElementById("reply-title").dataset.id = id;
