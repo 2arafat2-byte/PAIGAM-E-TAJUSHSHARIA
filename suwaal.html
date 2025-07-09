@@ -2,101 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Suwaal Bhejein</title>
+  <title>Suwaal Bhejein | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #eef3f8;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 500px;
-      margin: 60px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 12px 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      font-size: 15px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    #msg {
-      margin-top: 15px;
-      font-weight: bold;
-      text-align: center;
-    }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 20px; color: #333; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2 { margin-bottom: 15px; }
+    input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; }
+    button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    #msg { margin-top: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>📨 Apna Suwaal Bhejein</h2>
+    <input type="text" id="title" placeholder="Suwaal ka Title" />
     <input type="text" id="name" placeholder="Aapka Naam" />
-    <input type="text" id="phone" placeholder="Mobile Number" />
+    <input type="text" id="phone" placeholder="Phone Number" />
     <input type="text" id="address" placeholder="Address" />
-    <textarea id="question" placeholder="Aapka Suwaal" rows="5"></textarea>
-    <button onclick="submitQuestion()">📤 Bhej Dein</button>
+    <textarea id="question" placeholder="Apna suwaal yahan likhein..."></textarea>
+    <button onclick="submitSuwaal()">📤 Bhej dein</button>
     <p id="msg"></p>
   </div>
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyCrnuVZLIs6DiZ7exEdrez59OsktcMA-iU",
-      authDomain: "dailyquiz-8149b.firebaseapp.com",
-      projectId: "dailyquiz-8149b",
-      storageBucket: "dailyquiz-8149b.appspot.com",
-      messagingSenderId: "814257864320",
-      appId: "1:814257864320:web:98e911b3ca5a643407b065"
+      apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
+      authDomain: "paigam-ba913.firebaseapp.com",
+      projectId: "paigam-ba913",
+      storageBucket: "paigam-ba913.appspot.com",
+      messagingSenderId: "480474970116",
+      appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function submitQuestion() {
-      const name = document.getElementById('name').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      const address = document.getElementById('address').value.trim();
-      const question = document.getElementById('question').value.trim();
-      const msg = document.getElementById('msg');
+    function submitSuwaal() {
+      const title = document.getElementById("title").value.trim();
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const question = document.getElementById("question").value.trim();
+      const msg = document.getElementById("msg");
 
-      if (!name || !phone || !address || !question) {
-        msg.textContent = "⚠️ Har field bharna zaruri hai.";
+      if (!title || !name || !phone || !address || !question) {
+        msg.innerText = "⚠️ Har field zaruri hai!";
         msg.style.color = "red";
         return;
       }
 
       db.collection("user_questions").add({
-        name, phone, address, question,
-        timestamp: new Date()
+        title, name, phone, address, question, timestamp: new Date()
       }).then(() => {
-        msg.textContent = "✅ Aapka suwaal record ho gaya hai.";
+        msg.innerText = "✅ Suwaal bhej diya gaya hai!";
         msg.style.color = "green";
-        document.getElementById('name').value = "";
-        document.getElementById('phone').value = "";
-        document.getElementById('address').value = "";
-        document.getElementById('question').value = "";
-      }).catch(err => {
-        msg.textContent = "❌ Error: " + err.message;
+        document.getElementById("title").value = "";
+        document.getElementById("name").value = "";
+        document.getElementById("phone").value = "";
+        document.getElementById("address").value = "";
+        document.getElementById("question").value = "";
+      }).catch(() => {
+        msg.innerText = "❌ Suwaal bhejne me problem aayi.";
         msg.style.color = "red";
       });
     }
