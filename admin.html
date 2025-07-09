@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel | Paighaam</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -39,6 +39,27 @@
     th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
     th { background: #eee; }
     #admin-panel, .section { display: none; }
+
+    .dark input,
+    .dark textarea,
+    .dark select {
+      background: #1e1e1e;
+      color: white;
+      border: 1px solid #444;
+    }
+
+    .dark button {
+      background: #333;
+      color: white;
+    }
+
+    .dark table,
+    .dark th,
+    .dark td {
+      background: #1e1e1e;
+      color: white;
+      border-color: #555;
+    }
   </style>
 </head>
 <body>
@@ -62,7 +83,7 @@
         <h3>Set Daily Quiz</h3>
         <input type="date" id="quiz-date" />
         <input type="time" id="quiz-time" />
-        <textarea id="quiz-question" placeholder="Enter Question Here..."></textarea>
+        <textarea id="quiz-question" placeholder="Enter question here"></textarea>
         <input type="text" id="opt-a" placeholder="Option A" />
         <input type="text" id="opt-b" placeholder="Option B" />
         <input type="text" id="opt-c" placeholder="Option C" />
@@ -105,148 +126,140 @@
     </div>
   </div>
 
-  <!-- Firebase + FFmpeg Script -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, setDoc, doc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { createFFmpeg, fetchFile } from './ffmpeg.min.js';
+<!-- Firebase & FFmpeg -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, setDoc, doc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { createFFmpeg, fetchFile } from "./ffmpeg.min.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
-      authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913",
-      storageBucket: "paigam-ba913.appspot.com",
-      messagingSenderId: "480474970116",
-      appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
+    authDomain: "paigam-ba913.firebaseapp.com",
+    projectId: "paigam-ba913",
+    storageBucket: "paigam-ba913.appspot.com",
+    messagingSenderId: "480474970116",
+    appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const allowedAdmins = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const allowedAdmins = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    onAuthStateChanged(auth, user => {
-      const status = document.getElementById("login-status");
-      if (user && allowedAdmins.includes(user.email)) {
-        status.innerText = "✅ Welcome, " + user.email;
-        document.getElementById("login-btn").style.display = "none";
-        document.getElementById("logout-btn").style.display = "inline-block";
-        document.getElementById("admin-panel").style.display = "block";
-      } else if (user) {
-        status.innerText = "❌ Access Denied: " + user.email;
-      } else {
-        status.innerText = "Please sign in.";
-      }
+  onAuthStateChanged(auth, user => {
+    const status = document.getElementById("login-status");
+    if (user && allowedAdmins.includes(user.email)) {
+      status.innerText = "✅ Welcome, " + user.email;
+      document.getElementById("login-btn").style.display = "none";
+      document.getElementById("logout-btn").style.display = "inline-block";
+      document.getElementById("admin-panel").style.display = "block";
+    } else if (user) {
+      status.innerText = "❌ Access Denied: " + user.email;
+    } else {
+      status.innerText = "Please sign in.";
+    }
+  });
+
+  document.getElementById("login-btn").onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
+  window.logout = () => signOut(auth);
+  window.toggleDarkMode = () => document.body.classList.toggle("dark");
+
+  window.showSection = id => {
+    ["quiz", "answers", "suwaal"].forEach(sec => {
+      document.getElementById(sec).style.display = sec === id ? "block" : "none";
+    });
+    if (id === "answers") loadAnswers();
+    if (id === "suwaal") loadSuwaal();
+  };
+
+  window.submitQuiz = async () => {
+    const date = document.getElementById("quiz-date").value;
+    const time = document.getElementById("quiz-time").value;
+    const id = `${date}T${time}`;
+    const question = document.getElementById("quiz-question").value;
+    const a = document.getElementById("opt-a").value;
+    const b = document.getElementById("opt-b").value;
+    const c = document.getElementById("opt-c").value;
+    const d = document.getElementById("opt-d").value;
+    const correct = document.getElementById("correct-opt").value;
+    const msg = document.getElementById("quiz-msg");
+
+    if (!date || !time || !question || !a || !b || !c || !d || !correct) {
+      msg.innerText = "⚠️ Fill all fields!";
+      return;
+    }
+
+    await setDoc(doc(db, "quiz_questions", id), {
+      question, option_a: a, option_b: b, option_c: c, option_d: d, correct
+    });
+    msg.innerText = "✅ Quiz saved!";
+  };
+
+  async function loadAnswers() {
+    const table = document.getElementById("answers-table");
+    table.innerHTML = "";
+    const q = query(collection(db, "quiz_answers"), orderBy("date", "desc"));
+    const snap = await getDocs(q);
+    snap.forEach(docu => {
+      const d = docu.data();
+      table.innerHTML += `<tr>
+        <td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td>
+        <td>${d.answer}</td><td>${d.correct ? "✅" : "❌"}</td>
+      </tr>`;
+    });
+  }
+
+  async function loadSuwaal() {
+    const table = document.getElementById("suwaal-table");
+    table.innerHTML = "";
+    const snap = await getDocs(collection(db, "user_questions"));
+    snap.forEach(docu => {
+      const d = docu.data();
+      table.innerHTML += `<tr>
+        <td>${d.title}</td><td>${d.name}</td>
+        <td><button onclick="setReply('${docu.id}', '${d.title.replace(/'/g, "\\'")}')">✏️ Reply</button></td>
+      </tr>`;
+    });
+  }
+
+  window.setReply = (id, title) => {
+    document.getElementById("reply-title").value = title;
+    document.getElementById("reply-title").dataset.id = id;
+  };
+
+  window.submitReply = async () => {
+    const id = document.getElementById("reply-title").dataset.id;
+    const title = document.getElementById("reply-title").value;
+    const text = document.getElementById("text-reply").value;
+    const audio = document.getElementById("audio-file").files[0];
+    const image = document.getElementById("image-file").files[0];
+    const msg = document.getElementById("reply-msg");
+
+    if (!id || (!text && !audio && !image)) {
+      msg.innerText = "⚠️ Fill at least one reply (text/audio/image)";
+      return;
+    }
+
+    msg.innerText = "⏳ Creating video...";
+
+    let videoBase64 = "";
+    if (audio && image) {
+      const ffmpeg = createFFmpeg({ log: true });
+      await ffmpeg.load();
+      ffmpeg.FS("writeFile", "audio.mp3", await fetchFile(audio));
+      ffmpeg.FS("writeFile", "image.jpg", await fetchFile(image));
+      await ffmpeg.run("-loop", "1", "-i", "image.jpg", "-i", "audio.mp3", "-shortest", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-b:a", "128k", "-pix_fmt", "yuv420p", "output.mp4");
+      const data = ffmpeg.FS("readFile", "output.mp4");
+      videoBase64 = `data:video/mp4;base64,${btoa(String.fromCharCode(...data))}`;
+    }
+
+    await setDoc(doc(db, "question_answers", id), {
+      title, text, video: videoBase64
     });
 
-    document.getElementById("login-btn").onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-    window.logout = () => signOut(auth);
-    window.toggleDarkMode = () => document.body.classList.toggle("dark");
-
-    window.showSection = id => {
-      ["quiz", "answers", "suwaal"].forEach(sec => {
-        document.getElementById(sec).style.display = sec === id ? "block" : "none";
-      });
-      if (id === "answers") loadAnswers();
-      if (id === "suwaal") loadSuwaal();
-    };
-
-    window.submitQuiz = async () => {
-      const date = document.getElementById("quiz-date").value;
-      const time = document.getElementById("quiz-time").value;
-      const id = `${date}T${time}`;
-      const question = document.getElementById("quiz-question").value;
-      const a = document.getElementById("opt-a").value;
-      const b = document.getElementById("opt-b").value;
-      const c = document.getElementById("opt-c").value;
-      const d = document.getElementById("opt-d").value;
-      const correct = document.getElementById("correct-opt").value;
-      const msg = document.getElementById("quiz-msg");
-
-      if (!date || !time || !question || !a || !b || !c || !d || !correct) {
-        msg.innerText = "⚠️ Fill all fields!";
-        return;
-      }
-
-      await setDoc(doc(db, "quiz_questions", id), {
-        question, option_a: a, option_b: b, option_c: c, option_d: d, correct
-      });
-      msg.innerText = "✅ Quiz saved!";
-    };
-
-    async function loadAnswers() {
-      const table = document.getElementById("answers-table");
-      table.innerHTML = "";
-      const q = query(collection(db, "quiz_answers"), orderBy("date", "desc"));
-      const snap = await getDocs(q);
-      snap.forEach(docu => {
-        const d = docu.data();
-        table.innerHTML += `<tr>
-          <td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td>
-          <td>${d.answer}</td><td>${d.correct ? "✅" : "❌"}</td>
-        </tr>`;
-      });
-    }
-
-    async function loadSuwaal() {
-      const table = document.getElementById("suwaal-table");
-      table.innerHTML = "";
-      const snap = await getDocs(collection(db, "user_questions"));
-      snap.forEach(docu => {
-        const d = docu.data();
-        table.innerHTML += `<tr>
-          <td>${d.title}</td><td>${d.name}</td>
-          <td><button onclick="setReply('${docu.id}', '${d.title.replace(/'/g, "\\'")}')">✏️ Reply</button></td>
-        </tr>`;
-      });
-    }
-
-    window.setReply = (id, title) => {
-      document.getElementById("reply-title").value = title;
-      document.getElementById("reply-title").dataset.id = id;
-    };
-
-    window.submitReply = async () => {
-      const id = document.getElementById("reply-title").dataset.id;
-      const title = document.getElementById("reply-title").value;
-      const text = document.getElementById("text-reply").value;
-      const audio = document.getElementById("audio-file").files[0];
-      const image = document.getElementById("image-file").files[0];
-      const msg = document.getElementById("reply-msg");
-
-      if (!id || (!text && !audio && !image)) {
-        msg.innerText = "⚠️ Fill at least one reply (text/audio/image)";
-        return;
-      }
-
-      msg.innerText = "⏳ Processing...";
-
-      let videoBase64 = "";
-
-      if (audio && image) {
-        const ffmpeg = createFFmpeg({ log: true });
-        await ffmpeg.load();
-
-        ffmpeg.FS('writeFile', 'audio.mp3', await fetchFile(audio));
-        ffmpeg.FS('writeFile', 'image.jpg', await fetchFile(image));
-
-        await ffmpeg.run('-loop', '1', '-i', 'image.jpg', '-i', 'audio.mp3', '-c:v', 'libx264', '-tune', 'stillimage', '-c:a', 'aac', '-b:a', '192k', '-shortest', 'output.mp4');
-
-        const data = ffmpeg.FS('readFile', 'output.mp4');
-        videoBase64 = "data:video/mp4;base64," + btoa(String.fromCharCode(...data));
-      }
-
-      try {
-        await setDoc(doc(db, "question_answers", id), {
-          title, text, video: videoBase64
-        });
-        msg.innerText = "✅ Reply saved!";
-      } catch (e) {
-        console.error(e);
-        msg.innerText = "❌ Failed to save reply.";
-      }
-    };
-  </script>
+    msg.innerText = "✅ Reply saved!";
+  };
+</script>
 </body>
 </html>
