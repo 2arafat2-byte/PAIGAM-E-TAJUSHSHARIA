@@ -9,129 +9,64 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f4f6f8;
-  color: #333;
-  padding: 20px;
-  transition: background 0.3s, color 0.3s;
-  animation: fadeIn 0.6s ease-out;
-}
-.dark {
-  background: #121212;
-  color: #f0f0f0;
-}
-.container {
-  max-width: 1000px;
-  margin: auto;
-}
-.card {
-  background: white;
-  padding: 25px;
-  margin-bottom: 25px;
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease-in-out;
-}
-.dark .card {
-  background: #1e1e1e;
-}
-.card:hover {
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
-}
-input, textarea, select {
-  width: 100%;
-  padding: 12px 14px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 15px;
-  background: #fff;
-  transition: border 0.3s, box-shadow 0.3s;
-}
-.dark input, .dark textarea, .dark select {
-  background: #2a2a2a;
-  color: #f0f0f0;
-  border: 1px solid #444;
-}
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
-}
-button {
-  padding: 10px 22px;
-  font-size: 15px;
-  background: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  margin: 6px 5px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-button:hover {
-  background: #0056b3;
-}
-.dark button {
-  background: #0056b3;
-}
-.dark button:hover {
-  background: #003e82;
-}
-#admin-panel {
-  display: none;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-th, td {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  text-align: left;
-}
-th {
-  background: #f1f1f1;
-  font-weight: bold;
-}
-.dark th {
-  background: #222;
-}
-tbody tr:hover {
-  background: #f9f9f9;
-}
-.dark tbody tr:hover {
-  background: #1f1f1f;
-}
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f7f7f7;
+    color: #333;
+    padding: 20px;
+    transition: background 0.3s, color 0.3s;
+  }
+  .container { max-width: 1000px; margin: auto; }
+  .card {
+    background: white;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: background 0.3s, color 0.3s;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  button {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    margin: 5px 5px;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.9; }
+  #admin-panel { display: none; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    padding: 8px;
+    border: 1px solid #ccc;
+  }
+  th { background: #eee; }
 
-/* Top Buttons */
-button.section-toggle {
-  background: #28a745;
-}
-button.section-toggle:hover {
-  background: #218838;
-}
-
-/* Toggle button */
-.toggle-dark {
-  float: right;
-  background: #343a40;
-  color: white;
-  margin-top: -8px;
-}
-
-/* Animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+  /* 🔄 Dark mode */
+  .dark {
+    background: #1e1e1e;
+    color: #f1f1f1;
+  }
+  .dark .card {
+    background: #2e2e2e;
+    color: #fff;
+  }
+  .dark th {
+    background: #444;
+    color: #fff;
+  }
   </style>
 </head>
 <body>
@@ -202,19 +137,20 @@ button.section-toggle:hover {
     storageBucket: "paigam-ba913.appspot.com",
     messagingSenderId: "480474970116",
     appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
-    
   };
-  function toggleDark() {
-  document.body.classList.toggle("dark");
-}
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
+
   const allowedAdmins = [
     "arrahmanallamalquraan123@gmail.com",
     "imranraza12738@gmail.com"
   ];
+
+  function toggleDark() {
+    document.body.classList.toggle("dark");
+  }
 
   auth.onAuthStateChanged(user => {
     const status = document.getElementById("login-status");
@@ -234,121 +170,9 @@ button.section-toggle:hover {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider);
   };
-  function logout() { auth.signOut(); }
 
-  function showSection(id) {
-    ["quiz", "answers", "suwaal"].forEach(sec => {
-      document.getElementById(sec).style.display = sec === id ? "block" : "none";
-    });
-    if (id === "answers") loadAnswers();
-    if (id === "suwaal") loadSuwaal();
-  }
-
-  async function submitQuiz() {
-    const date = document.getElementById("quiz-date").value;
-    const time = document.getElementById("quiz-time").value;
-    const id = `${date}T${time}`;
-    const question = document.getElementById("quiz-question").value;
-    const a = document.getElementById("opt-a").value;
-    const b = document.getElementById("opt-b").value;
-    const c = document.getElementById("opt-c").value;
-    const d = document.getElementById("opt-d").value;
-    const correct = document.getElementById("correct-opt").value;
-    const msg = document.getElementById("quiz-msg");
-
-    if (!date || !time || !question || !a || !b || !c || !d || !correct) {
-      msg.innerText = "⚠️ Fill all fields!";
-      return;
-    }
-
-    await db.collection("quiz_questions").doc(id).set({
-      question, option_a: a, option_b: b, option_c: c, option_d: d, correct
-    });
-    msg.innerText = "✅ Quiz saved!";
-  }
-
-  async function loadAnswers() {
-    const table = document.getElementById("answers-table");
-    table.innerHTML = "";
-    const snap = await db.collection("quiz_answers").orderBy("date", "desc").get();
-    snap.forEach(doc => {
-      const d = doc.data();
-      table.innerHTML += `<tr>
-        <td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td>
-        <td>${d.answer}</td><td>${d.correct ? "✅" : "❌"}</td>
-      </tr>`;
-    });
-  }
-
-  async function loadSuwaal() {
-    const table = document.getElementById("suwaal-table");
-    table.innerHTML = "";
-    const snap = await db.collection("user_questions").get();
-    snap.forEach(doc => {
-      const d = doc.data();
-      table.innerHTML += `<tr>
-        <td>${d.title}</td><td>${d.name}</td>
-        <td><button onclick="setReply('${doc.id}', '${d.title}')">✏️ Reply</button></td>
-      </tr>`;
-    });
-  }
-
-  function setReply(id, title) {
-    document.getElementById("reply-title").value = title;
-    document.getElementById("reply-title").dataset.id = id;
-  }
-
-  async function submitReply() {
-    const id = document.getElementById("reply-title").dataset.id;
-    const title = document.getElementById("reply-title").value;
-    const text = document.getElementById("text-reply").value;
-    const file = document.getElementById("audio-file").files[0];
-    const msg = document.getElementById("reply-msg");
-
-    if (!text && !file) {
-      msg.innerText = "⚠️ Text ya audio zaroori hai";
-      return;
-    }
-
-    let audioUrl = null;
-
-    if (file) {
-      const token = gapi.auth.getToken().access_token;
-      const metadata = {
-        name: `${Date.now()}_${file.name}`,
-        mimeType: file.type,
-      };
-
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", file);
-
-      const uploadRes = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token },
-        body: form
-      });
-
-      const fileData = await uploadRes.json();
-
-      // Make public
-      await fetch(`https://www.googleapis.com/drive/v3/files/${fileData.id}/permissions`, {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ role: "reader", type: "anyone" }),
-      });
-
-      audioUrl = `https://drive.google.com/uc?id=${fileData.id}`;
-    }
-
-    await db.collection("question_answers").doc(id).set({
-      title, text, audio: audioUrl
-    });
-
-    msg.innerText = "✅ Reply saved!";
+  function logout() {
+    auth.signOut();
   }
 
   function initDriveAuth() {
@@ -362,7 +186,6 @@ button.section-toggle:hover {
           console.log("Drive connected");
         } else {
           alert("❌ Google Drive permission failed");
-          function toggleDark() {
         }
       });
     });
