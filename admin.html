@@ -75,175 +75,192 @@
   </div>  
 </div>
 
-  </div>  <script src="https://apis.google.com/js/api.js"></script>  <script>  
-  const firebaseConfig = {  
-    apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",  
-    authDomain: "paigam-ba913.firebaseapp.com",  
-    projectId: "paigam-ba913",  
-    storageBucket: "paigam-ba913.appspot.com",  
-    messagingSenderId: "480474970116",  
-    appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"  
-  };  
-  
-  firebase.initializeApp(firebaseConfig);  
-  const auth = firebase.auth();  
-  const db = firebase.firestore();  
-  const allowedAdmins = [  
-    "arrahmanallamalquraan123@gmail.com",  
-    "imranraza12738@gmail.com"  
-  ];  
-  
-  auth.onAuthStateChanged(user => {  
-    const status = document.getElementById("login-status");  
-    if (user && allowedAdmins.includes(user.email)) {  
-      status.innerText = "✅ Welcome, " + user.email;  
-      document.getElementById("login-btn").style.display = "none";  
-      document.getElementById("logout-btn").style.display = "inline-block";  
-      document.getElementById("admin-panel").style.display = "block";  
-    } else if (user) {  
-      status.innerText = "❌ Access Denied: " + user.email;  
-    } else {  
-      status.innerText = "Please sign in.";  
-    }  
-  });  
-  
-  document.getElementById("login-btn").onclick = () => {  
-    const provider = new firebase.auth.GoogleAuthProvider();  
-    auth.signInWithPopup(provider);  
-  };  
-  function logout() { auth.signOut(); }  
-  
-  function showSection(id) {  
-    ["quiz", "answers", "suwaal"].forEach(sec => {  
-      document.getElementById(sec).style.display = sec === id ? "block" : "none";  
-    });  
-    if (id === "answers") loadAnswers();  
-    if (id === "suwaal") loadSuwaal();  
-  }  
-  
-  async function submitQuiz() {  
-    const date = document.getElementById("quiz-date").value;  
-    const time = document.getElementById("quiz-time").value;  
-    const id = `${date}T${time}`;  
-    const question = document.getElementById("quiz-question").value;  
-    const a = document.getElementById("opt-a").value;  
-    const b = document.getElementById("opt-b").value;  
-    const c = document.getElementById("opt-c").value;  
-    const d = document.getElementById("opt-d").value;  
-    const correct = document.getElementById("correct-opt").value;  
-    const msg = document.getElementById("quiz-msg");  
-  
-    if (!date || !time || !question || !a || !b || !c || !d || !correct) {  
-      msg.innerText = "⚠️ Fill all fields!";  
-      return;  
-    }  
-  
-    await db.collection("quiz_questions").doc(id).set({  
-      question, option_a: a, option_b: b, option_c: c, option_d: d, correct  
-    });  
-    msg.innerText = "✅ Quiz saved!";  
-  }  
-  
-  async function loadAnswers() {  
-    const table = document.getElementById("answers-table");  
-    table.innerHTML = "";  
-    const snap = await db.collection("quiz_answers").orderBy("date", "desc").get();  
-    snap.forEach(doc => {  
-      const d = doc.data();  
-      table.innerHTML += `<tr>  
-        <td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td>  
-        <td>${d.answer}</td><td>${d.correct ? "✅" : "❌"}</td>  
-      </tr>`;  
-    });  
-  }  
-  
-  async function loadSuwaal() {  
-    const table = document.getElementById("suwaal-table");  
-    table.innerHTML = "";  
-    const snap = await db.collection("user_questions").get();  
-    snap.forEach(doc => {  
-      const d = doc.data();  
-      table.innerHTML += `<tr>  
-        <td>${d.title}</td><td>${d.name}</td>  
-        <td><button onclick="setReply('${doc.id}', '${d.title}')">✏️ Reply</button></td>  
-      </tr>`;  
-    });  
-  }  
-  
-  function setReply(id, title) {  
-    document.getElementById("reply-title").value = title;  
-    document.getElementById("reply-title").dataset.id = id;  
-  }  
-  
-  async function submitReply() {  
-    const id = document.getElementById("reply-title").dataset.id;  
-    const title = document.getElementById("reply-title").value;  
-    const text = document.getElementById("text-reply").value;  
-    const file = document.getElementById("audio-file").files[0];  
-    const msg = document.getElementById("reply-msg");  
-  
-    if (!text && !file) {  
-      msg.innerText = "⚠️ Text ya audio zaroori hai";  
-      return;  
-    }  
-  
-    let audioUrl = null;  
-  
-    if (file) {  
-      const token = gapi.auth.getToken().access_token;  
-      const metadata = {  
-        name: `${Date.now()}_${file.name}`,  
-        mimeType: file.type,  
-      };  
-  
-      const form = new FormData();  
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));  
-      form.append("file", file);  
-  
-      const uploadRes = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {  
-        method: "POST",  
-        headers: { Authorization: "Bearer " + token },  
-        body: form  
-      });  
-  
-      const fileData = await uploadRes.json();  
-  
-      // Make public  
-      await fetch(`https://www.googleapis.com/drive/v3/files/${fileData.id}/permissions`, {  
-        method: "POST",  
-        headers: {  
-          Authorization: "Bearer " + token,  
-          "Content-Type": "application/json",  
-        },  
-        body: JSON.stringify({ role: "reader", type: "anyone" }),  
-      });  
-  
-      audioUrl = `https://drive.google.com/uc?id=${fileData.id}`;  
-    }  
-  
-    await db.collection("question_answers").doc(id).set({  
-      title, text, audio: audioUrl  
-    });  
-  
-    msg.innerText = "✅ Reply saved!";  
-  }  
-  
-  function initDriveAuth() {  
-    gapi.load("auth", () => {  
-      gapi.auth.authorize({  
-        client_id: "217808443449-4gdikf4abcgskau343par41k6vi5pl1n.apps.googleusercontent.com",  
-        scope: "https://www.googleapis.com/auth/drive.file",  
-        immediate: false,  
-      }, (authResult) => {  
-        if (authResult && !authResult.error) {  
-          console.log("Drive connected");  
-        } else {  
-          alert("❌ Google Drive permission failed");  
-        }  
-      });  
-    });  
-  }  
-  
-  window.onload = initDriveAuth;  
+  </div>  <script src="https://apis.google.com/js/api.js"></script> 
+  <script src="https://apis.google.com/js/api.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
+    authDomain: "paigam-ba913.firebaseapp.com",
+    projectId: "paigam-ba913",
+    storageBucket: "paigam-ba913.appspot.com",
+    messagingSenderId: "480474970116",
+    appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const allowedAdmins = [
+    "arrahmanallamalquraan123@gmail.com",
+    "imranraza12738@gmail.com"
+  ];
+
+  // Google Drive Auth2 Setup
+  function initDriveAuth() {
+    gapi.load("client:auth2", () => {
+      gapi.auth2.init({
+        client_id: "217808443449-4gdikf4abcgskau343par41k6vi5pl1n.apps.googleusercontent.com",
+        scope: "https://www.googleapis.com/auth/drive.file"
+      }).then(() => {
+        console.log("Google Drive auth2 initialized");
+      }).catch(err => {
+        alert("❌ Google Drive auth2 init failed");
+        console.error(err);
+      });
+    });
+  }
+
+  window.onload = initDriveAuth;
+
+  auth.onAuthStateChanged(user => {
+    const status = document.getElementById("login-status");
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const adminPanel = document.getElementById("admin-panel");
+
+    if (user && allowedAdmins.includes(user.email)) {
+      status.innerText = "✅ Welcome, " + user.email;
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "inline-block";
+      adminPanel.style.display = "block";
+    } else if (user) {
+      status.innerText = "❌ Access Denied: " + user.email;
+      logoutBtn.style.display = "inline-block";
+      adminPanel.style.display = "none";
+    } else {
+      status.innerText = "Please sign in.";
+    }
+  });
+
+  document.getElementById("login-btn").onclick = () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
+  };
+
+  function logout() {
+    auth.signOut();
+  }
+
+  function showSection(id) {
+    ["quiz", "answers", "suwaal"].forEach(sec => {
+      document.getElementById(sec).style.display = sec === id ? "block" : "none";
+    });
+    if (id === "answers") loadAnswers();
+    if (id === "suwaal") loadSuwaal();
+  }
+
+  async function submitQuiz() {
+    const date = document.getElementById("quiz-date").value;
+    const time = document.getElementById("quiz-time").value;
+    const id = `${date}T${time}`;
+    const question = document.getElementById("quiz-question").value;
+    const a = document.getElementById("opt-a").value;
+    const b = document.getElementById("opt-b").value;
+    const c = document.getElementById("opt-c").value;
+    const d = document.getElementById("opt-d").value;
+    const correct = document.getElementById("correct-opt").value;
+    const msg = document.getElementById("quiz-msg");
+
+    if (!date || !time || !question || !a || !b || !c || !d || !correct) {
+      msg.innerText = "⚠️ Fill all fields!";
+      return;
+    }
+
+    await db.collection("quiz_questions").doc(id).set({
+      question, option_a: a, option_b: b, option_c: c, option_d: d, correct
+    });
+    msg.innerText = "✅ Quiz saved!";
+  }
+
+  async function loadAnswers() {
+    const table = document.getElementById("answers-table");
+    table.innerHTML = "";
+    const snap = await db.collection("quiz_answers").orderBy("date", "desc").get();
+    snap.forEach(doc => {
+      const d = doc.data();
+      table.innerHTML += `<tr>
+        <td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td>
+        <td>${d.answer}</td><td>${d.correct ? "✅" : "❌"}</td>
+      </tr>`;
+    });
+  }
+
+  async function loadSuwaal() {
+    const table = document.getElementById("suwaal-table");
+    table.innerHTML = "";
+    const snap = await db.collection("user_questions").get();
+    snap.forEach(doc => {
+      const d = doc.data();
+      table.innerHTML += `<tr>
+        <td>${d.title}</td><td>${d.name}</td>
+        <td><button onclick="setReply('${doc.id}', '${d.title}')">✏️ Reply</button></td>
+      </tr>`;
+    });
+  }
+
+  function setReply(id, title) {
+    document.getElementById("reply-title").value = title;
+    document.getElementById("reply-title").dataset.id = id;
+  }
+
+  async function submitReply() {
+    const id = document.getElementById("reply-title").dataset.id;
+    const title = document.getElementById("reply-title").value;
+    const text = document.getElementById("text-reply").value;
+    const file = document.getElementById("audio-file").files[0];
+    const msg = document.getElementById("reply-msg");
+
+    if (!text && !file) {
+      msg.innerText = "⚠️ Text ya audio zaroori hai";
+      return;
+    }
+
+    let audioUrl = null;
+
+    if (file) {
+      try {
+        const user = gapi.auth2.getAuthInstance().currentUser.get();
+        const token = user.getAuthResponse().access_token;
+
+        const metadata = {
+          name: `${Date.now()}_${file.name}`,
+          mimeType: file.type,
+        };
+
+        const form = new FormData();
+        form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+        form.append("file", file);
+
+        const uploadRes = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token },
+          body: form
+        });
+
+        const fileData = await uploadRes.json();
+
+        await fetch(`https://www.googleapis.com/drive/v3/files/${fileData.id}/permissions`, {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ role: "reader", type: "anyone" }),
+        });
+
+        audioUrl = `https://drive.google.com/uc?id=${fileData.id}`;
+      } catch (e) {
+        msg.innerText = "❌ Audio upload failed.";
+        console.error(e);
+        return;
+      }
+    }
+
+    await db.collection("question_answers").doc(id).set({
+      title, text, audio: audioUrl
+    });
+
+    msg.innerText = "✅ Reply saved!";
+  }
 </script>  </body>  
 </html>
