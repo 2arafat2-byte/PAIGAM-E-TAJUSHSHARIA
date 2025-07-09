@@ -1,147 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jawabat | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background: #f4f4f4;
       margin: 0;
-      padding: 0;
+      padding: 20px;
+      color: #333;
     }
-    header {
-      background: #007bff;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-size: 22px;
-    }
+    h2 { text-align: center; }
     #search {
-      width: 90%;
-      padding: 10px;
-      margin: 15px auto;
-      display: block;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      width: 100%; max-width: 400px; margin: 10px auto 20px;
+      padding: 10px; border-radius: 6px; border: 1px solid #ccc; display: block;
     }
-    .answer-list {
-      max-width: 800px;
-      margin: auto;
-      padding: 10px;
-    }
-    .answer-item {
+    .card {
       background: white;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 16px;
+      margin: 10px auto;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       cursor: pointer;
     }
-    .viewer {
+    .modal {
       position: fixed;
       top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8);
       display: none;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
-      padding: 20px;
-      box-sizing: border-box;
       z-index: 1000;
     }
-    .viewer img {
-      max-width: 90%;
-      max-height: 50vh;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-    .viewer audio {
-      width: 80%;
-      margin-bottom: 20px;
-    }
-    .viewer p {
+    .modal-content {
+      background-size: cover;
+      background-position: center;
+      width: 90%;
+      max-width: 500px;
+      padding: 30px;
+      border-radius: 12px;
+      position: relative;
       color: white;
-      font-size: 20px;
+      box-shadow: 0 0 10px #000;
+      backdrop-filter: blur(5px);
+    }
+    .modal-content::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      border-radius: 12px;
+      z-index: 1;
+    }
+    .modal-content * {
+      position: relative;
+      z-index: 2;
     }
     .close-btn {
       position: absolute;
-      top: 20px; right: 20px;
+      top: 10px;
+      right: 15px;
       background: red;
       color: white;
       border: none;
-      border-radius: 5px;
-      padding: 8px 12px;
+      border-radius: 50%;
+      width: 30px; height: 30px;
       cursor: pointer;
     }
+    audio { width: 100%; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <header>🎧 Jawabat</header>
-  <input type="text" id="search" placeholder="Search by title..." />
+  <h2>📖 Jawaabaat</h2>
+  <input type="text" id="search" placeholder="Search title..." />
 
-  <div class="answer-list" id="answer-list"></div>
+  <div id="answers"></div>
 
-  <div class="viewer" id="viewer">
-    <button class="close-btn" onclick="closeViewer()">❌ Close</button>
-    <img id="viewer-img" src="" alt="Still image" />
-    <audio controls id="viewer-audio"></audio>
-    <p id="viewer-text"></p>
+  <div id="modal" class="modal" onclick="closeModal()">
+    <div class="modal-content" id="modal-content" onclick="event.stopPropagation()">
+      <button class="close-btn" onclick="closeModal()">✖</button>
+      <h3 id="modal-title"></h3>
+      <p id="modal-text"></p>
+      <audio id="modal-audio" controls></audio>
+    </div>
   </div>
 
-  <script>
-    const firebaseConfig = {
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913"
-    };
+      projectId: "paigam-ba913",
+    });
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    const listEl = document.getElementById("answer-list");
-    const searchEl = document.getElementById("search");
+    const db = getFirestore(app);
+    const container = document.getElementById("answers");
+    const search = document.getElementById("search");
 
     let allAnswers = [];
 
     async function loadAnswers() {
-      const snap = await db.collection("question_answers").orderBy("timestamp", "desc").get();
-      allAnswers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      renderAnswers(allAnswers);
+      const snap = await getDocs(collection(db, "question_answers"));
+      allAnswers = [];
+      snap.forEach(doc => {
+        const d = doc.data();
+        allAnswers.push({ id: doc.id, ...d });
+      });
+      displayAnswers(allAnswers);
     }
 
-    function renderAnswers(list) {
-      listEl.innerHTML = "";
+    function displayAnswers(list) {
+      container.innerHTML = "";
       list.forEach(ans => {
-        const item = document.createElement("div");
-        item.className = "answer-item";
-        item.innerText = ans.title;
-        item.onclick = () => openViewer(ans);
-        listEl.appendChild(item);
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerText = ans.title;
+        card.onclick = () => openModal(ans);
+        container.appendChild(card);
       });
     }
 
-    function openViewer(ans) {
-      document.getElementById("viewer").style.display = "flex";
-      document.getElementById("viewer-img").src = ans.image || "";
-      document.getElementById("viewer-audio").src = ans.audio || "";
-      document.getElementById("viewer-text").innerText = ans.text || "No text reply";
+    function openModal(ans) {
+      const modal = document.getElementById("modal");
+      const audio = document.getElementById("modal-audio");
+      const title = document.getElementById("modal-title");
+      const text = document.getElementById("modal-text");
+      const bg = document.getElementById("modal-content");
+
+      title.innerText = ans.title;
+      text.innerText = ans.text || "";
+      audio.src = ans.audio || "";
+
+      if (ans.image && ans.image.startsWith("data:image")) {
+        bg.style.backgroundImage = `url('${ans.image}')`;
+      } else {
+        bg.style.backgroundImage = "url('https://via.placeholder.com/500x300?text=No+Image')";
+      }
+
+      modal.style.display = "flex";
     }
 
-    function closeViewer() {
-      document.getElementById("viewer").style.display = "none";
-      document.getElementById("viewer-audio").pause();
+    function closeModal() {
+      document.getElementById("modal").style.display = "none";
+      document.getElementById("modal-audio").pause();
     }
 
-    searchEl.oninput = () => {
-      const q = searchEl.value.toLowerCase();
-      const filtered = allAnswers.filter(a => a.title.toLowerCase().includes(q));
-      renderAnswers(filtered);
-    };
+    search.addEventListener("input", () => {
+      const keyword = search.value.toLowerCase();
+      const filtered = allAnswers.filter(a => a.title.toLowerCase().includes(keyword));
+      displayAnswers(filtered);
+    });
 
     loadAnswers();
   </script>
