@@ -9,16 +9,129 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f7f7f7; color: #333; padding: 20px; }
-    .container { max-width: 1000px; margin: auto; }
-    .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; }
-    button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 6px; margin: 5px 5px; cursor: pointer; }
-    button:hover { opacity: 0.9; }
-    #admin-panel { display: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; border: 1px solid #ccc; }
-    th { background: #eee; }
+    * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f4f6f8;
+  color: #333;
+  padding: 20px;
+  transition: background 0.3s, color 0.3s;
+  animation: fadeIn 0.6s ease-out;
+}
+.dark {
+  background: #121212;
+  color: #f0f0f0;
+}
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
+.card {
+  background: white;
+  padding: 25px;
+  margin-bottom: 25px;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease-in-out;
+}
+.dark .card {
+  background: #1e1e1e;
+}
+.card:hover {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+}
+input, textarea, select {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  background: #fff;
+  transition: border 0.3s, box-shadow 0.3s;
+}
+.dark input, .dark textarea, .dark select {
+  background: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #444;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.15);
+}
+button {
+  padding: 10px 22px;
+  font-size: 15px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  margin: 6px 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+button:hover {
+  background: #0056b3;
+}
+.dark button {
+  background: #0056b3;
+}
+.dark button:hover {
+  background: #003e82;
+}
+#admin-panel {
+  display: none;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+th, td {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+th {
+  background: #f1f1f1;
+  font-weight: bold;
+}
+.dark th {
+  background: #222;
+}
+tbody tr:hover {
+  background: #f9f9f9;
+}
+.dark tbody tr:hover {
+  background: #1f1f1f;
+}
+
+/* Top Buttons */
+button.section-toggle {
+  background: #28a745;
+}
+button.section-toggle:hover {
+  background: #218838;
+}
+
+/* Toggle button */
+.toggle-dark {
+  float: right;
+  background: #343a40;
+  color: white;
+  margin-top: -8px;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
   </style>
 </head>
 <body>
