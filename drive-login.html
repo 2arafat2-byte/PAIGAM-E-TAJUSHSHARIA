@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Drive Login</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <h2>🎤 Suwaal ka Audio Reply System</h2>
+  <button id="login-btn">Google Drive Login</button>
+  <p id="status"></p>
+
+  <script>
+    let accessToken = null;
+
+    function handleCredentialResponse(response) {
+      // Yeh response JWT hota hai, Drive ke liye access token nahi
+      document.getElementById("status").innerText = "❌ JWT received. Not access token.";
+    }
+
+    document.getElementById("login-btn").addEventListener("click", () => {
+      const clientId = 'YOUR_CLIENT_ID_HERE'; // <-- Replace karo
+      const redirectUri = window.location.href; // Ya custom redirect URI
+      const scope = 'https://www.googleapis.com/auth/drive.file';
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
+
+      window.location.href = authUrl;
+    });
+
+    // Access token URL se parse karna
+    window.onload = () => {
+      if (window.location.hash.includes("access_token")) {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        accessToken = params.get("access_token");
+        document.getElementById("status").innerText = "✅ Logged in to Google Drive!";
+        console.log("Access Token:", accessToken);
+      }
+    };
+  </script>
+</body>
+</html>
