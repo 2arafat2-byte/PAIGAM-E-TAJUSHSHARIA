@@ -2,41 +2,83 @@
 <html>
 <head>
   <title>Google Drive Login</title>
+  <meta name="google-signin-client_id" content="217808443449-4gdikf4abcgskau343par41k6vi5pl1n.apps.googleusercontent.com">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
-<body>
-  <h2>🎤 Suwaal ka Audio Reply System</h2>
-  <button id="login-btn">Google Drive Login</button>
-  <p id="status"></p>
-
   <script>
-    let accessToken = null;
+    let accessToken = "";
 
     function handleCredentialResponse(response) {
-      // Yeh response JWT hota hai, Drive ke liye access token nahi
-      document.getElementById("status").innerText = "❌ JWT received. Not access token.";
+      const id_token = response.credential;
+      document.getElementById("status").innerText = "✅ Logged in";
     }
 
-    document.getElementById("login-btn").addEventListener("click", () => {
-      const clientId = '217808443449-7p0civi85bk7e2b8207p5c9qu2sqd6k4.apps.googleusercontent.com'; // <-- Replace karo
-      const redirectUri = window.location.href; // Ya custom redirect URI
+    function authenticateWithDrive() {
+      const clientId = '217808443449-4gdikf4abcgskau343par41k6vi5pl1n.apps.googleusercontent.com';
+      const redirectUri = window.location.href;
       const scope = 'https://www.googleapis.com/auth/drive.file';
 
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
 
-      window.location.href = authUrl;
-    });
+      window.location = authUrl;
+    }
 
-    // Access token URL se parse karna
-    window.onload = () => {
-      if (window.location.hash.includes("access_token")) {
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
+    function checkAccessTokenFromUrl() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      if (params.get("access_token")) {
         accessToken = params.get("access_token");
-        document.getElementById("status").innerText = "✅ Logged in to Google Drive!";
-        console.log("Access Token:", accessToken);
+        document.getElementById("token-box").innerText = accessToken;
+        document.getElementById("status").innerText = "✅ Access token obtained!";
       }
-    };
+    }
+
+    function uploadAudioToDrive() {
+      const fileInput = document.getElementById("audio");
+      const file = fileInput.files[0];
+      if (!file || !accessToken) {
+        alert("⚠️ Please select file and make sure you're logged in.");
+        return;
+      }
+
+      const metadata = {
+        name: file.name,
+        mimeType: file.type
+      };
+
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+      form.append('file', file);
+
+      fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+        body: form
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert("✅ Upload successful! File ID: " + data.id);
+      })
+      .catch(err => {
+        console.error(err);
+        alert("❌ Upload failed!");
+      });
+    }
+
+    window.onload = checkAccessTokenFromUrl;
   </script>
+</head>
+<body>
+  <h2>Google Drive Uploader</h2>
+  <p id="status">⏳ Not logged in</p>
+
+  <button onclick="authenticateWithDrive()">🔐 Sign in with Google Drive</button>
+
+  <div style="margin-top:20px;">
+    <input type="file" id="audio" accept="audio/*">
+    <button onclick="uploadAudioToDrive()">📤 Upload Audio</button>
+  </div>
+
+  <p><strong>Access Token:</strong></p>
+  <textarea id="token-box" style="width:100%;height:80px;"></textarea>
 </body>
 </html>
