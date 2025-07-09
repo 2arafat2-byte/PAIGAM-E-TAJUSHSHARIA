@@ -1,149 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Jawabat | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f5f5f5;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
       margin: 0;
-      padding: 20px;
+      padding: 0;
     }
-    h2 { text-align: center; }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 22px;
+    }
     #search {
-      width: 100%;
-      max-width: 500px;
-      margin: 0 auto 20px;
+      width: 90%;
       padding: 10px;
-      font-size: 16px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      margin: 15px auto;
       display: block;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
     .answer-list {
-      max-width: 700px;
-      margin: 0 auto;
+      max-width: 800px;
+      margin: auto;
+      padding: 10px;
     }
     .answer-item {
       background: white;
       padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin: 10px 0;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
       cursor: pointer;
-      transition: background 0.2s;
     }
-    .answer-item:hover {
-      background: #eef3ff;
-    }
-    .modal {
+    .viewer {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.85);
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 999;
+      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 1000;
     }
-    .modal-content {
-      background: #000;
-      width: 90%;
-      max-width: 600px;
-      aspect-ratio: 16 / 9;
-      position: relative;
-      border-radius: 8px;
-      overflow: hidden;
+    .viewer img {
+      max-width: 90%;
+      max-height: 50vh;
+      border-radius: 10px;
+      margin-bottom: 20px;
     }
-    .modal-content img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      position: absolute;
+    .viewer audio {
+      width: 80%;
+      margin-bottom: 20px;
     }
-    .modal-content audio {
-      width: 100%;
-      position: absolute;
-      bottom: 0;
-      background: rgba(0,0,0,0.6);
+    .viewer p {
+      color: white;
+      font-size: 20px;
     }
     .close-btn {
       position: absolute;
-      top: 10px;
-      right: 15px;
-      background: #fff;
-      color: #000;
-      padding: 5px 10px;
+      top: 20px; right: 20px;
+      background: red;
+      color: white;
+      border: none;
       border-radius: 5px;
-      font-weight: bold;
+      padding: 8px 12px;
       cursor: pointer;
-      z-index: 2;
     }
   </style>
 </head>
 <body>
-  <h2>🎧 Jawabat</h2>
+  <header>🎧 Jawabat</header>
   <input type="text" id="search" placeholder="Search by title..." />
+
   <div class="answer-list" id="answer-list"></div>
 
-  <div class="modal" id="modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeModal()">✖</span>
-      <img id="modal-img" src="" alt="Background" />
-      <audio id="modal-audio" controls></audio>
-    </div>
+  <div class="viewer" id="viewer">
+    <button class="close-btn" onclick="closeViewer()">❌ Close</button>
+    <img id="viewer-img" src="" alt="Still image" />
+    <audio controls id="viewer-audio"></audio>
+    <p id="viewer-text"></p>
   </div>
 
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913",
+      projectId: "paigam-ba913"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const answerList = document.getElementById("answer-list");
-    const searchInput = document.getElementById("search");
+    const listEl = document.getElementById("answer-list");
+    const searchEl = document.getElementById("search");
+
     let allAnswers = [];
 
     async function loadAnswers() {
-      const snap = await db.collection("question_answers").get();
-      allAnswers = snap.docs.map(doc => doc.data());
-      renderList(allAnswers);
+      const snap = await db.collection("question_answers").orderBy("timestamp", "desc").get();
+      allAnswers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderAnswers(allAnswers);
     }
 
-    function renderList(data) {
-      answerList.innerHTML = "";
-      data.forEach(ans => {
+    function renderAnswers(list) {
+      listEl.innerHTML = "";
+      list.forEach(ans => {
         const item = document.createElement("div");
         item.className = "answer-item";
-        item.innerText = ans.title || "Untitled";
-        item.onclick = () => openModal(ans);
-        answerList.appendChild(item);
+        item.innerText = ans.title;
+        item.onclick = () => openViewer(ans);
+        listEl.appendChild(item);
       });
     }
 
-    function openModal(data) {
-      document.getElementById("modal").style.display = "flex";
-      document.getElementById("modal-img").src = data.image || "https://via.placeholder.com/1280x720?text=No+Image";
-      document.getElementById("modal-audio").src = data.audio || "";
+    function openViewer(ans) {
+      document.getElementById("viewer").style.display = "flex";
+      document.getElementById("viewer-img").src = ans.image || "";
+      document.getElementById("viewer-audio").src = ans.audio || "";
+      document.getElementById("viewer-text").innerText = ans.text || "No text reply";
     }
 
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
-      document.getElementById("modal-audio").pause();
+    function closeViewer() {
+      document.getElementById("viewer").style.display = "none";
+      document.getElementById("viewer-audio").pause();
     }
 
-    searchInput.addEventListener("input", () => {
-      const val = searchInput.value.toLowerCase();
-      const filtered = allAnswers.filter(a => (a.title || "").toLowerCase().includes(val));
-      renderList(filtered);
-    });
+    searchEl.oninput = () => {
+      const q = searchEl.value.toLowerCase();
+      const filtered = allAnswers.filter(a => a.title.toLowerCase().includes(q));
+      renderAnswers(filtered);
+    };
 
     loadAnswers();
   </script>
