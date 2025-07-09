@@ -2,400 +2,254 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel | Paighaam-e-Tajushshariah</title>
+  <title>Admin Panel | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
-    * {box-sizing: border-box; margin: 0; padding: 0;}
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
-      transition: background 0.4s, color 0.4s;
-    }
-    body.dark {
-      background: #1e1e1e;
-      color: #f1f1f1;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-    }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 25px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    body.dark .card {
-      background: #2c2c2c;
-      color: #fff;
-    }
-    h2, h3 {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    button {
-      padding: 10px 18px;
-      margin: 5px;
-      font-size: 15px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover {
-      opacity: 0.9;
-    }
-    #login-btn { background: #007bff; color: white; }
-    #logout-btn { background: #dc3545; color: white; display: none; }
-    #status { text-align: center; margin: 15px 0; font-weight: bold; }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #fff;
-    }
-    body.dark input, body.dark select, body.dark textarea {
-      background: #3a3a3a;
-      color: #fff;
-      border: 1px solid #666;
-    }
-    .btn-group {
-      text-align: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .top-btn, .dark-toggle {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 999;
-      background: #343a40;
-      color: white;
-    }
-    .dark-toggle {
-      left: auto;
-      right: 10px;
-    }
-    .intro-text {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 28px;
-      font-weight: bold;
-      text-align: center;
-      color: #444;
-      animation: fadeOutSand 4s forwards;
-      z-index: 9999;
-    }
-    @keyframes fadeOutSand {
-      0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
-      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); visibility: hidden; }
-    }
-    .page-content {
-      opacity: 0;
-      animation: fadeInPage 1s ease-out 4s forwards;
-    }
-    @keyframes fadeInPage {
-      to { opacity: 1; }
-    }
+    body { font-family: 'Segoe UI', sans-serif; background: #f7f7f7; color: #333; padding: 20px; }
+    .container { max-width: 1000px; margin: auto; }
+    .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 6px; margin: 5px 5px; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    #admin-panel { display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; border: 1px solid #ccc; }
+    th { background: #eee; }
   </style>
 </head>
 <body>
-  <div class="intro-text">📜 Paighaam-e-Tajushshariah</div>
-  <div class="page-content">
-    <button class="top-btn" onclick="viewSchedule()">📅 Schedule</button>
-    <button class="dark-toggle" onclick="toggleDark()">🌙</button>
-    <div class="container">
-      <div class="card">
-        <h2>🔐 Admin Panel</h2>
-        <p id="status">Checking login...</p>
-        <div class="btn-group">
-          <button id="login-btn">Sign in with Google</button>
-          <button id="logout-btn">Logout</button>
-        </div>
-        <div id="admin-content" style="display:none;">
-          <div class="btn-group">
-            <button onclick="showAnswers()">📄 View Answers</button>
-            <button onclick="showSetForm()">📝 Set Quiz</button>
-            <button onclick="showSuwaalat()">📨 Suwaalaat</button>
-          </div>
-          <div id="set-form" style="display:none;">
-            <h3>🗓️ Set Quiz</h3>
-            <input type="date" id="quiz-date" />
-            <input type="time" id="quiz-time" />
-            <textarea id="quiz-question" placeholder="Enter Question Here"></textarea>
-            <input type="text" id="opt-a" placeholder="Option A" />
-            <input type="text" id="opt-b" placeholder="Option B" />
-            <input type="text" id="opt-c" placeholder="Option C" />
-            <input type="text" id="opt-d" placeholder="Option D" />
-            <select id="correct-option">
-              <option value="">Correct Option</option>
-              <option value="a">A</option>
-              <option value="b">B</option>
-              <option value="c">C</option>
-              <option value="d">D</option>
-            </select>
-            <button onclick="saveQuiz()">💾 Save</button>
-            <p id="quiz-msg"></p>
-          </div>
-          <!-- VIEW ANSWERS -->
-          <div id="answers-section" style="display:none;">
-            <h3>📋 Answers</h3>
-            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-              <thead>
-                <tr style="background:#ddd;">
-                  <th>Date</th>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Address</th>
-                  <th>Answer</th>
-                  <th>✔?</th>
-                </tr>
-              </thead>
-              <tbody id="answers-table"></tbody>
-            </table>
-          </div>
+  <div class="container">
+    <div class="card">
+      <h2>🔐 Admin Panel</h2>
+      <p id="login-status">Checking login...</p>
+      <button id="login-btn">Sign in with Google</button>
+      <button id="logout-btn" style="display:none;" onclick="logout()">🚪 Logout</button>
+    </div>
 
-          <!-- SCHEDULED QUESTIONS -->
-          <div id="schedule-section" style="display:none;">
-            <h3>📅 Scheduled Questions</h3>
-            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-              <thead>
-                <tr style="background:#ddd;">
-                  <th>Date & Time</th>
-                  <th>Question</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="schedule-table"></tbody>
-            </table>
-          </div>
+    <div class="card" id="admin-panel">
+      <div>
+        <button onclick="showSection('quiz')">📝 Set Quiz</button>
+        <button onclick="showSection('answers')">📋 View Answers</button>
+        <button onclick="showSection('suwaal')">📨 Suwaalaat</button>
+      </div>
 
-          <!-- SUWAALAT -->
-          <div id="suwaalat-section" style="display:none;">
-            <h3>📨 Received Suwaalaat</h3>
-            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-              <thead>
-                <tr style="background:#ddd;">
-                  <th>Title</th>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Address</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="suwaalat-table"></tbody>
-            </table>
-            <div style="margin-top: 30px;" id="reply-section">
-              <h3>🗣️ Reply to Suwaal</h3>
-              <input type="text" id="reply-title" placeholder="Suwaal Title" readonly />
-              <textarea id="text-reply" placeholder="Write your text reply here..."></textarea>
-              <input type="file" accept="audio/*" id="audio-file" />
-              <button onclick="submitReply()">📤 Submit Reply</button>
-              <p id="reply-msg"></p>
-            </div>
-          </div>
+      <div id="quiz" style="display:none;">
+        <h3>Set Daily Quiz</h3>
+        <input type="date" id="quiz-date" />
+        <input type="time" id="quiz-time" />
+        <textarea id="quiz-question" placeholder="Question"></textarea>
+        <input type="text" id="opt-a" placeholder="Option A" />
+        <input type="text" id="opt-b" placeholder="Option B" />
+        <input type="text" id="opt-c" placeholder="Option C" />
+        <input type="text" id="opt-d" placeholder="Option D" />
+        <select id="correct-opt">
+          <option value="">Correct Option</option>
+          <option value="a">A</option>
+          <option value="b">B</option>
+          <option value="c">C</option>
+          <option value="d">D</option>
+        </select>
+        <button onclick="submitQuiz()">💾 Save</button>
+        <p id="quiz-msg"></p>
+      </div>
+
+      <div id="answers" style="display:none;">
+        <h3>Submitted Answers</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Answer</th><th>✔?</th></tr></thead>
+          <tbody id="answers-table"></tbody>
+        </table>
+      </div>
+
+      <div id="suwaal" style="display:none;">
+        <h3>Suwaalaat</h3>
+        <table><thead><tr><th>Title</th><th>Name</th><th>Action</th></tr></thead><tbody id="suwaal-table"></tbody></table>
+        <div style="margin-top: 20px;">
+          <input type="text" id="reply-title" readonly />
+          <textarea id="text-reply" placeholder="Type reply..."></textarea>
+          <input type="file" accept="audio/*" id="audio-file" />
+          <button onclick="submitReply()">📤 Send Reply</button>
+          <p id="reply-msg"></p>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const allowedAdmins = [
-      "arrahmanallamalquraan123@gmail.com",
-      "imranraza12738@gmail.com"
-    ];
+<script src="https://apis.google.com/js/api.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
+    authDomain: "paigam-ba913.firebaseapp.com",
+    projectId: "paigam-ba913",
+    storageBucket: "paigam-ba913.appspot.com",
+    messagingSenderId: "480474970116",
+    appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+  };
 
-    const firebaseConfig = {
-      apiKey: "YOUR_FIREBASE_API_KEY",
-      authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_BUCKET.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const allowedAdmins = [
+    "arrahmanallamalquraan123@gmail.com",
+    "imranraza12738@gmail.com"
+  ];
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+  auth.onAuthStateChanged(user => {
+    const status = document.getElementById("login-status");
+    if (user && allowedAdmins.includes(user.email)) {
+      status.innerText = "✅ Welcome, " + user.email;
+      document.getElementById("login-btn").style.display = "none";
+      document.getElementById("logout-btn").style.display = "inline-block";
+      document.getElementById("admin-panel").style.display = "block";
+    } else if (user) {
+      status.innerText = "❌ Access Denied: " + user.email;
+    } else {
+      status.innerText = "Please sign in.";
+    }
+  });
 
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("status");
-    const adminContent = document.getElementById("admin-content");
+  document.getElementById("login-btn").onclick = () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
+  };
+  function logout() { auth.signOut(); }
 
-    loginBtn.onclick = () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider);
-    };
+  function showSection(id) {
+    ["quiz", "answers", "suwaal"].forEach(sec => {
+      document.getElementById(sec).style.display = sec === id ? "block" : "none";
+    });
+    if (id === "answers") loadAnswers();
+    if (id === "suwaal") loadSuwaal();
+  }
 
-    logoutBtn.onclick = () => {
-      auth.signOut();
-      location.reload();
-    };
+  async function submitQuiz() {
+    const date = document.getElementById("quiz-date").value;
+    const time = document.getElementById("quiz-time").value;
+    const id = `${date}T${time}`;
+    const question = document.getElementById("quiz-question").value;
+    const a = document.getElementById("opt-a").value;
+    const b = document.getElementById("opt-b").value;
+    const c = document.getElementById("opt-c").value;
+    const d = document.getElementById("opt-d").value;
+    const correct = document.getElementById("correct-opt").value;
+    const msg = document.getElementById("quiz-msg");
 
-    auth.onAuthStateChanged((user) => {
-      if (user && allowedAdmins.includes(user.email)) {
-        status.innerText = `✅ Welcome, ${user.email}`;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
-        adminContent.style.display = "block";
-      } else {
-        status.innerText = user
-          ? `❌ Access Denied: ${user.email}`
-          : "Please log in";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
-        adminContent.style.display = "none";
-      }
+    if (!date || !time || !question || !a || !b || !c || !d || !correct) {
+      msg.innerText = "⚠️ Fill all fields!";
+      return;
+    }
+
+    await db.collection("quiz_questions").doc(id).set({
+      question, option_a: a, option_b: b, option_c: c, option_d: d, correct
+    });
+    msg.innerText = "✅ Quiz saved!";
+  }
+
+  async function loadAnswers() {
+    const table = document.getElementById("answers-table");
+    table.innerHTML = "";
+    const snap = await db.collection("quiz_answers").orderBy("date", "desc").get();
+    snap.forEach(doc => {
+      const d = doc.data();
+      table.innerHTML += `<tr>
+        <td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td>
+        <td>${d.answer}</td><td>${d.correct ? "✅" : "❌"}</td>
+      </tr>`;
+    });
+  }
+
+  async function loadSuwaal() {
+    const table = document.getElementById("suwaal-table");
+    table.innerHTML = "";
+    const snap = await db.collection("user_questions").get();
+    snap.forEach(doc => {
+      const d = doc.data();
+      table.innerHTML += `<tr>
+        <td>${d.title}</td><td>${d.name}</td>
+        <td><button onclick="setReply('${doc.id}', '${d.title}')">✏️ Reply</button></td>
+      </tr>`;
+    });
+  }
+
+  function setReply(id, title) {
+    document.getElementById("reply-title").value = title;
+    document.getElementById("reply-title").dataset.id = id;
+  }
+
+  async function submitReply() {
+    const id = document.getElementById("reply-title").dataset.id;
+    const title = document.getElementById("reply-title").value;
+    const text = document.getElementById("text-reply").value;
+    const file = document.getElementById("audio-file").files[0];
+    const msg = document.getElementById("reply-msg");
+
+    if (!text && !file) {
+      msg.innerText = "⚠️ Text ya audio zaroori hai";
+      return;
+    }
+
+    let audioUrl = null;
+
+    if (file) {
+      const token = gapi.auth.getToken().access_token;
+      const metadata = {
+        name: `${Date.now()}_${file.name}`,
+        mimeType: file.type,
+      };
+
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+      form.append("file", file);
+
+      const uploadRes = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: form
+      });
+
+      const fileData = await uploadRes.json();
+
+      // Make public
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileData.id}/permissions`, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role: "reader", type: "anyone" }),
+      });
+
+      audioUrl = `https://drive.google.com/uc?id=${fileData.id}`;
+    }
+
+    await db.collection("question_answers").doc(id).set({
+      title, text, audio: audioUrl
     });
 
-    function toggleSections(showId) {
-      ["answers-section", "set-form", "schedule-section", "suwaalat-section"].forEach((id) => {
-        document.getElementById(id).style.display = id === showId ? "block" : "none";
+    msg.innerText = "✅ Reply saved!";
+  }
+
+  function initDriveAuth() {
+    gapi.load("auth", () => {
+      gapi.auth.authorize({
+        client_id: "217808443449-4gdikf4abcgskau343par41k6vi5pl1n.apps.googleusercontent.com",
+        scope: "https://www.googleapis.com/auth/drive.file",
+        immediate: false,
+      }, (authResult) => {
+        if (authResult && !authResult.error) {
+          console.log("Drive connected");
+        } else {
+          alert("❌ Google Drive permission failed");
+        }
       });
-    }
+    });
+  }
 
-    function toggleDark() {
-      document.body.classList.toggle("dark");
-    }
-    async function saveQuiz() {
-      const date = document.getElementById("quiz-date").value;
-      const time = document.getElementById("quiz-time").value;
-      const question = document.getElementById("quiz-question").value;
-      const a = document.getElementById("opt-a").value;
-      const b = document.getElementById("opt-b").value;
-      const c = document.getElementById("opt-c").value;
-      const d = document.getElementById("opt-d").value;
-      const correct = document.getElementById("correct-option").value;
-      const msg = document.getElementById("quiz-msg");
-
-      if (!date || !time || !question || !a || !b || !c || !d || !correct) {
-        msg.innerText = "⚠️ Fill all fields!";
-        return;
-      }
-
-      const id = `${date}T${time}`;
-
-      try {
-        await db.collection("quiz_questions").doc(id).set({
-          question, option_a: a, option_b: b, option_c: c, option_d: d, correct
-        });
-        msg.innerText = "✅ Quiz saved!";
-      } catch (e) {
-        msg.innerText = "❌ " + e.message;
-      }
-    }
-
-    async function viewSchedule() {
-      toggleSections("schedule-section");
-      const table = document.getElementById("schedule-table");
-      table.innerHTML = "";
-
-      const snap = await db.collection("quiz_questions").orderBy(firebase.firestore.FieldPath.documentId(), "desc").get();
-      snap.forEach(doc => {
-        const d = doc.data();
-        table.innerHTML += `
-          <tr>
-            <td>${doc.id.replace("T", " @ ")}</td>
-            <td>${d.question.slice(0, 50)}...</td>
-            <td><button onclick="deleteQuiz('${doc.id}')">🗑 Delete</button></td>
-          </tr>`;
-      });
-    }
-
-    async function deleteQuiz(id) {
-      if (confirm("Delete this quiz?")) {
-        await db.collection("quiz_questions").doc(id).delete();
-        viewSchedule();
-      }
-    }
-
-    async function showAnswers() {
-      toggleSections("answers-section");
-      const table = document.getElementById("answers-table");
-      table.innerHTML = "";
-
-      const snap = await db.collection("quiz_answers").orderBy("date", "desc").get();
-      snap.forEach(doc => {
-        const d = doc.data();
-        const correct = d.correct ? "✅" : "❌";
-        table.innerHTML += `
-          <tr>
-            <td>${d.date}</td>
-            <td>${d.name}</td>
-            <td>${d.phone}</td>
-            <td>${d.address}</td>
-            <td>${d.answer}</td>
-            <td>${correct}</td>
-          </tr>`;
-      });
-    }
-
-    async function showSuwaalat() {
-      toggleSections("suwaalat-section");
-      const table = document.getElementById("suwaalat-table");
-      table.innerHTML = "";
-
-      const snap = await db.collection("user_questions").get();
-      snap.forEach(doc => {
-        const d = doc.data();
-        table.innerHTML += `
-          <tr>
-            <td>${d.title}</td>
-            <td>${d.name}</td>
-            <td>${d.phone}</td>
-            <td>${d.address}</td>
-            <td><button onclick="replyTo('${doc.id}', '${d.title}')">✏️ Reply</button></td>
-          </tr>`;
-      });
-    }
-
-    function replyTo(id, title) {
-      document.getElementById("reply-title").value = title;
-      document.getElementById("reply-title").dataset.id = id;
-    }
-
-    async function submitReply() {
-      const id = document.getElementById("reply-title").dataset.id;
-      const title = document.getElementById("reply-title").value;
-      const text = document.getElementById("text-reply").value.trim();
-      const file = document.getElementById("audio-file").files[0];
-      const msg = document.getElementById("reply-msg");
-
-      if (!text && !file) {
-        msg.innerText = "⚠️ Please write reply or upload audio.";
-        return;
-      }
-
-      let audioUrl = null;
-
-      if (file) {
-        const path = `answers/audios/${Date.now()}_${file.name}`;
-        const ref = storage.ref().child(path);
-        await ref.put(file);
-        audioUrl = await ref.getDownloadURL();
-      }
-
-      await db.collection("question_answers").doc(id).set({
-        id, title, text, audio: audioUrl
-      });
-
-      msg.innerText = "✅ Reply submitted!";
-    }
-  </script>
+  window.onload = initDriveAuth;
+</script>
 </body>
 </html>
