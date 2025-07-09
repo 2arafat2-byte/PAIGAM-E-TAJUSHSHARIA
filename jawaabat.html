@@ -18,13 +18,28 @@
       padding: 10px; border-radius: 6px; border: 1px solid #ccc; display: block;
     }
     .card {
+      display: flex;
+      align-items: center;
       background: white;
       padding: 16px;
-      margin: 10px auto;
-      border-radius: 10px;
-      max-width: 600px;
+      margin: 15px auto;
+      border-radius: 12px;
+      max-width: 700px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       cursor: pointer;
+      min-height: 80px;
+    }
+    .card img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 15px;
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #333;
     }
     .modal {
       position: fixed;
@@ -39,10 +54,10 @@
     .modal-content {
       background-size: cover;
       background-position: center;
-      width: 90%;
+      width: 95%;
       max-width: 500px;
       padding: 30px;
-      border-radius: 12px;
+      border-radius: 14px;
       position: relative;
       color: white;
       box-shadow: 0 0 10px #000;
@@ -52,8 +67,8 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.6);
-      border-radius: 12px;
+      background: rgba(0,0,0,0.65);
+      border-radius: 14px;
       z-index: 1;
     }
     .modal-content * {
@@ -69,15 +84,23 @@
       border: none;
       border-radius: 50%;
       width: 30px; height: 30px;
+      font-size: 18px;
       cursor: pointer;
+      z-index: 3;
     }
-    audio { width: 100%; margin-top: 10px; }
+    audio {
+      width: 100%;
+      margin-top: 12px;
+    }
+    #modal-title {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
   <h2>📖 Jawaabaat</h2>
   <input type="text" id="search" placeholder="Search title..." />
-
   <div id="answers"></div>
 
   <div id="modal" class="modal" onclick="closeModal()">
@@ -89,7 +112,6 @@
     </div>
   </div>
 
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -97,7 +119,7 @@
     const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913",
+      projectId: "paigam-ba913"
     });
 
     const db = getFirestore(app);
@@ -121,8 +143,18 @@
       list.forEach(ans => {
         const card = document.createElement("div");
         card.className = "card";
-        card.innerText = ans.title;
+
+        const img = document.createElement("img");
+        img.src = (ans.image && ans.image.startsWith("data:image")) ? ans.image : "https://via.placeholder.com/60";
+        card.appendChild(img);
+
+        const title = document.createElement("div");
+        title.className = "card-title";
+        title.innerText = ans.title;
+
+        card.appendChild(title);
         card.onclick = () => openModal(ans);
+
         container.appendChild(card);
       });
     }
@@ -148,7 +180,8 @@
     }
 
     function closeModal() {
-      document.getElementById("modal").style.display = "none";
+      const modal = document.getElementById("modal");
+      modal.style.display = "none";
       document.getElementById("modal-audio").pause();
     }
 
