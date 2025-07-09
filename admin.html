@@ -153,27 +153,28 @@
   }
 
   auth.onAuthStateChanged(user => {
-    const status = document.getElementById("login-status");
-    if (user && allowedAdmins.includes(user.email)) {
-      status.innerText = "✅ Welcome, " + user.email;
-      document.getElementById("login-btn").style.display = "none";
-      document.getElementById("logout-btn").style.display = "inline-block";
-      document.getElementById("admin-panel").style.display = "block";
-    } else if (user) {
-      status.innerText = "❌ Access Denied: " + user.email;
-    } else {
-      status.innerText = "Please sign in.";
-    }
-  });
+  const status = document.getElementById("login-status");
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const adminPanel = document.getElementById("admin-panel");
 
-  document.getElementById("login-btn").onclick = () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider);
-  };
-
-  function logout() {
-    auth.signOut();
+  if (user && allowedAdmins.includes(user.email)) {
+    status.innerText = "✅ Welcome, " + user.email;
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+    adminPanel.style.display = "block";
+  } else if (user) {
+    status.innerText = "❌ Access Denied: " + user.email;
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+    adminPanel.style.display = "none";
+  } else {
+    status.innerText = "Please sign in.";
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+    adminPanel.style.display = "none";
   }
+}); 
 
   function initDriveAuth() {
     gapi.load("auth", () => {
