@@ -142,6 +142,7 @@ button.section-toggle:hover {
       <button id="login-btn">Sign in with Google</button>
       <button id="logout-btn" style="display:none;" onclick="logout()">🚪 Logout</button>
     </div>
+    <button class="toggle-dark" onclick="toggleDark()">🌙 Toggle Dark</button>
 
     <div class="card" id="admin-panel">
       <div>
@@ -201,7 +202,11 @@ button.section-toggle:hover {
     storageBucket: "paigam-ba913.appspot.com",
     messagingSenderId: "480474970116",
     appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+    
   };
+  function toggleDark() {
+  document.body.classList.toggle("dark");
+}
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
@@ -357,6 +362,7 @@ button.section-toggle:hover {
           console.log("Drive connected");
         } else {
           alert("❌ Google Drive permission failed");
+          function toggleDark() {
         }
       });
     });
