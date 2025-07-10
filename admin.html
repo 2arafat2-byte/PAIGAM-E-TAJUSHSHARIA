@@ -6,24 +6,22 @@
   <title>Admin Panel | Paighaam</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-    };
+    tailwind.config = { darkMode: 'class' };
   </script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
   <div class="flex">
     <!-- Sidebar -->
     <aside class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg">
-      <div class="p-4 font-bold text-xl">🔐 Paighaam Admin Panel</div>
+      <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
       <nav class="flex flex-col space-y-2 p-4">
-        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📌 Set Daily Suwaal</button>
+        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
         <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
         <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
       </nav>
     </aside>
 
-    <!-- Main Content -->
+    <!-- Main -->
     <main class="flex-1 p-6">
       <div class="flex justify-between items-center mb-6">
         <div id="welcome" class="font-semibold">Checking login...</div>
@@ -81,10 +79,10 @@
     </main>
   </div>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -145,13 +143,32 @@
       showSection("answers-section");
       const list = document.getElementById("answers-list");
       list.innerHTML = "";
+
       getDocs(collection(db, "quizAnswers")).then(snapshot => {
         snapshot.forEach(doc => {
           const a = doc.data();
-          if (a.correct) {
-            list.innerHTML += `<div class="p-3 border rounded bg-green-100 dark:bg-green-800">${a.name} ✅ ${a.answer}</div>`;
+          if (!a.correct) return;
+
+          let displayAnswer = a.answer;
+
+          if (a.options && !isNaN(a.answer)) {
+            const index = parseInt(a.answer);
+            displayAnswer = `Option ${index + 1}: ${a.options[index] || "(invalid option)"}`;
           }
+
+          list.innerHTML += `
+            <div class="p-4 rounded bg-green-100 dark:bg-green-800 text-sm shadow-md">
+              <div><strong>${a.name}</strong> 
+                <span class="inline-block bg-green-600 text-white px-2 py-0.5 text-xs rounded ml-2">✅ Correct</span>
+              </div>
+              <div class="mt-1">Answer: <span class="font-medium">${displayAnswer}</span></div>
+              <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(a.timestamp).toLocaleString()}</div>
+            </div>`;
         });
+
+        if (list.innerHTML.trim() === "") {
+          list.innerHTML = "<div class='text-center text-gray-500'>😕 Abhi tak koi sahi jawab nahi mila.</div>";
+        }
       });
     }
 
@@ -164,14 +181,15 @@
       let data = { question, date, mode };
 
       if (mode === "mcq") {
-        data.options = Array.from(document.querySelectorAll(".option")).map(input => input.value);
+        const opts = Array.from(document.querySelectorAll(".option")).map(input => input.value);
+        data.options = opts;
         data.correct = document.getElementById("correct-option").value;
       } else {
         data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
       }
 
       await addDoc(collection(db, "dailyQuiz"), data);
-      alert("Suwaal saved ✅");
+      alert("✅ Suwaal Saved");
       quizForm.reset();
     };
 
