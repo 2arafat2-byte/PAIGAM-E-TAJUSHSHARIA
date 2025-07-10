@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Quiz | Paighaam</title>
+  <title>Daily Quiz | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
-<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
   <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
-    
+
     <div id="quiz-header" class="flex items-center justify-center space-x-2">
       <img id="quiz-logo" src="" alt="Logo" class="w-12 h-12 hidden" />
-      <h1 id="quiz-title" class="text-2xl font-bold text-center"></h1>
+      <h1 id="quiz-title" class="text-2xl font-bold text-center">Daily Suwaal</h1>
     </div>
 
     <div id="quiz-box" class="space-y-3 hidden">
@@ -29,12 +29,13 @@
       <input type="text" id="address" placeholder="Address" class="w-full border px-3 py-2 rounded" required>
 
       <button id="submit-btn" class="bg-blue-600 text-white w-full py-2 rounded">📤 Submit Answer</button>
-      <p id="status" class="text-center text-sm"></p>
+      <p id="status" class="text-center text-sm mt-2"></p>
     </div>
 
     <p id="loading">⏳ Loading today's suwaal...</p>
   </div>
 
+  <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
@@ -70,29 +71,32 @@
     let quizOptions = [];
 
     async function loadQuiz() {
-      const now = new Date().toISOString();
-      const q = query(collection(db, "dailyQuiz"), where("date", "<=", now));
-      const snapshot = await getDocs(q);
+      const now = new Date();
+      const snapshot = await getDocs(collection(db, "dailyQuiz"));
 
-      let latestQuiz = null;
+      let activeQuiz = null;
       snapshot.forEach(doc => {
-        if (!latestQuiz || doc.data().date > latestQuiz.data().date) {
-          latestQuiz = doc;
+        const data = doc.data();
+        const start = new Date(data.startTime);
+        const end = new Date(data.endTime);
+        if (start <= now && now <= end) {
+          if (!activeQuiz || start > new Date(activeQuiz.data().startTime)) {
+            activeQuiz = doc;
+          }
         }
       });
 
-      if (!latestQuiz) {
-        loading.innerText = "⚠️ No quiz set yet.";
+      if (!activeQuiz) {
+        loading.innerText = "⚠️ No active quiz for now.";
         return;
       }
 
-      const quiz = latestQuiz.data();
-      currentQuizId = latestQuiz.id;
+      const quiz = activeQuiz.data();
+      currentQuizId = activeQuiz.id;
       correctAnswer = quiz.correct;
       quizMode = quiz.mode;
       quizOptions = quiz.options || [];
 
-      // Set title and image
       quizTitle.innerText = quiz.title || "Daily Suwaal";
       if (quiz.imageURL) {
         quizLogo.src = quiz.imageURL;
@@ -127,7 +131,6 @@
 
       if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
 
-      // Prevent double submission
       const check = query(
         collection(db, "quizAnswers"),
         where("questionId", "==", currentQuizId),
@@ -153,7 +156,7 @@
       if (quizMode === "mcq") {
         isCorrect = userAnswer === correctAnswer;
       } else {
-        const normalize = (txt) => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
+        const normalize = txt => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
         isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
       }
 
