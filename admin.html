@@ -6,72 +6,86 @@
   <title>Admin Panel | Paighaam</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = { darkMode: 'class' };
+    tailwind.config = {
+      darkMode: 'class',
+    };
   </script>
 </head>
-<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white transition-all duration-300">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
   <div class="flex">
     <!-- Sidebar -->
-    <aside class="w-64 min-h-screen bg-white dark:bg-gray-800 p-4 shadow">
-      <h1 class="text-2xl font-bold mb-6">🔐 Paighaam Admin Panel</h1>
-      <div class="flex flex-col space-y-3">
-        <button disabled onclick="showSection('set-quiz')" class="bg-blue-100 dark:bg-blue-900 text-blue-800 px-4 py-2 rounded shadow">📌 Set Daily Suwaal</button>
-        <button disabled onclick="showSection('view-schedule')" class="bg-green-100 dark:bg-green-900 text-green-800 px-4 py-2 rounded shadow">📅 View Schedule</button>
-        <button disabled onclick="showSection('view-answers')" class="bg-purple-100 dark:bg-purple-900 text-purple-800 px-4 py-2 rounded shadow">✅ View Answers</button>
-      </div>
+    <aside class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg">
+      <div class="p-4 font-bold text-xl">🔐 Paighaam Admin Panel</div>
+      <nav class="flex flex-col space-y-2 p-4">
+        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📌 Set Daily Suwaal</button>
+        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
+      </nav>
     </aside>
 
-    <!-- Main -->
+    <!-- Main Content -->
     <main class="flex-1 p-6">
       <div class="flex justify-between items-center mb-6">
-        <div id="login-status">Checking login...</div>
+        <div id="welcome" class="font-semibold">Checking login...</div>
         <div class="space-x-2">
-          <button onclick="document.body.classList.toggle('dark')" class="bg-yellow-400 text-black px-4 py-2 rounded">🌗 Toggle</button>
-          <button id="login-btn" class="bg-blue-600 text-white px-4 py-2 rounded">Login</button>
-          <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
+          <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
+          <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
         </div>
       </div>
 
       <!-- Sections -->
-      <section id="set-quiz" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">📌 Set Daily Suwaal</h2>
+      <div id="set-suhaal-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
+        <label class="block mb-2">Choose Mode:</label>
+        <select id="question-mode" class="mb-4 px-2 py-1 border rounded">
+          <option value="mcq">MCQ (Options)</option>
+          <option value="text">Text Answer</option>
+        </select>
+
         <form id="quiz-form" class="space-y-4">
-          <input type="text" id="question" placeholder="Enter Question" class="w-full p-2 border rounded"/>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <input type="text" id="optionA" placeholder="Option A" class="p-2 border rounded"/>
-            <input type="text" id="optionB" placeholder="Option B" class="p-2 border rounded"/>
-            <input type="text" id="optionC" placeholder="Option C" class="p-2 border rounded"/>
-            <input type="text" id="optionD" placeholder="Option D" class="p-2 border rounded"/>
+          <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+
+          <div id="mcq-options">
+            <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
+
+            <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
+              <option value="0">Correct: Option 1</option>
+              <option value="1">Correct: Option 2</option>
+              <option value="2">Correct: Option 3</option>
+              <option value="3">Correct: Option 4</option>
+            </select>
           </div>
-          <select id="correctOption" class="p-2 border rounded w-full">
-            <option value="">Correct Option</option>
-            <option value="A">Option A</option>
-            <option value="B">Option B</option>
-            <option value="C">Option C</option>
-            <option value="D">Option D</option>
-          </select>
-          <input type="datetime-local" id="scheduleTime" class="p-2 border rounded w-full"/>
-          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Save Suwaal</button>
+
+          <div id="text-answer-box" class="hidden">
+            <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
+          </div>
+
+          <input type="datetime-local" id="question-date" class="w-full border px-2 py-1 rounded" required />
+
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
-      </section>
+      </div>
 
-      <section id="view-schedule" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">📅 Scheduled Suwaalaat</h2>
+      <div id="schedule-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
         <div id="schedule-list" class="space-y-2"></div>
-      </section>
+      </div>
 
-      <section id="view-answers" class="hidden">
-        <h2 class="text-xl font-semibold mb-2">✅ User Correct Answers</h2>
-        <div id="answer-list" class="space-y-2"></div>
-      </section>
+      <div id="answers-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">✅ View Answers</h2>
+        <div id="answers-list" class="space-y-2"></div>
+      </div>
     </main>
   </div>
 
-  <!-- Firebase + Script -->
+  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -83,54 +97,97 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("login-status");
+    const logoutBtn = document.getElementById("logout");
+    const welcome = document.getElementById("welcome");
+    const toggleTheme = document.getElementById("toggle-theme");
+    const quizForm = document.getElementById("quiz-form");
+    const modeSelect = document.getElementById("question-mode");
+    const mcqOptions = document.getElementById("mcq-options");
+    const textAnswerBox = document.getElementById("text-answer-box");
 
-    loginBtn.onclick = () => signInWithPopup(auth, provider);
-    logoutBtn.onclick = () => signOut(auth);
+    toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
 
-    onAuthStateChanged(auth, user => {
-      if (user && allowed.includes(user.email)) {
-        status.textContent = `✅ Welcome, ${user.email}`;
-        loginBtn.classList.add("hidden");
-        logoutBtn.classList.remove("hidden");
-        document.querySelectorAll("aside button").forEach(b => b.disabled = false);
-      } else {
-        status.textContent = "❌ Access Denied";
-        logoutBtn.classList.add("hidden");
-        loginBtn.classList.remove("hidden");
-        document.querySelectorAll("aside button").forEach(b => b.disabled = true);
-      }
-    });
-
-    window.showSection = (id) => {
-      ["set-quiz", "view-schedule", "view-answers"].forEach(s => document.getElementById(s).classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
+    modeSelect.onchange = () => {
+      const mode = modeSelect.value;
+      mcqOptions.classList.toggle("hidden", mode !== "mcq");
+      textAnswerBox.classList.toggle("hidden", mode !== "text");
     };
 
-    document.getElementById("quiz-form").addEventListener("submit", async (e) => {
+    function showSection(id) {
+      document.getElementById("set-suhaal-section").classList.add("hidden");
+      document.getElementById("schedule-section").classList.add("hidden");
+      document.getElementById("answers-section").classList.add("hidden");
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
+    document.getElementById("view-schedule").onclick = () => loadSchedule();
+    document.getElementById("view-answers").onclick = () => loadAnswers();
+
+    function loadSchedule() {
+      showSection("schedule-section");
+      const list = document.getElementById("schedule-list");
+      list.innerHTML = "";
+      getDocs(query(collection(db, "dailyQuiz"), orderBy("date"))).then(snapshot => {
+        snapshot.forEach(doc => {
+          const q = doc.data();
+          list.innerHTML += `<div class="p-3 border rounded bg-white dark:bg-gray-700">${q.question} <br><small>${q.date}</small></div>`;
+        });
+      });
+    }
+
+    function loadAnswers() {
+      showSection("answers-section");
+      const list = document.getElementById("answers-list");
+      list.innerHTML = "";
+      getDocs(collection(db, "quizAnswers")).then(snapshot => {
+        snapshot.forEach(doc => {
+          const a = doc.data();
+          if (a.correct) {
+            list.innerHTML += `<div class="p-3 border rounded bg-green-100 dark:bg-green-800">${a.name} ✅ ${a.answer}</div>`;
+          }
+        });
+      });
+    }
+
+    quizForm.onsubmit = async (e) => {
       e.preventDefault();
-      const data = {
-        question: question.value,
-        options: {
-          A: optionA.value,
-          B: optionB.value,
-          C: optionC.value,
-          D: optionD.value
-        },
-        correct: correctOption.value,
-        scheduled: scheduleTime.value,
-        created: serverTimestamp()
-      };
-      await addDoc(collection(db, "dailyquiz"), data);
-      alert("✅ Suwaal Saved");
-      e.target.reset();
+      const question = document.getElementById("question").value;
+      const date = document.getElementById("question-date").value;
+      const mode = modeSelect.value;
+
+      let data = { question, date, mode };
+
+      if (mode === "mcq") {
+        data.options = Array.from(document.querySelectorAll(".option")).map(input => input.value);
+        data.correct = document.getElementById("correct-option").value;
+      } else {
+        data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
+      }
+
+      await addDoc(collection(db, "dailyQuiz"), data);
+      alert("Suwaal saved ✅");
+      quizForm.reset();
+    };
+
+    logoutBtn.onclick = () => {
+      signOut(auth);
+      location.reload();
+    };
+
+    onAuthStateChanged(auth, user => {
+      if (user && allowedEmails.includes(user.email)) {
+        welcome.innerText = `✅ Welcome, ${user.email}`;
+        logoutBtn.classList.remove("hidden");
+        document.getElementById("set-suhaal-section").classList.remove("hidden");
+      } else {
+        signInWithPopup(auth, provider);
+      }
     });
   </script>
 </body>
