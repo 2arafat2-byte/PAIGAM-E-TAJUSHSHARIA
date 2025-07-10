@@ -5,70 +5,40 @@
   <title>Admin Panel | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root {
-      --bg: #f9f9f9;
-      --text: #111;
-      --card: #fff;
-    }
-    body.dark {
-      --bg: #111;
-      --text: #fff;
-      --card: #1e1e1e;
-    }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
+      background-color: var(--bg, #f4f4f4);
+      color: var(--text, #000);
       padding: 20px;
-      transition: 0.3s ease all;
+      transition: all 0.3s ease;
     }
-    .container {
-      max-width: 960px;
-      margin: auto;
-    }
+    .dark { --bg: #111; --text: #fff; }
+    .container { max-width: 800px; margin: auto; }
     .card {
-      background: var(--card);
+      background: var(--card, white);
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
     button {
+      padding: 10px;
       background: #007bff;
       color: white;
       border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      margin: 6px 4px;
+      border-radius: 5px;
+      margin: 5px;
       cursor: pointer;
     }
-    button:hover {
-      opacity: 0.9;
-    }
-    table {
+    button:hover { opacity: 0.9; }
+    input, textarea {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      padding: 8px;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 5px;
       border: 1px solid #ccc;
-      text-align: left;
     }
-    th {
-      background: #eee;
-    }
-    #admin-panel, .section {
-      display: none;
-    }
+    #admin-panel, .section { display: none; }
   </style>
 </head>
 <body>
@@ -76,37 +46,26 @@
     <div class="card">
       <h2>🔐 Admin Panel</h2>
       <p id="login-status">Checking login...</p>
-      <button id="login-btn">🔓 Sign in with Google</button>
-      <button id="logout-btn" style="display:none;">🚪 Logout</button>
+      <button id="login-btn">Sign in with Google</button>
+      <button id="logout-btn" style="display:none;">Logout</button>
       <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
     </div>
 
     <div id="admin-panel" class="card">
-      <h3>Suwaalaat & Replies</h3>
-      <table>
-        <thead><tr><th>Title</th><th>Name</th><th>Action</th></tr></thead>
-        <tbody id="suwaal-table"></tbody>
-      </table>
-
-      <div style="margin-top:20px">
-        <input type="text" id="reply-title" placeholder="Title" readonly />
-        <textarea id="text-reply" placeholder="Type reply..."></textarea>
-        <input type="file" id="audio-file" accept="audio/*" />
-        <input type="file" id="image-file" accept="image/*" />
-        <button onclick="submitReply()">📤 Send Reply</button>
-        <p id="reply-msg"></p>
-      </div>
+      <h3>🎙️ Record Answer (Image + Audio → Video)</h3>
+      <input type="file" id="audio-file" accept="audio/*" />
+      <input type="file" id="image-file" accept="image/*" />
+      <button onclick="createVideo()">🎬 Make Video</button>
+      <p id="status-msg"></p>
+      <div id="video-preview"></div>
     </div>
   </div>
 
-  <!-- FFmpeg -->
-  <script src="ffmpeg.min.js"></script>
-
-  <!-- Firebase SDK -->
+  <!-- Firebase + FFmpeg -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { createFFmpeg, fetchFile } from './ffmpeg.min.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -119,93 +78,71 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
     const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
+    const status = document.getElementById("login-status");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("login-status");
     const panel = document.getElementById("admin-panel");
 
     onAuthStateChanged(auth, user => {
       if (user && allowed.includes(user.email)) {
-        status.innerText = "✅ Welcome " + user.email;
+        status.innerText = "✅ Logged in as " + user.email;
         loginBtn.style.display = "none";
         logoutBtn.style.display = "inline-block";
         panel.style.display = "block";
-        loadSuwaalaat();
+      } else if (user) {
+        status.innerText = "❌ Access Denied for " + user.email;
       } else {
-        status.innerText = user ? "❌ Access Denied" : "Please sign in";
+        status.innerText = "Please sign in.";
       }
     });
 
     loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
     logoutBtn.onclick = () => signOut(auth);
 
-    async function loadSuwaalaat() {
-      const snap = await getDocs(collection(db, "user_questions"));
-      const table = document.getElementById("suwaal-table");
-      table.innerHTML = "";
-      snap.forEach(docu => {
-        const d = docu.data();
-        table.innerHTML += `
-          <tr>
-            <td>${d.title}</td>
-            <td>${d.name}</td>
-            <td><button onclick="setReply('${docu.id}', \`${d.title.replace(/`/g, "\\`")}\`)">Reply</button></td>
-          </tr>
-        `;
-      });
-    }
+    // FFmpeg Logic
+    const ffmpeg = createFFmpeg({ log: true });
 
-    window.setReply = (id, title) => {
-      document.getElementById("reply-title").value = title;
-      document.getElementById("reply-title").dataset.id = id;
-    };
-
-    window.submitReply = async () => {
-      const id = document.getElementById("reply-title").dataset.id;
-      const title = document.getElementById("reply-title").value;
-      const text = document.getElementById("text-reply").value;
+    async function createVideo() {
       const audioFile = document.getElementById("audio-file").files[0];
       const imageFile = document.getElementById("image-file").files[0];
-      const msg = document.getElementById("reply-msg");
-      msg.innerText = "⏳ Processing...";
+      const statusMsg = document.getElementById("status-msg");
+      const preview = document.getElementById("video-preview");
 
-      if (!id || (!text && !audioFile && !imageFile)) {
-        msg.innerText = "⚠️ Provide reply text or media.";
+      if (!audioFile || !imageFile) {
+        statusMsg.innerText = "⚠️ Please select both image and audio file.";
         return;
       }
 
-      let videoBase64 = "", imageBase64 = "";
-      if (audioFile && imageFile) {
-        const { createFFmpeg, fetchFile } = FFmpeg;
-        const ffmpeg = createFFmpeg({ log: true });
+      statusMsg.innerText = "⏳ Processing...";
+
+      if (!ffmpeg.isLoaded()) {
         await ffmpeg.load();
-        ffmpeg.FS("writeFile", "img.jpg", await fetchFile(imageFile));
-        ffmpeg.FS("writeFile", "audio.mp3", await fetchFile(audioFile));
-        await ffmpeg.run("-loop", "1", "-i", "img.jpg", "-i", "audio.mp3", "-c:v", "libx264", "-c:a", "aac", "-b:a", "192k", "-shortest", "-pix_fmt", "yuv420p", "out.mp4");
-        const data = ffmpeg.FS("readFile", "out.mp4");
-        videoBase64 = `data:video/mp4;base64,${btoa(String.fromCharCode(...data))}`;
-        imageBase64 = await toBase64(imageFile);
       }
 
-      await setDoc(doc(db, "question_answers", id), {
-        title,
-        text,
-        video: videoBase64,
-        image: imageBase64
-      });
+      ffmpeg.FS('writeFile', 'input.jpg', await fetchFile(imageFile));
+      ffmpeg.FS('writeFile', 'input.mp3', await fetchFile(audioFile));
 
-      msg.innerText = "✅ Reply saved!";
-    };
+      await ffmpeg.run(
+        '-loop', '1',
+        '-i', 'input.jpg',
+        '-i', 'input.mp3',
+        '-c:v', 'libx264',
+        '-c:a', 'aac',
+        '-shortest',
+        '-pix_fmt', 'yuv420p',
+        'output.mp4'
+      );
 
-    const toBase64 = file =>
-      new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-      });
+      const data = ffmpeg.FS('readFile', 'output.mp4');
+      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+      const videoUrl = URL.createObjectURL(videoBlob);
+
+      // Preview
+      preview.innerHTML = `<video src="${videoUrl}" controls width="100%"></video>`;
+      statusMsg.innerText = "✅ Video created successfully!";
+    }
   </script>
 </body>
 </html>
