@@ -1,3 +1,4 @@
+<!-- Save this as admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,55 +9,148 @@
     :root {
       --bg: #f4f4f4;
       --text: #000;
-    }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 20px;
-      transition: all 0.3s ease;
+      --card: #fff;
+      --shadow: rgba(0, 0, 0, 0.1);
     }
     .dark {
       --bg: #121212;
       --text: #fff;
+      --card: #1e1e1e;
+      --shadow: rgba(255, 255, 255, 0.1);
     }
-    button {
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.3s ease;
+    }
+    header {
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      background: var(--card);
+      box-shadow: 0 2px 5px var(--shadow);
+    }
+    nav button {
+      margin: 5px;
       padding: 10px;
       border: none;
+      border-radius: 5px;
       background: #007bff;
       color: white;
-      border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
+    nav button:hover {
       opacity: 0.9;
     }
-    #admin-panel {
+    .container {
+      padding: 20px;
+    }
+    .section {
       display: none;
+      margin-top: 20px;
+      background: var(--card);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px var(--shadow);
+    }
+    input, select, textarea {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    label {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .visible { display: block; }
+    .quiz-item {
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>🔐 Admin Panel</h2>
-  <p id="login-status">Checking login...</p>
-  <button id="login-btn">Sign in with Google</button>
-  <button id="logout-btn" style="display:none;">Logout</button>
-  <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
+  <header>
+    <h2>🔐 Admin Panel</h2>
+    <div>
+      <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
+      <button id="login-btn">Login with Google</button>
+      <button id="logout-btn" style="display:none;">Logout</button>
+    </div>
+  </header>
 
-  <div id="admin-panel">
-    <h3>✔️ Logged In</h3>
-    <!-- Admin tools will go here -->
+  <div class="container">
+    <p id="login-status">Checking login...</p>
+    <nav style="display:none;" id="nav">
+      <button onclick="showSection('set-quiz')">📌 Set Daily Suwaal</button>
+      <button onclick="showSection('view-schedule')">📅 Schedule</button>
+      <button onclick="showSection('view-answers')">✅ View Answers</button>
+    </nav>
+
+    <!-- Set Quiz Section -->
+    <div class="section" id="set-quiz">
+      <h3>📌 Set Daily Suwaal</h3>
+      <form id="quizForm">
+        <label>Question Type:</label>
+        <select id="type">
+          <option value="mcq">MCQ</option>
+          <option value="text">Text Answer</option>
+        </select>
+
+        <label>Question:</label>
+        <textarea id="question" required></textarea>
+
+        <div id="mcq-options">
+          <label>Option A:</label><input type="text" id="optA" />
+          <label>Option B:</label><input type="text" id="optB" />
+          <label>Option C:</label><input type="text" id="optC" />
+          <label>Option D:</label><input type="text" id="optD" />
+          <label>Correct Option:</label>
+          <select id="correct">
+            <option value="">Select</option>
+            <option>A</option><option>B</option><option>C</option><option>D</option>
+          </select>
+        </div>
+
+        <div id="text-correct" style="display:none;">
+          <label>Correct Answer (text):</label>
+          <input type="text" id="correctText" />
+        </div>
+
+        <label>Date & Time:</label>
+        <input type="datetime-local" id="datetime" required />
+
+        <button type="submit">Save Suwaal</button>
+      </form>
+    </div>
+
+    <!-- View Schedule -->
+    <div class="section" id="view-schedule">
+      <h3>📅 Scheduled Suwaalat</h3>
+      <div id="schedule-list">Loading...</div>
+    </div>
+
+    <!-- View Answers -->
+    <div class="section" id="view-answers">
+      <h3>✅ Correct Answers</h3>
+      <div id="answer-list">Loading...</div>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      signOut,
-      onAuthStateChanged
+      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, query, orderBy, where
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -69,51 +163,90 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-
     const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
     const status = document.getElementById("login-status");
-    const adminPanel = document.getElementById("admin-panel");
+    const nav = document.getElementById("nav");
 
     loginBtn.onclick = () => {
-      signInWithPopup(auth, provider)
-        .then((result) => {
-          const email = result.user.email;
-          status.innerText = "Signed in as " + email;
-        })
-        .catch((error) => {
-          console.error("Login error:", error);
-          status.innerText = "Login failed.";
-        });
+      signInWithPopup(auth, provider).catch(e => alert("Login failed"));
     };
 
-    logoutBtn.onclick = () => {
-      signOut(auth).then(() => {
-        status.innerText = "Signed out.";
-        adminPanel.style.display = "none";
+    logoutBtn.onclick = () => signOut(auth);
+
+    onAuthStateChanged(auth, user => {
+      if (user && allowedEmails.includes(user.email)) {
+        status.innerText = `✅ Welcome, ${user.email}`;
+        nav.style.display = "block";
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+      } else {
+        status.innerText = "❌ Access denied or not signed in.";
+        nav.style.display = "none";
         loginBtn.style.display = "inline-block";
         logoutBtn.style.display = "none";
-      });
-    };
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const email = user.email;
-        if (allowedEmails.includes(email)) {
-          status.innerText = "✅ Welcome, " + email;
-          loginBtn.style.display = "none";
-          logoutBtn.style.display = "inline-block";
-          adminPanel.style.display = "block";
-        } else {
-          status.innerText = "❌ Access Denied: " + email;
-        }
-      } else {
-        status.innerText = "Please sign in.";
       }
     });
+
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('visible'));
+      document.getElementById(id).classList.add('visible');
+      if (id === 'view-schedule') loadSchedule();
+      if (id === 'view-answers') loadAnswers();
+    }
+
+    document.getElementById("type").onchange = () => {
+      const type = document.getElementById("type").value;
+      document.getElementById("mcq-options").style.display = type === "mcq" ? "block" : "none";
+      document.getElementById("text-correct").style.display = type === "text" ? "block" : "none";
+    };
+
+    document.getElementById("quizForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const type = document.getElementById("type").value;
+      const question = document.getElementById("question").value;
+      const datetime = document.getElementById("datetime").value;
+      let data = { type, question, dateTime: datetime };
+
+      if (type === "mcq") {
+        const options = [document.getElementById("optA").value, document.getElementById("optB").value, document.getElementById("optC").value, document.getElementById("optD").value];
+        const correct = document.getElementById("correct").value;
+        data.options = options;
+        data.correctAnswer = options[["A","B","C","D"].indexOf(correct)];
+      } else {
+        data.correctAnswer = document.getElementById("correctText").value;
+      }
+
+      await addDoc(collection(db, "quizzes"), data);
+      alert("Suwaal saved!");
+      e.target.reset();
+    };
+
+    async function loadSchedule() {
+      const list = document.getElementById("schedule-list");
+      list.innerHTML = "";
+      const q = query(collection(db, "quizzes"), orderBy("dateTime"));
+      const snapshot = await getDocs(q);
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        list.innerHTML += `<div class="quiz-item"><b>${d.dateTime}</b>: ${d.question}</div>`;
+      });
+    }
+
+    async function loadAnswers() {
+      const list = document.getElementById("answer-list");
+      list.innerHTML = "";
+      const q = query(collection(db, "submissions"), where("correct", "==", true), orderBy("timestamp", "desc"));
+      const snapshot = await getDocs(q);
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        list.innerHTML += `<div class="quiz-item"><b>${d.name}</b>: ${d.answer} (${d.timestamp})</div>`;
+      });
+    }
   </script>
 </body>
 </html>
