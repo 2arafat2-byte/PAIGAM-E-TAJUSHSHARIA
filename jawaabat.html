@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel | Paighaam</title>
+  <title>Jawaabat | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
-      --bg: #f9f9f9;
-      --text: #111;
+      --bg: #f4f4f4;
+      --text: #222;
       --card: #fff;
     }
     body.dark {
@@ -16,97 +16,78 @@
       --card: #1e1e1e;
     }
     body {
-      font-family: 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 20px;
-      transition: 0.3s ease all;
     }
     .container {
-      max-width: 960px;
+      max-width: 900px;
       margin: auto;
     }
-    .card {
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .video-card {
       background: var(--card);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      margin: 6px 4px;
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       cursor: pointer;
+      transition: 0.3s;
     }
-    button:hover {
-      opacity: 0.9;
+    .video-card:hover {
+      transform: scale(1.01);
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
+    .video-card h3 {
+      margin-top: 0;
     }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      text-align: left;
-    }
-    th {
-      background: #eee;
-    }
-    #admin-panel, .section {
+    .video-player {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
       display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      flex-direction: column;
+    }
+    .video-player video {
+      max-width: 90%;
+      max-height: 80%;
+      border-radius: 12px;
+    }
+    .video-player button {
+      margin-top: 20px;
+      background: #fff;
+      color: #111;
+    }
+    .toggle {
+      float: right;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="card">
-      <h2>🔐 Admin Panel</h2>
-      <p id="login-status">Checking login...</p>
-      <button id="login-btn">🔓 Sign in with Google</button>
-      <button id="logout-btn" style="display:none;">🚪 Logout</button>
-      <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
-    </div>
-
-    <div id="admin-panel" class="card">
-      <h3>Suwaalaat & Replies</h3>
-      <table>
-        <thead><tr><th>Title</th><th>Name</th><th>Action</th></tr></thead>
-        <tbody id="suwaal-table"></tbody>
-      </table>
-
-      <div style="margin-top:20px">
-        <input type="text" id="reply-title" placeholder="Title" readonly />
-        <textarea id="text-reply" placeholder="Type reply..."></textarea>
-        <input type="file" id="audio-file" accept="audio/*" />
-        <input type="file" id="image-file" accept="image/*" />
-        <button onclick="submitReply()">📤 Send Reply</button>
-        <p id="reply-msg"></p>
-      </div>
-    </div>
+    <button class="toggle" onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
+    <h2>📺 Jawaabaat</h2>
+    <div class="video-list" id="video-list"></div>
   </div>
 
-  <!-- FFmpeg -->
-  <script src="ffmpeg.min.js"></script>
+  <div class="video-player" id="player">
+    <video controls id="play-video"></video>
+    <button onclick="document.getElementById('player').style.display='none'">❌ Close</button>
+  </div>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -118,94 +99,30 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
-    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("login-status");
-    const panel = document.getElementById("admin-panel");
+    const container = document.getElementById("video-list");
+    const player = document.getElementById("player");
+    const playVideo = document.getElementById("play-video");
 
-    onAuthStateChanged(auth, user => {
-      if (user && allowed.includes(user.email)) {
-        status.innerText = "✅ Welcome " + user.email;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
-        panel.style.display = "block";
-        loadSuwaalaat();
-      } else {
-        status.innerText = user ? "❌ Access Denied" : "Please sign in";
-      }
+    const snap = await getDocs(collection(db, "question_answers"));
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (!d.video) return;
+
+      const div = document.createElement("div");
+      div.className = "video-card";
+      div.innerHTML = `
+        <h3>${d.title}</h3>
+        ${d.text ? `<p>${d.text}</p>` : ""}
+      `;
+      div.onclick = () => {
+        playVideo.src = d.video;
+        player.style.display = "flex";
+        playVideo.play();
+      };
+      container.appendChild(div);
     });
-
-    loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-    logoutBtn.onclick = () => signOut(auth);
-
-    async function loadSuwaalaat() {
-      const snap = await getDocs(collection(db, "user_questions"));
-      const table = document.getElementById("suwaal-table");
-      table.innerHTML = "";
-      snap.forEach(docu => {
-        const d = docu.data();
-        table.innerHTML += `
-          <tr>
-            <td>${d.title}</td>
-            <td>${d.name}</td>
-            <td><button onclick="setReply('${docu.id}', \`${d.title.replace(/`/g, "\\`")}\`)">Reply</button></td>
-          </tr>
-        `;
-      });
-    }
-
-    window.setReply = (id, title) => {
-      document.getElementById("reply-title").value = title;
-      document.getElementById("reply-title").dataset.id = id;
-    };
-
-    window.submitReply = async () => {
-      const id = document.getElementById("reply-title").dataset.id;
-      const title = document.getElementById("reply-title").value;
-      const text = document.getElementById("text-reply").value;
-      const audioFile = document.getElementById("audio-file").files[0];
-      const imageFile = document.getElementById("image-file").files[0];
-      const msg = document.getElementById("reply-msg");
-      msg.innerText = "⏳ Processing...";
-
-      if (!id || (!text && !audioFile && !imageFile)) {
-        msg.innerText = "⚠️ Provide reply text or media.";
-        return;
-      }
-
-      let videoBase64 = "", imageBase64 = "";
-      if (audioFile && imageFile) {
-        const { createFFmpeg, fetchFile } = FFmpeg;
-        const ffmpeg = createFFmpeg({ log: true });
-        await ffmpeg.load();
-        ffmpeg.FS("writeFile", "img.jpg", await fetchFile(imageFile));
-        ffmpeg.FS("writeFile", "audio.mp3", await fetchFile(audioFile));
-        await ffmpeg.run("-loop", "1", "-i", "img.jpg", "-i", "audio.mp3", "-c:v", "libx264", "-c:a", "aac", "-b:a", "192k", "-shortest", "-pix_fmt", "yuv420p", "out.mp4");
-        const data = ffmpeg.FS("readFile", "out.mp4");
-        videoBase64 = `data:video/mp4;base64,${btoa(String.fromCharCode(...data))}`;
-        imageBase64 = await toBase64(imageFile);
-      }
-
-      await setDoc(doc(db, "question_answers", id), {
-        title,
-        text,
-        video: videoBase64,
-        image: imageBase64
-      });
-
-      msg.innerText = "✅ Reply saved!";
-    };
-
-    const toBase64 = file =>
-      new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-      });
   </script>
 </body>
 </html>
