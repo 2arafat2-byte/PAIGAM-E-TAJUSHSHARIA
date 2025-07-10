@@ -19,7 +19,7 @@
       </nav>
     </aside>
 
-    <!-- Main -->
+    <!-- Main Content -->
     <main class="flex-1 p-6">
       <div class="flex justify-between items-center mb-6">
         <div id="welcome" class="font-semibold">Checking login...</div>
@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <!-- Sections -->
+      <!-- Set Quiz Section -->
       <div id="set-suhaal-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
         <label class="block mb-2">Choose Mode:</label>
@@ -64,27 +64,44 @@
         </form>
       </div>
 
+      <!-- Schedule -->
       <div id="schedule-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
         <div id="schedule-list" class="space-y-2"></div>
       </div>
 
+      <!-- View Answers -->
       <div id="answers-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
         <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
-          <option value="correct">✅ Correct Answers</option>
-          <option value="wrong">❌ Wrong Answers</option>
+          <option value="correct">✅ Correct</option>
+          <option value="wrong">❌ Wrong</option>
         </select>
         <div id="answers-list" class="space-y-2"></div>
       </div>
     </main>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Modal -->
+  <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
+      <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
+      <p><strong>Name:</strong> <span id="modal-name"></span></p>
+      <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
+      <p><strong>Address:</strong> <span id="modal-address"></span></p>
+      <p><strong>Total Answers:</strong> <span id="modal-total">0</span></p>
+      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -99,11 +116,13 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
+
     const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
     const logoutBtn = document.getElementById("logout");
     const welcome = document.getElementById("welcome");
     const toggleTheme = document.getElementById("toggle-theme");
+
     const quizForm = document.getElementById("quiz-form");
     const modeSelect = document.getElementById("question-mode");
     const mcqOptions = document.getElementById("mcq-options");
@@ -112,103 +131,21 @@
     toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
 
     modeSelect.onchange = () => {
-      const mode = modeSelect.value;
-      mcqOptions.classList.toggle("hidden", mode !== "mcq");
-      textAnswerBox.classList.toggle("hidden", mode !== "text");
+      mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
+      textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
     };
 
     function showSection(id) {
-      document.getElementById("set-suhaal-section").classList.add("hidden");
-      document.getElementById("schedule-section").classList.add("hidden");
-      document.getElementById("answers-section").classList.add("hidden");
+      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(section => {
+        document.getElementById(section).classList.add("hidden");
+      });
       document.getElementById(id).classList.remove("hidden");
     }
 
     document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
     document.getElementById("view-schedule").onclick = () => loadSchedule();
     document.getElementById("view-answers").onclick = () => loadAnswers();
-
-    function loadSchedule() {
-      showSection("schedule-section");
-      const list = document.getElementById("schedule-list");
-      list.innerHTML = "";
-      getDocs(query(collection(db, "dailyQuiz"), orderBy("date"))).then(snapshot => {
-        snapshot.forEach(doc => {
-          const q = doc.data();
-          list.innerHTML += `<div class="p-3 border rounded bg-white dark:bg-gray-700">${q.question} <br><small>${q.date}</small></div>`;
-        });
-      });
-    }
-
-    async function loadAnswers() {
-      showSection("answers-section");
-      const list = document.getElementById("answers-list");
-      list.innerHTML = "";
-
-      const filter = document.getElementById("answer-filter").value;
-
-      const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
-      snapshot.forEach(async (docSnap) => {
-        const a = docSnap.data();
-        const id = docSnap.id;
-        const matchFilter = (filter === "correct" && a.correct) || (filter === "wrong" && !a.correct);
-        if (!matchFilter) return;
-
-        let displayAnswer = a.answer;
-        if (a.options && !isNaN(a.answer)) {
-          const index = parseInt(a.answer);
-          displayAnswer = `Option ${index + 1}: ${a.options[index] || "(invalid option)"}`;
-        }
-
-        list.innerHTML += `
-          <div class="p-4 rounded bg-${a.correct ? "green" : "red"}-100 dark:bg-${a.correct ? "green" : "red"}-800 text-sm shadow-md">
-            <div class="flex justify-between items-center">
-              <div>
-                <strong>${a.name}</strong>
-                <span class="inline-block bg-${a.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
-                  ${a.correct ? "✅ Correct" : "❌ Wrong"}
-                </span>
-              </div>
-              <button onclick="deleteAnswer('${id}')" class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
-            </div>
-            <div class="mt-1">Answer: <span class="font-medium">${displayAnswer}</span></div>
-            <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(a.timestamp).toLocaleString()}</div>
-          </div>`;
-      });
-    }
-
-    window.deleteAnswer = async function(id) {
-      if (confirm("Delete this answer?")) {
-        await deleteDoc(doc(db, "quizAnswers", id));
-        loadAnswers();
-      }
-    }
-
-    document.getElementById("answer-filter").onchange = loadAnswers;
-
-    quizForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const question = document.getElementById("question").value;
-      const date = document.getElementById("question-date").value;
-      const mode = modeSelect.value;
-      let data = { question, date, mode };
-
-      if (mode === "mcq") {
-        const opts = Array.from(document.querySelectorAll(".option")).map(input => input.value);
-        data.options = opts;
-        data.correct = document.getElementById("correct-option").value;
-      } else {
-        data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
-      }
-
-      await addDoc(collection(db, "dailyQuiz"), data);
-      alert("✅ Suwaal Saved");
-      quizForm.reset();
-    };
-
-    logoutBtn.onclick = () => {
-      signOut(auth); location.reload();
-    };
+    logoutBtn.onclick = () => { signOut(auth); location.reload(); }
 
     onAuthStateChanged(auth, user => {
       if (user && allowedEmails.includes(user.email)) {
@@ -219,6 +156,101 @@
         signInWithPopup(auth, provider);
       }
     });
+
+    quizForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const question = document.getElementById("question").value;
+      const date = document.getElementById("question-date").value;
+      const mode = modeSelect.value;
+      const data = { question, date, mode };
+
+      if (mode === "mcq") {
+        const options = Array.from(document.querySelectorAll(".option")).map(i => i.value);
+        data.options = options;
+        data.correct = document.getElementById("correct-option").value;
+      } else {
+        data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
+      }
+
+      await addDoc(collection(db, "dailyQuiz"), data);
+      alert("✅ Suwaal Saved");
+      quizForm.reset();
+    };
+
+    function loadSchedule() {
+      showSection("schedule-section");
+      const list = document.getElementById("schedule-list");
+      list.innerHTML = "";
+      getDocs(query(collection(db, "dailyQuiz"), orderBy("date"))).then(snapshot => {
+        snapshot.forEach(doc => {
+          const q = doc.data();
+          list.innerHTML += `<div class="p-3 border rounded bg-white dark:bg-gray-700">${q.question}<br><small>${q.date}</small></div>`;
+        });
+      });
+    }
+
+    async function loadAnswers() {
+      showSection("answers-section");
+      const list = document.getElementById("answers-list");
+      list.innerHTML = "";
+
+      const filter = document.getElementById("answer-filter").value;
+      const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+        const matchFilter = (filter === "correct" && data.correct) || (filter === "wrong" && !data.correct);
+        if (!matchFilter) return;
+
+        const answerText = data.options && !isNaN(data.answer)
+          ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
+          : data.answer;
+
+        list.innerHTML += `
+          <div class="p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 text-sm shadow-md cursor-pointer"
+            onclick="openModal('${data.name}', '${data.phone}', '${data.address}')">
+            <div class="flex justify-between items-center">
+              <div>
+                <strong>${data.name}</strong>
+                <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                  ${data.correct ? "✅ Correct" : "❌ Wrong"}
+                </span>
+              </div>
+              <button onclick="event.stopPropagation(); deleteAnswer('${id}')" class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
+            </div>
+            <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(data.timestamp).toLocaleString()}</div>
+          </div>`;
+      });
+    }
+
+    window.deleteAnswer = async (id) => {
+      if (confirm("Delete this answer?")) {
+        await deleteDoc(doc(db, "quizAnswers", id));
+        loadAnswers();
+      }
+    };
+
+    window.openModal = async (name, phone, address) => {
+      document.getElementById("modal-name").innerText = name;
+      document.getElementById("modal-phone").innerText = phone;
+      document.getElementById("modal-address").innerText = address;
+
+      const q = query(collection(db, "quizAnswers"), where("phone", "==", phone));
+      const snap = await getDocs(q);
+      document.getElementById("modal-total").innerText = snap.size;
+
+      document.getElementById("id-modal").classList.remove("hidden");
+      document.getElementById("id-modal").classList.add("flex");
+    };
+
+    window.closeModal = () => {
+      document.getElementById("id-modal").classList.add("hidden");
+      document.getElementById("id-modal").classList.remove("flex");
+    };
+
+    document.getElementById("answer-filter").onchange = loadAnswers;
   </script>
 </body>
 </html>
