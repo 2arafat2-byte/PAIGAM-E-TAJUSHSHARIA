@@ -70,7 +70,8 @@
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
-<!-- Schedule -->
+
+      <!-- Schedule -->
       <div id="schedule-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
         <div id="schedule-list" class="space-y-2"></div>
@@ -88,7 +89,7 @@
     </main>
   </div>
 
-  <!-- Modal for ID Card -->
+  <!-- Modal -->
   <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
       <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
@@ -99,35 +100,38 @@
     </div>
   </div>
 
-  <!-- Firebase SDK + Admin Script -->
+  <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const firebaseConfig = {
+    const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
       projectId: "paigam-ba913",
       storageBucket: "paigam-ba913.appspot.com",
       messagingSenderId: "480474970116",
       appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
-    };
+    });
 
-    const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-
     const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
     const logoutBtn = document.getElementById("logout");
     const welcome = document.getElementById("welcome");
-    const toggleTheme = document.getElementById("toggle-theme");
+    const quizForm = document.getElementById("quiz-form");
+    const modeSelect = document.getElementById("question-mode");
+    const mcqOptions = document.getElementById("mcq-options");
+    const textAnswerBox = document.getElementById("text-answer-box");
 
-    toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
+    // Theme & Logout
+    document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
     logoutBtn.onclick = () => { signOut(auth); location.reload(); }
 
+    // Login Check
     onAuthStateChanged(auth, async (user) => {
       if (user && allowedEmails.includes(user.email)) {
         welcome.innerText = `✅ Welcome, ${user.email}`;
@@ -139,10 +143,9 @@
       }
     });
 
+    // Section Switch
     function showSection(id) {
-      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(sec => {
-        document.getElementById(sec).classList.add("hidden");
-      });
+      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(s => document.getElementById(s).classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
     }
 
@@ -150,45 +153,54 @@
     document.getElementById("view-schedule").onclick = () => loadSchedule();
     document.getElementById("view-answers").onclick = () => loadAnswers();
 
-    const quizForm = document.getElementById("quiz-form");
-    const modeSelect = document.getElementById("question-mode");
-    const mcqOptions = document.getElementById("mcq-options");
-    const textAnswerBox = document.getElementById("text-answer-box");
-
     modeSelect.onchange = () => {
       mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
       textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
     };
 
+    // Submit Suwaal
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
-      const title = document.getElementById("quiz-title").value.trim();
-      const imageURL = document.getElementById("image-url").value.trim();
-      const question = document.getElementById("question").value.trim();
-      const startTime = document.getElementById("question-start").value;
-      const endTime = document.getElementById("question-end").value;
-      const mode = modeSelect.value;
+      const submitBtn = quizForm.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Saving...";
 
-      const data = { title, imageURL, question, startTime, endTime, mode };
+      const data = {
+        title: document.getElementById("quiz-title").value.trim(),
+        imageURL: document.getElementById("image-url").value.trim(),
+        question: document.getElementById("question").value.trim(),
+        startTime: document.getElementById("question-start").value,
+        endTime: document.getElementById("question-end").value,
+        mode: modeSelect.value
+      };
 
-      if (mode === "mcq") {
-        const options = Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim());
-        data.options = options;
+      if (data.mode === "mcq") {
+        data.options = Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim());
         data.correct = document.getElementById("correct-option").value;
       } else {
         data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
       }
 
-      await addDoc(collection(db, "dailyQuiz"), data);
-      alert("✅ Suwaal Saved");
-      quizForm.reset();
+      try {
+        await addDoc(collection(db, "dailyQuiz"), data);
+        alert("✅ Suwaal Saved");
+        quizForm.reset();
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error saving question");
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submit";
     };
-async function loadSchedule() {
+
+    // Load Schedule
+    async function loadSchedule() {
       showSection("schedule-section");
       const list = document.getElementById("schedule-list");
       list.innerHTML = "";
-      const snapshot = await getDocs(query(collection(db, "dailyQuiz"), orderBy("startTime")));
-      snapshot.forEach(docSnap => {
+      const snap = await getDocs(query(collection(db, "dailyQuiz"), orderBy("startTime")));
+      snap.forEach(docSnap => {
         const q = docSnap.data();
         const id = docSnap.id;
         list.innerHTML += `
@@ -197,18 +209,20 @@ async function loadSchedule() {
             <img src="${q.imageURL || ""}" class="w-20 h-20 mt-2" /><br>
             ${q.question}<br>
             <small>From: ${new Date(q.startTime).toLocaleString()}<br>To: ${new Date(q.endTime).toLocaleString()}</small><br>
-            <button onclick="deleteSchedule('${id}')" class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+            <button onclick="event.stopPropagation(); deleteSchedule('${id}')" class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
           </div>`;
       });
     }
 
-    async function deleteSchedule(id) {
+    // Delete Quiz
+    window.deleteSchedule = async (id) => {
       if (confirm("Delete this quiz schedule?")) {
         await deleteDoc(doc(db, "dailyQuiz", id));
-        loadSchedule();
+        await loadSchedule();
       }
-    }
+    };
 
+    // Load Answers
     async function loadAnswers() {
       showSection("answers-section");
       const list = document.getElementById("answers-list");
