@@ -1,4 +1,3 @@
-<!-- admin.html -->
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -14,19 +13,19 @@
 </head>
 <body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white transition-all duration-300">
   <!-- Header -->
-  <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
-    <h1 class="text-2xl font-bold">🔐 Paighaam Admin Panel</h1>
-    <div>
-      <button onclick="toggleTheme()" class="px-3 py-1 rounded bg-yellow-500 text-white mr-2">🌓 Toggle</button>
+  <header class="flex flex-col md:flex-row items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
+    <h1 class="text-2xl font-bold mb-2 md:mb-0">🔐 Paighaam Admin Panel</h1>
+    <div class="space-x-2">
+      <button onclick="toggleTheme()" class="px-3 py-1 rounded bg-yellow-500 text-white">🌓 Toggle</button>
       <button id="login-btn" class="px-3 py-1 rounded bg-blue-600 text-white">Login</button>
       <button id="logout-btn" class="px-3 py-1 rounded bg-red-600 text-white hidden">Logout</button>
     </div>
   </header>
 
   <!-- Main Layout -->
-  <div class="flex">
+  <div class="flex flex-col md:flex-row min-h-screen">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white dark:bg-gray-800 min-h-screen shadow-lg p-4">
+    <aside class="md:w-64 w-full bg-white dark:bg-gray-800 p-4">
       <nav class="space-y-2">
         <button onclick="showSection('set-quiz')" class="w-full text-left px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded">📌 Set Daily Suwaal</button>
         <button onclick="showSection('view-schedule')" class="w-full text-left px-4 py-2 bg-green-100 dark:bg-green-900 rounded">📅 View Schedule</button>
@@ -38,7 +37,7 @@
     <main class="flex-1 p-6 space-y-8">
       <p id="login-status" class="text-lg font-semibold">Checking login...</p>
 
-      <!-- Set Quiz -->
+      <!-- Sections -->
       <section id="set-quiz" class="hidden">
         <h2 class="text-xl font-bold mb-4">📌 Set Daily Suwaal</h2>
         <form id="quizForm" class="space-y-4 bg-white dark:bg-gray-800 p-6 rounded shadow">
@@ -74,13 +73,11 @@
         </form>
       </section>
 
-      <!-- Schedule -->
       <section id="view-schedule" class="hidden">
         <h2 class="text-xl font-bold mb-4">📅 Scheduled Suwaalat</h2>
         <div id="schedule-list" class="space-y-2"></div>
       </section>
 
-      <!-- View Answers -->
       <section id="view-answers" class="hidden">
         <h2 class="text-xl font-bold mb-4">✅ Correct Answers</h2>
         <div id="answer-list" class="space-y-2"></div>
@@ -88,7 +85,7 @@
     </main>
   </div>
 
-  <!-- Firebase and Script -->
+  <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
@@ -111,8 +108,8 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
-
     const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
     const status = document.getElementById("login-status");
@@ -132,6 +129,10 @@
       }
     });
 
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
     function showSection(id) {
       ["set-quiz", "view-schedule", "view-answers"].forEach(sec => {
         document.getElementById(sec).classList.add("hidden");
@@ -139,10 +140,6 @@
       document.getElementById(id).classList.remove("hidden");
       if (id === "view-schedule") loadSchedule();
       if (id === "view-answers") loadAnswers();
-    }
-
-    function toggleTheme() {
-      document.documentElement.classList.toggle('dark');
     }
 
     document.getElementById("type").onchange = () => {
