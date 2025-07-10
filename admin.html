@@ -13,7 +13,7 @@
     <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
       <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
       <nav class="flex flex-col space-y-2 p-4">
-        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
+        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Suwaal</button>
         <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
         <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
       </nav>
@@ -31,25 +31,23 @@
 
       <!-- Set Quiz Section -->
       <div id="set-suhaal-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
-
-        <label class="block mb-2">Choose Mode:</label>
-        <select id="question-mode" class="mb-4 px-2 py-1 border rounded">
-          <option value="mcq">MCQ (Options)</option>
-          <option value="text">Text Answer</option>
-        </select>
-
+        <h2 class="text-xl font-semibold mb-4">📝 Set Suwaal</h2>
         <form id="quiz-form" class="space-y-4">
           <input type="text" id="quiz-title" placeholder="Quiz Title (e.g. Pehla Suwaal...)" class="w-full border px-2 py-1 rounded" required />
           <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+
+          <label class="block mb-2">Choose Mode:</label>
+          <select id="question-mode" class="w-full border px-2 py-1 rounded">
+            <option value="mcq">MCQ (Options)</option>
+            <option value="text">Text Answer</option>
+          </select>
 
           <div id="mcq-options">
             <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
             <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
             <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
             <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
-
-            <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
+            <select id="correct-option" class="w-full border px-2 py-1 rounded">
               <option value="0">Correct: Option 1</option>
               <option value="1">Correct: Option 2</option>
               <option value="2">Correct: Option 3</option>
@@ -61,7 +59,8 @@
             <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
           </div>
 
-          <input type="datetime-local" id="question-date" class="w-full border px-2 py-1 rounded" required />
+          <input type="datetime-local" id="start-time" class="w-full border px-2 py-1 rounded" required />
+          <input type="datetime-local" id="end-time" class="w-full border px-2 py-1 rounded" required />
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
@@ -84,26 +83,26 @@
     </main>
   </div>
 
-  <!-- Modal (Optional for viewing details) -->
-  <div id="id-modal" class="fixed hidden inset-0 bg-black bg-opacity-50 justify-center items-center z-50">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg w-80">
-      <h3 class="text-lg font-bold mb-2">User Info</h3>
+  <!-- Modal -->
+  <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
+      <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
       <p><strong>Name:</strong> <span id="modal-name"></span></p>
       <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
       <p><strong>Address:</strong> <span id="modal-address"></span></p>
-      <button onclick="closeModal()" class="mt-4 bg-gray-600 text-white px-4 py-1 rounded">Close</button>
+      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
     </div>
   </div>
 
-  <!-- Firebase & Logic -->
+  <!-- Firebase Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import {
       getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -115,10 +114,9 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-
     const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
     const logoutBtn = document.getElementById("logout");
@@ -127,6 +125,16 @@
 
     toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
     logoutBtn.onclick = () => { signOut(auth); location.reload(); }
+
+    const quizForm = document.getElementById("quiz-form");
+    const modeSelect = document.getElementById("question-mode");
+    const mcqOptions = document.getElementById("mcq-options");
+    const textAnswerBox = document.getElementById("text-answer-box");
+
+    modeSelect.onchange = () => {
+      mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
+      textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
+    };
 
     onAuthStateChanged(auth, user => {
       if (user && allowedEmails.includes(user.email)) {
@@ -139,16 +147,6 @@
       }
     });
 
-    const quizForm = document.getElementById("quiz-form");
-    const modeSelect = document.getElementById("question-mode");
-    const mcqOptions = document.getElementById("mcq-options");
-    const textAnswerBox = document.getElementById("text-answer-box");
-
-    modeSelect.onchange = () => {
-      mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
-      textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
-    };
-
     function showSection(id) {
       ["set-suhaal-section", "schedule-section", "answers-section"].forEach(sec => {
         document.getElementById(sec).classList.add("hidden");
@@ -159,31 +157,26 @@
     document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
     document.getElementById("view-schedule").onclick = () => loadSchedule();
     document.getElementById("view-answers").onclick = () => loadAnswers();
-    document.getElementById("answer-filter").onchange = loadAnswers;
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
       const title = document.getElementById("quiz-title").value.trim();
       const question = document.getElementById("question").value.trim();
-      const date = document.getElementById("question-date").value;
       const mode = modeSelect.value;
-      const data = { title, question, date, mode };
-
-      if (!title || !question || !date) return alert("⚠️ All fields are required.");
+      const start = document.getElementById("start-time").value;
+      const end = document.getElementById("end-time").value;
+      const data = { title, question, mode, start, end };
 
       if (mode === "mcq") {
-        const options = Array.from(document.querySelectorAll(".option")).map(i => i.value.trim());
-        if (options.some(o => !o)) return alert("⚠️ All options are required.");
+        const options = Array.from(document.querySelectorAll(".option")).map(o => o.value.trim());
         data.options = options;
         data.correct = document.getElementById("correct-option").value;
       } else {
-        const ans = document.getElementById("correct-text-answer").value.trim().toLowerCase();
-        if (!ans) return alert("⚠️ Correct text answer is required.");
-        data.correct = ans;
+        data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
       }
 
       await addDoc(collection(db, "dailyQuiz"), data);
-      alert("✅ Suwaal saved successfully!");
+      alert("✅ Suwaal Saved!");
       quizForm.reset();
     };
 
@@ -191,30 +184,26 @@
       showSection("schedule-section");
       const list = document.getElementById("schedule-list");
       list.innerHTML = "";
-      const snapshot = await getDocs(query(collection(db, "dailyQuiz"), orderBy("date")));
+      const snapshot = await getDocs(query(collection(db, "dailyQuiz"), orderBy("start")));
 
       snapshot.forEach(docSnap => {
         const q = docSnap.data();
-        const id = docSnap.id;
-
         list.innerHTML += `
-          <div class="p-3 border rounded bg-white dark:bg-gray-700 relative">
-            <div class="absolute top-2 right-2">
-              <button onclick="deleteSchedule('${id}')" class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
-            </div>
-            <strong>${q.title || "No Title"}</strong><br>
+          <div class="p-4 border rounded bg-white dark:bg-gray-700">
+            <strong>${q.title}</strong><br>
             ${q.question}<br>
-            <small>${new Date(q.date).toLocaleString()}</small>
+            <small>${new Date(q.start).toLocaleString()} - ${new Date(q.end).toLocaleString()}</small>
+            <div><button onclick="deleteSchedule('${docSnap.id}')" class="text-red-600 mt-1 hover:underline text-sm">🗑️ Delete</button></div>
           </div>`;
       });
     }
 
     window.deleteSchedule = async (id) => {
-      if (confirm("⚠️ Delete this quiz?")) {
+      if (confirm("Delete this suwaal?")) {
         await deleteDoc(doc(db, "dailyQuiz", id));
         loadSchedule();
       }
-    };
+    }
 
     async function loadAnswers() {
       showSection("answers-section");
@@ -222,25 +211,23 @@
       list.innerHTML = "";
       const filter = document.getElementById("answer-filter").value;
       const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
-
       const phoneCount = {};
+
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
         const id = docSnap.id;
 
-        const match = (filter === "correct" && data.correct) || (filter === "wrong" && !data.correct);
-        if (!match) return;
+        if ((filter === "correct" && !data.correct) || (filter === "wrong" && data.correct)) return;
 
         const answerText = data.options && !isNaN(data.answer)
-          ? `Option ${parseInt(data.answer)+1}: ${data.options[data.answer]}`
+          ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
           : data.answer;
 
-        const phone = data.phone;
-        phoneCount[phone] = (phoneCount[phone] || 0) + 1;
+        phoneCount[data.phone] = (phoneCount[data.phone] || 0) + 1;
 
         list.innerHTML += `
           <div class="p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer"
-            onclick="openModal('${data.name}', '${phone}', '${data.address}', ${phoneCount[phone]})">
+            onclick="openModal('${data.name}', '${data.phone}', '${data.address}', ${phoneCount[data.phone]})">
             <div class="flex justify-between items-center">
               <div>
                 <strong>${data.name}</strong>
@@ -261,7 +248,7 @@
         await deleteDoc(doc(db, "quizAnswers", id));
         loadAnswers();
       }
-    };
+    }
 
     window.openModal = (name, phone, address, count) => {
       document.getElementById("modal-name").innerText = name;
@@ -269,12 +256,14 @@
       document.getElementById("modal-address").innerText = address;
       document.getElementById("id-modal").classList.remove("hidden");
       document.getElementById("id-modal").classList.add("flex");
-    };
+    }
 
     window.closeModal = () => {
       document.getElementById("id-modal").classList.add("hidden");
       document.getElementById("id-modal").classList.remove("flex");
-    };
+    }
+
+    document.getElementById("answer-filter").onchange = loadAnswers;
   </script>
 </body>
 </html>
