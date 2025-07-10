@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Panel | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -12,60 +12,41 @@
       padding: 20px;
       transition: all 0.3s ease;
     }
-    .dark { --bg: #111; --text: #fff; }
-    .container { max-width: 800px; margin: auto; }
-    .card {
-      background: var(--card, white);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+    .dark { --bg: #111; --text: #fff; background: #111; color: #fff; }
+    input, textarea {
+      width: 100%; margin-bottom: 10px; padding: 10px;
+      border: 1px solid #ccc; border-radius: 5px;
     }
     button {
-      padding: 10px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      margin: 5px;
-      cursor: pointer;
+      padding: 10px; background: #007bff;
+      color: white; border: none; border-radius: 5px; cursor: pointer;
     }
     button:hover { opacity: 0.9; }
-    input, textarea {
-      width: 100%;
-      margin: 8px 0;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    #admin-panel, .section { display: none; }
+    #admin-panel { display: none; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h2>🔐 Admin Panel</h2>
-      <p id="login-status">Checking login...</p>
-      <button id="login-btn">Sign in with Google</button>
-      <button id="logout-btn" style="display:none;">Logout</button>
-      <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
-    </div>
+  <h2>🔐 Admin Panel</h2>
+  <p id="login-status">Checking login...</p>
+  <button id="login-btn">Sign in with Google</button>
+  <button id="logout-btn" style="display:none;">Logout</button>
+  <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
 
-    <div id="admin-panel" class="card">
-      <h3>🎙️ Record Answer (Image + Audio → Video)</h3>
-      <input type="file" id="audio-file" accept="audio/*" />
-      <input type="file" id="image-file" accept="image/*" />
-      <button onclick="createVideo()">🎬 Make Video</button>
-      <p id="status-msg"></p>
-      <div id="video-preview"></div>
-    </div>
+  <div id="admin-panel">
+    <h3>🎤 Reply to Suwaal</h3>
+    <input type="text" id="reply-title" placeholder="Question Title" />
+    <input type="file" id="audio-file" accept="audio/*" />
+    <input type="file" id="image-file" accept="image/*" />
+    <button onclick="submitVideoReply()">📤 Send Reply</button>
+    <p id="reply-msg"></p>
   </div>
 
   <!-- Firebase + FFmpeg -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { createFFmpeg, fetchFile } from './ffmpeg.min.js';
+    import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { createFFmpeg, fetchFile } from "./ffmpeg.min.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -78,6 +59,7 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
     const status = document.getElementById("login-status");
@@ -99,49 +81,55 @@
     });
 
     loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-    logoutBtn.onclick = () => signOut(auth);
+    logoutBtn.onclick = () => {
+      signOut(auth);
+      status.innerText = "Signed out.";
+      panel.style.display = "none";
+      loginBtn.style.display = "inline-block";
+      logoutBtn.style.display = "none";
+    };
 
-    // FFmpeg Logic
-    const ffmpeg = createFFmpeg({ log: true });
+    async function submitVideoReply() {
+      const title = document.getElementById("reply-title").value.trim();
+      const audio = document.getElementById("audio-file").files[0];
+      const image = document.getElementById("image-file").files[0];
+      const msg = document.getElementById("reply-msg");
 
-    async function createVideo() {
-      const audioFile = document.getElementById("audio-file").files[0];
-      const imageFile = document.getElementById("image-file").files[0];
-      const statusMsg = document.getElementById("status-msg");
-      const preview = document.getElementById("video-preview");
-
-      if (!audioFile || !imageFile) {
-        statusMsg.innerText = "⚠️ Please select both image and audio file.";
+      if (!title || !audio || !image) {
+        msg.innerText = "⚠️ Fill all fields!";
         return;
       }
 
-      statusMsg.innerText = "⏳ Processing...";
+      msg.innerText = "⏳ Processing...";
 
-      if (!ffmpeg.isLoaded()) {
-        await ffmpeg.load();
-      }
+      const ffmpeg = createFFmpeg({ log: true });
+      if (!ffmpeg.isLoaded()) await ffmpeg.load();
 
-      ffmpeg.FS('writeFile', 'input.jpg', await fetchFile(imageFile));
-      ffmpeg.FS('writeFile', 'input.mp3', await fetchFile(audioFile));
+      await ffmpeg.FS("writeFile", "image.jpg", await fetchFile(image));
+      await ffmpeg.FS("writeFile", "audio.mp3", await fetchFile(audio));
 
       await ffmpeg.run(
-        '-loop', '1',
-        '-i', 'input.jpg',
-        '-i', 'input.mp3',
-        '-c:v', 'libx264',
-        '-c:a', 'aac',
-        '-shortest',
-        '-pix_fmt', 'yuv420p',
-        'output.mp4'
+        "-loop", "1",
+        "-i", "image.jpg",
+        "-i", "audio.mp3",
+        "-c:v", "libx264",
+        "-tune", "stillimage",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-pix_fmt", "yuv420p",
+        "-shortest",
+        "output.mp4"
       );
 
-      const data = ffmpeg.FS('readFile', 'output.mp4');
-      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
-      const videoUrl = URL.createObjectURL(videoBlob);
+      const data = ffmpeg.FS("readFile", "output.mp4");
+      const base64Video = btoa(String.fromCharCode(...data));
+      await setDoc(doc(db, "video_answers", title), {
+        title,
+        video: base64Video,
+        created: new Date().toISOString()
+      });
 
-      // Preview
-      preview.innerHTML = `<video src="${videoUrl}" controls width="100%"></video>`;
-      statusMsg.innerText = "✅ Video created successfully!";
+      msg.innerText = "✅ Video reply saved!";
     }
   </script>
 </body>
