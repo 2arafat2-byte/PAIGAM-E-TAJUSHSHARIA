@@ -2,33 +2,87 @@
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Quiz | Paighaam</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel | Paighaam</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
 </head>
-<body class="bg-gray-100 text-gray-900 min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-xl bg-white p-6 rounded-lg shadow-md space-y-4">
-    <h1 class="text-2xl font-bold text-center">📝 Daily Quiz</h1>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white transition-all min-h-screen">
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="w-64 min-h-screen bg-white dark:bg-gray-800 p-4 shadow">
+      <h1 class="text-2xl font-bold mb-6">🔐 Admin Panel</h1>
+      <div class="flex flex-col space-y-3">
+        <button disabled onclick="showSection('set-quiz')" class="bg-blue-100 dark:bg-blue-900 text-blue-800 px-4 py-2 rounded shadow">📌 Set Daily Suwaal</button>
+        <button disabled onclick="showSection('view-schedule')" class="bg-green-100 dark:bg-green-900 text-green-800 px-4 py-2 rounded shadow">📅 View Schedule</button>
+        <button disabled onclick="showSection('view-answers')" class="bg-purple-100 dark:bg-purple-900 text-purple-800 px-4 py-2 rounded shadow">✅ View Answers</button>
+      </div>
+    </aside>
 
-    <form id="user-form" class="space-y-3">
-      <input id="username" required type="text" placeholder="Your Name" class="w-full p-2 border rounded" />
-      <input id="phone" required type="text" placeholder="Phone Number" class="w-full p-2 border rounded" />
-      <input id="address" required type="text" placeholder="Address" class="w-full p-2 border rounded" />
-    </form>
+    <!-- Main -->
+    <main class="flex-1 p-6">
+      <div class="flex justify-between items-center mb-6">
+        <div id="login-status">Checking login...</div>
+        <div class="space-x-2">
+          <button onclick="document.body.classList.toggle('dark')" class="bg-yellow-400 text-black px-4 py-2 rounded">🌗 Toggle</button>
+          <button id="login-btn" class="bg-blue-600 text-white px-4 py-2 rounded">Login</button>
+          <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
+        </div>
+      </div>
 
-    <div id="quiz-container" class="space-y-4 hidden">
-      <h2 id="question" class="text-lg font-semibold"></h2>
-      <div id="options" class="grid grid-cols-1 gap-2"></div>
-      <button id="submit-btn" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Submit Answer</button>
-    </div>
+      <!-- Sections -->
+      <section id="set-quiz" class="hidden space-y-4">
+        <h2 class="text-xl font-semibold mb-2">📌 Set Daily Suwaal</h2>
+        <form id="quiz-form" class="space-y-4">
+          <select id="quiz-type" class="p-2 border rounded w-full">
+            <option value="mcq">MCQ (Multiple Choice)</option>
+            <option value="text">Text Answer</option>
+          </select>
 
-    <div id="message" class="text-center text-green-600 font-medium hidden"></div>
+          <input type="text" id="question" placeholder="Enter Question" class="w-full p-2 border rounded"/>
+
+          <div id="mcq-fields" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <input type="text" id="optionA" placeholder="Option A" class="p-2 border rounded"/>
+            <input type="text" id="optionB" placeholder="Option B" class="p-2 border rounded"/>
+            <input type="text" id="optionC" placeholder="Option C" class="p-2 border rounded"/>
+            <input type="text" id="optionD" placeholder="Option D" class="p-2 border rounded"/>
+            <select id="correctOption" class="p-2 border rounded w-full">
+              <option value="">Correct Option</option>
+              <option value="A">Option A</option>
+              <option value="B">Option B</option>
+              <option value="C">Option C</option>
+              <option value="D">Option D</option>
+            </select>
+          </div>
+
+          <div id="text-answer-field" class="hidden">
+            <input type="text" id="correctText" placeholder="Correct Answer (text)" class="p-2 border rounded w-full" />
+          </div>
+
+          <input type="datetime-local" id="scheduleTime" class="p-2 border rounded w-full"/>
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">💾 Save Suwaal</button>
+        </form>
+      </section>
+
+      <section id="view-schedule" class="hidden">
+        <h2 class="text-xl font-semibold mb-2">📅 Scheduled Suwaalaat</h2>
+        <div id="schedule-list" class="space-y-2"></div>
+      </section>
+
+      <section id="view-answers" class="hidden">
+        <h2 class="text-xl font-semibold mb-2">✅ User Correct Answers</h2>
+        <div id="answer-list" class="space-y-2"></div>
+      </section>
+    </main>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, where, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -41,78 +95,128 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    const questionEl = document.getElementById("question");
-    const optionsEl = document.getElementById("options");
-    const quizContainer = document.getElementById("quiz-container");
-    const submitBtn = document.getElementById("submit-btn");
-    const message = document.getElementById("message");
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const status = document.getElementById("login-status");
 
-    let selected = "";
-    let correctAnswer = "";
-    let currentQuizId = "";
+    loginBtn.onclick = () => signInWithPopup(auth, provider);
+    logoutBtn.onclick = () => signOut(auth);
 
-    function formatDate(dt = new Date()) {
-      return dt.toISOString().slice(0, 10); // YYYY-MM-DD
-    }
-
-    async function loadTodayQuiz() {
-      const today = formatDate();
-      const quizQuery = query(collection(db, "dailyquiz"), where("scheduled", ">=", today), where("scheduled", "<", today + "T23:59"));
-      const snapshot = await getDocs(quizQuery);
-      if (!snapshot.empty) {
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          currentQuizId = doc.id;
-          correctAnswer = data.correct;
-          questionEl.textContent = data.question;
-          optionsEl.innerHTML = "";
-          for (let key in data.options) {
-            const btn = document.createElement("button");
-            btn.textContent = `${key}: ${data.options[key]}`;
-            btn.className = "border px-4 py-2 rounded hover:bg-blue-100";
-            btn.onclick = () => {
-              selected = key;
-              document.querySelectorAll("#options button").forEach(b => b.classList.remove("bg-blue-300"));
-              btn.classList.add("bg-blue-300");
-            };
-            optionsEl.appendChild(btn);
-          }
-          quizContainer.classList.remove("hidden");
-        });
+    onAuthStateChanged(auth, user => {
+      if (user && allowed.includes(user.email)) {
+        status.textContent = `✅ Welcome, ${user.email}`;
+        loginBtn.classList.add("hidden");
+        logoutBtn.classList.remove("hidden");
+        document.querySelectorAll("aside button").forEach(b => b.disabled = false);
       } else {
-        questionEl.textContent = "⚠️ No quiz found for today.";
-        quizContainer.classList.remove("hidden");
-        submitBtn.style.display = "none";
+        status.textContent = "❌ Access Denied";
+        logoutBtn.classList.add("hidden");
+        loginBtn.classList.remove("hidden");
+        document.querySelectorAll("aside button").forEach(b => b.disabled = true);
       }
-    }
+    });
 
-    submitBtn.onclick = async () => {
-      const name = document.getElementById("username").value;
-      const phone = document.getElementById("phone").value;
-      const address = document.getElementById("address").value;
-
-      if (!name || !phone || !address || !selected) {
-        alert("Please fill all fields and select an answer.");
-        return;
-      }
-
-      await addDoc(collection(db, "quizanswers"), {
-        name,
-        phone,
-        address,
-        selected,
-        correct: selected === correctAnswer,
-        quizId: currentQuizId,
-        timestamp: new Date().toISOString()
-      });
-
-      message.textContent = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat in shaa Allah baad me bata denge.";
-      message.classList.remove("hidden");
-      quizContainer.classList.add("hidden");
+    window.showSection = (id) => {
+      ["set-quiz", "view-schedule", "view-answers"].forEach(s => document.getElementById(s).classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
     };
 
-    loadTodayQuiz();
+    // Toggle between MCQ / Text answer fields
+    const quizType = document.getElementById("quiz-type");
+    quizType.onchange = () => {
+      if (quizType.value === "mcq") {
+        document.getElementById("mcq-fields").classList.remove("hidden");
+        document.getElementById("text-answer-field").classList.add("hidden");
+      } else {
+        document.getElementById("mcq-fields").classList.add("hidden");
+        document.getElementById("text-answer-field").classList.remove("hidden");
+      }
+    };
+
+    // Submit Quiz
+    document.getElementById("quiz-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const mode = quizType.value;
+      const question = document.getElementById("question").value;
+      const scheduled = document.getElementById("scheduleTime").value;
+      let data = {
+        question,
+        mode,
+        scheduled,
+        created: serverTimestamp()
+      };
+
+      if (mode === "mcq") {
+        data.options = {
+          A: document.getElementById("optionA").value,
+          B: document.getElementById("optionB").value,
+          C: document.getElementById("optionC").value,
+          D: document.getElementById("optionD").value
+        };
+        data.correct = document.getElementById("correctOption").value;
+      } else {
+        data.correctText = document.getElementById("correctText").value.trim().toLowerCase();
+      }
+
+      await addDoc(collection(db, "dailyquiz"), data);
+      alert("✅ Suwaal saved successfully!");
+      e.target.reset();
+    });
+
+    // View schedule
+    async function loadSchedule() {
+      const container = document.getElementById("schedule-list");
+      container.innerHTML = "<p>Loading...</p>";
+      const q = query(collection(db, "dailyquiz"), orderBy("scheduled", "desc"));
+      const snap = await getDocs(q);
+      container.innerHTML = "";
+      snap.forEach(doc => {
+        const d = doc.data();
+        const div = document.createElement("div");
+        div.className = "p-3 border rounded bg-gray-50 dark:bg-gray-800";
+        div.innerHTML = `<strong>${d.question}</strong><br><span class="text-sm text-gray-500">${d.scheduled}</span>`;
+        container.appendChild(div);
+      });
+    }
+
+    // View correct answers
+    async function loadCorrectAnswers() {
+      const list = document.getElementById("answer-list");
+      list.innerHTML = "Loading...";
+      const q = query(collection(db, "quizanswers"), where("correct", "==", true));
+      const snap = await getDocs(q);
+      list.innerHTML = "";
+      if (snap.empty) {
+        list.innerHTML = "<p>No correct answers found.</p>";
+        return;
+      }
+      snap.forEach(doc => {
+        const d = doc.data();
+        const div = document.createElement("div");
+        div.className = "p-3 border rounded bg-green-50 dark:bg-green-900";
+        div.innerHTML = `
+          <p><strong>${d.name}</strong></p>
+          <p>📞 ${d.phone}</p>
+          <p>🏠 ${d.address}</p>
+          <p>✅ Answer: ${d.selected || d.textAnswer}</p>
+          <p class="text-xs text-gray-400">🕒 ${new Date(d.timestamp).toLocaleString()}</p>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    document.querySelectorAll("aside button")[1].onclick = () => {
+      showSection("view-schedule");
+      loadSchedule();
+    };
+    document.querySelectorAll("aside button")[2].onclick = () => {
+      showSection("view-answers");
+      loadCorrectAnswers();
+    };
   </script>
 </body>
 </html>
