@@ -6,80 +6,62 @@
   <title>Admin Panel | Paighaam</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-    }
+    tailwind.config = { darkMode: 'class' };
   </script>
 </head>
 <body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white transition-all duration-300">
-  <!-- Header -->
-  <header class="flex flex-col md:flex-row items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
-    <h1 class="text-2xl font-bold mb-2 md:mb-0">🔐 Paighaam Admin Panel</h1>
-    <div class="space-x-2">
-      <button onclick="toggleTheme()" class="px-3 py-1 rounded bg-yellow-500 text-white">🌓 Toggle</button>
-      <button id="login-btn" class="px-3 py-1 rounded bg-blue-600 text-white">Login</button>
-      <button id="logout-btn" class="px-3 py-1 rounded bg-red-600 text-white hidden">Logout</button>
-    </div>
-  </header>
-
-  <!-- Main Layout -->
-  <div class="flex flex-col md:flex-row min-h-screen">
+  <div class="flex">
     <!-- Sidebar -->
-    <aside class="md:w-64 w-full bg-white dark:bg-gray-800 p-4">
-      <nav class="space-y-2">
-        <button onclick="showSection('set-quiz')" class="w-full text-left px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded">📌 Set Daily Suwaal</button>
-        <button onclick="showSection('view-schedule')" class="w-full text-left px-4 py-2 bg-green-100 dark:bg-green-900 rounded">📅 View Schedule</button>
-        <button onclick="showSection('view-answers')" class="w-full text-left px-4 py-2 bg-purple-100 dark:bg-purple-900 rounded">✅ View Answers</button>
-      </nav>
+    <aside class="w-64 min-h-screen bg-white dark:bg-gray-800 p-4 shadow">
+      <h1 class="text-2xl font-bold mb-6">🔐 Paighaam Admin Panel</h1>
+      <div class="flex flex-col space-y-3">
+        <button disabled onclick="showSection('set-quiz')" class="bg-blue-100 dark:bg-blue-900 text-blue-800 px-4 py-2 rounded shadow">📌 Set Daily Suwaal</button>
+        <button disabled onclick="showSection('view-schedule')" class="bg-green-100 dark:bg-green-900 text-green-800 px-4 py-2 rounded shadow">📅 View Schedule</button>
+        <button disabled onclick="showSection('view-answers')" class="bg-purple-100 dark:bg-purple-900 text-purple-800 px-4 py-2 rounded shadow">✅ View Answers</button>
+      </div>
     </aside>
 
-    <!-- Content -->
-    <main class="flex-1 p-6 space-y-8">
-      <p id="login-status" class="text-lg font-semibold">Checking login...</p>
+    <!-- Main -->
+    <main class="flex-1 p-6">
+      <div class="flex justify-between items-center mb-6">
+        <div id="login-status">Checking login...</div>
+        <div class="space-x-2">
+          <button onclick="document.body.classList.toggle('dark')" class="bg-yellow-400 text-black px-4 py-2 rounded">🌗 Toggle</button>
+          <button id="login-btn" class="bg-blue-600 text-white px-4 py-2 rounded">Login</button>
+          <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
+        </div>
+      </div>
 
       <!-- Sections -->
       <section id="set-quiz" class="hidden">
-        <h2 class="text-xl font-bold mb-4">📌 Set Daily Suwaal</h2>
-        <form id="quizForm" class="space-y-4 bg-white dark:bg-gray-800 p-6 rounded shadow">
-          <div>
-            <label class="font-semibold">Question Type:</label>
-            <select id="type" class="w-full p-2 border rounded text-black">
-              <option value="mcq">MCQ</option>
-              <option value="text">Text Answer</option>
-            </select>
+        <h2 class="text-xl font-semibold mb-2">📌 Set Daily Suwaal</h2>
+        <form id="quiz-form" class="space-y-4">
+          <input type="text" id="question" placeholder="Enter Question" class="w-full p-2 border rounded"/>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <input type="text" id="optionA" placeholder="Option A" class="p-2 border rounded"/>
+            <input type="text" id="optionB" placeholder="Option B" class="p-2 border rounded"/>
+            <input type="text" id="optionC" placeholder="Option C" class="p-2 border rounded"/>
+            <input type="text" id="optionD" placeholder="Option D" class="p-2 border rounded"/>
           </div>
-          <div>
-            <label class="font-semibold">Question:</label>
-            <textarea id="question" required class="w-full p-2 border rounded text-black"></textarea>
-          </div>
-          <div id="mcq-options" class="space-y-2">
-            <input id="optA" placeholder="Option A" class="w-full p-2 border rounded text-black"/>
-            <input id="optB" placeholder="Option B" class="w-full p-2 border rounded text-black"/>
-            <input id="optC" placeholder="Option C" class="w-full p-2 border rounded text-black"/>
-            <input id="optD" placeholder="Option D" class="w-full p-2 border rounded text-black"/>
-            <select id="correct" class="w-full p-2 border rounded text-black">
-              <option value="">Select Correct Option</option>
-              <option>A</option><option>B</option><option>C</option><option>D</option>
-            </select>
-          </div>
-          <div id="text-correct" class="hidden">
-            <input id="correctText" placeholder="Correct Answer (text)" class="w-full p-2 border rounded text-black"/>
-          </div>
-          <div>
-            <label class="font-semibold">Date & Time:</label>
-            <input type="datetime-local" id="datetime" required class="w-full p-2 border rounded text-black" />
-          </div>
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save Suwaal</button>
+          <select id="correctOption" class="p-2 border rounded w-full">
+            <option value="">Correct Option</option>
+            <option value="A">Option A</option>
+            <option value="B">Option B</option>
+            <option value="C">Option C</option>
+            <option value="D">Option D</option>
+          </select>
+          <input type="datetime-local" id="scheduleTime" class="p-2 border rounded w-full"/>
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Save Suwaal</button>
         </form>
       </section>
 
       <section id="view-schedule" class="hidden">
-        <h2 class="text-xl font-bold mb-4">📅 Scheduled Suwaalat</h2>
+        <h2 class="text-xl font-semibold mb-2">📅 Scheduled Suwaalaat</h2>
         <div id="schedule-list" class="space-y-2"></div>
       </section>
 
       <section id="view-answers" class="hidden">
-        <h2 class="text-xl font-bold mb-4">✅ Correct Answers</h2>
+        <h2 class="text-xl font-semibold mb-2">✅ User Correct Answers</h2>
         <div id="answer-list" class="space-y-2"></div>
       </section>
     </main>
@@ -88,12 +70,8 @@
   <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore, collection, addDoc, getDocs, query, orderBy, where
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -108,88 +86,52 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
-    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
     const status = document.getElementById("login-status");
 
-    loginBtn.onclick = () => signInWithPopup(auth, provider).catch(err => alert("Login failed"));
+    loginBtn.onclick = () => signInWithPopup(auth, provider);
     logoutBtn.onclick = () => signOut(auth);
 
     onAuthStateChanged(auth, user => {
-      if (user && allowedEmails.includes(user.email)) {
+      if (user && allowed.includes(user.email)) {
         status.textContent = `✅ Welcome, ${user.email}`;
-        loginBtn.classList.add('hidden');
-        logoutBtn.classList.remove('hidden');
+        loginBtn.classList.add("hidden");
+        logoutBtn.classList.remove("hidden");
+        document.querySelectorAll("aside button").forEach(b => b.disabled = false);
       } else {
         status.textContent = "❌ Access Denied";
-        loginBtn.classList.remove('hidden');
-        logoutBtn.classList.add('hidden');
+        logoutBtn.classList.add("hidden");
+        loginBtn.classList.remove("hidden");
+        document.querySelectorAll("aside button").forEach(b => b.disabled = true);
       }
     });
 
-    function toggleTheme() {
-      document.documentElement.classList.toggle('dark');
-    }
-
-    function showSection(id) {
-      ["set-quiz", "view-schedule", "view-answers"].forEach(sec => {
-        document.getElementById(sec).classList.add("hidden");
-      });
+    window.showSection = (id) => {
+      ["set-quiz", "view-schedule", "view-answers"].forEach(s => document.getElementById(s).classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
-      if (id === "view-schedule") loadSchedule();
-      if (id === "view-answers") loadAnswers();
-    }
-
-    document.getElementById("type").onchange = () => {
-      const type = document.getElementById("type").value;
-      document.getElementById("mcq-options").classList.toggle("hidden", type !== "mcq");
-      document.getElementById("text-correct").classList.toggle("hidden", type !== "text");
     };
 
-    document.getElementById("quizForm").onsubmit = async (e) => {
+    document.getElementById("quiz-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const type = document.getElementById("type").value;
-      const question = document.getElementById("question").value;
-      const datetime = document.getElementById("datetime").value;
-      let data = { type, question, dateTime: datetime };
-
-      if (type === "mcq") {
-        const options = [optA.value, optB.value, optC.value, optD.value];
-        const correct = document.getElementById("correct").value;
-        data.options = options;
-        data.correctAnswer = options[["A","B","C","D"].indexOf(correct)];
-      } else {
-        data.correctAnswer = document.getElementById("correctText").value;
-      }
-
-      await addDoc(collection(db, "quizzes"), data);
-      alert("Suwaal Saved!");
+      const data = {
+        question: question.value,
+        options: {
+          A: optionA.value,
+          B: optionB.value,
+          C: optionC.value,
+          D: optionD.value
+        },
+        correct: correctOption.value,
+        scheduled: scheduleTime.value,
+        created: serverTimestamp()
+      };
+      await addDoc(collection(db, "dailyquiz"), data);
+      alert("✅ Suwaal Saved");
       e.target.reset();
-    };
-
-    async function loadSchedule() {
-      const list = document.getElementById("schedule-list");
-      list.innerHTML = "";
-      const q = query(collection(db, "quizzes"), orderBy("dateTime"));
-      const snap = await getDocs(q);
-      snap.forEach(doc => {
-        const d = doc.data();
-        list.innerHTML += `<div class="p-2 rounded bg-gray-200 dark:bg-gray-700"><strong>${d.dateTime}</strong>: ${d.question}</div>`;
-      });
-    }
-
-    async function loadAnswers() {
-      const list = document.getElementById("answer-list");
-      list.innerHTML = "";
-      const q = query(collection(db, "submissions"), where("correct", "==", true), orderBy("timestamp", "desc"));
-      const snap = await getDocs(q);
-      snap.forEach(doc => {
-        const d = doc.data();
-        list.innerHTML += `<div class="p-2 rounded bg-green-200 dark:bg-green-700"><strong>${d.name}</strong>: ${d.answer}</div>`;
-      });
-    }
+    });
   </script>
 </body>
 </html>
