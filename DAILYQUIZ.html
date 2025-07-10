@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Daily Quiz | Paighaam</title>
+  <meta charset="UTF-8" />
+  <title id="page-title">Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
   <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
-    <h1 class="text-2xl font-bold text-center">🕌 Daily Quiz</h1>
+    <h1 id="quiz-title" class="text-2xl font-bold text-center">Loading...</h1>
 
     <div id="quiz-box" class="space-y-3 hidden">
       <p id="question" class="font-semibold"></p>
@@ -28,13 +28,13 @@
       <p id="status" class="text-center text-sm"></p>
     </div>
 
-    <p id="loading">⏳ Loading today's quiz...</p>
+    <p id="loading">⏳ Loading today’s quiz...</p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc
+      getFirestore, collection, query, where, getDocs, addDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -56,6 +56,9 @@
     const textAnswer = document.getElementById("text-answer");
     const submitBtn = document.getElementById("submit-btn");
     const statusEl = document.getElementById("status");
+
+    const quizTitle = document.getElementById("quiz-title");
+    const pageTitle = document.getElementById("page-title");
 
     let currentQuizId = "";
     let correctAnswer = "";
@@ -85,9 +88,12 @@
       quizMode = quiz.mode;
       quizOptions = quiz.options || [];
 
+      const title = quiz.title || "Quiz";
+      quizTitle.innerText = "📘 " + title;
+      pageTitle.innerText = title;
+
       loading.style.display = "none";
       quizBox.classList.remove("hidden");
-
       questionEl.innerText = "🧾 " + quiz.question;
 
       if (quizMode === "mcq") {
@@ -113,7 +119,7 @@
 
       if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
 
-      // Prevent double submission
+      // Check for duplicate submission
       const check = query(
         collection(db, "quizAnswers"),
         where("questionId", "==", currentQuizId),
@@ -121,7 +127,7 @@
       );
       const existing = await getDocs(check);
       if (!existing.empty) {
-        statusEl.innerText = "🚫 Aap ne is sawaal ka already jawab diya hai.";
+        statusEl.innerText = "🚫 Aap is suwaal ka already jawab de chuke hain.";
         return;
       }
 
