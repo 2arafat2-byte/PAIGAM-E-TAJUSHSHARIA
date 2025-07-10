@@ -1,44 +1,41 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Daily Quiz | Paighaam</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-    };
-  </script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
-  <main class="max-w-xl mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4 text-center">📘 Daily Suwaal</h1>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
+    <h1 class="text-2xl font-bold text-center">🕌 Daily Quiz</h1>
 
-    <form id="quiz-form" class="space-y-4 bg-white dark:bg-gray-800 p-4 rounded shadow-md">
-      <div id="question-box" class="mb-2 text-lg font-medium"></div>
+    <div id="quiz-box" class="space-y-3 hidden">
+      <p id="question" class="font-semibold"></p>
 
+      <!-- MCQ Options -->
       <div id="options-box" class="space-y-2 hidden"></div>
-      <div id="text-answer-box" class="hidden">
-        <input type="text" id="text-answer" class="w-full border px-2 py-1 rounded" placeholder="Type your answer" />
-      </div>
 
-      <input type="text" id="name" class="w-full border px-2 py-1 rounded" placeholder="Your Name" required />
-      <input type="text" id="number" class="w-full border px-2 py-1 rounded" placeholder="Your Number" required />
-      <input type="text" id="address" class="w-full border px-2 py-1 rounded" placeholder="Your Address" required />
+      <!-- Text Answer -->
+      <input type="text" id="text-answer" placeholder="Type your answer" class="hidden w-full border px-3 py-2 rounded"/>
 
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">📤 Submit</button>
-    </form>
+      <input type="text" id="name" placeholder="Your Name" class="w-full border px-3 py-2 rounded" required>
+      <input type="text" id="phone" placeholder="Phone Number" class="w-full border px-3 py-2 rounded" required>
+      <input type="text" id="address" placeholder="Address" class="w-full border px-3 py-2 rounded" required>
 
-    <div id="success" class="text-green-600 font-medium mt-4 hidden text-center">
-      ✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.
+      <button id="submit-btn" class="bg-blue-600 text-white w-full py-2 rounded">📤 Submit Answer</button>
+      <p id="status" class="text-center text-sm"></p>
     </div>
-  </main>
 
-  <!-- Firebase SDKs -->
+    <p id="loading">⏳ Loading today's quiz...</p>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -52,108 +49,112 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const qBox = document.getElementById("question-box");
+    const quizBox = document.getElementById("quiz-box");
+    const loading = document.getElementById("loading");
+    const questionEl = document.getElementById("question");
     const optionsBox = document.getElementById("options-box");
-    const textBox = document.getElementById("text-answer-box");
-    const quizForm = document.getElementById("quiz-form");
-    const successMsg = document.getElementById("success");
+    const textAnswer = document.getElementById("text-answer");
+    const submitBtn = document.getElementById("submit-btn");
+    const statusEl = document.getElementById("status");
 
-    let currentQuiz = null;
-
-    function todayISO() {
-      const now = new Date();
-      now.setHours(0,0,0,0);
-      return now.toISOString().slice(0, 16); // 'YYYY-MM-DDTHH:mm'
-    }
+    let currentQuizId = "";
+    let correctAnswer = "";
+    let quizMode = "";
+    let quizOptions = [];
 
     async function loadQuiz() {
-      const snapshot = await getDocs(query(collection(db, "dailyQuiz")));
-      const now = new Date();
-      let found = false;
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const qDate = new Date(data.date);
-        if (
-          qDate.getFullYear() === now.getFullYear() &&
-          qDate.getMonth() === now.getMonth() &&
-          qDate.getDate() === now.getDate()
-        ) {
-          found = true;
-          currentQuiz = data;
-          qBox.innerText = data.question;
+      const now = new Date().toISOString();
+      const q = query(collection(db, "dailyQuiz"), where("date", "<=", now));
+      const snapshot = await getDocs(q);
 
-          if (data.mode === "mcq") {
-            optionsBox.innerHTML = "";
-            data.options.forEach((opt, i) => {
-              optionsBox.innerHTML += `
-                <label class="block">
-                  <input type="radio" name="answer" value="${i}" class="mr-2" required />
-                  ${opt}
-                </label>`;
-            });
-            optionsBox.classList.remove("hidden");
-          } else {
-            textBox.classList.remove("hidden");
-          }
+      let latestQuiz = null;
+      snapshot.forEach(doc => {
+        if (!latestQuiz || doc.data().date > latestQuiz.data().date) {
+          latestQuiz = doc;
         }
       });
 
-      if (!found) {
-        qBox.innerHTML = "❌ Aaj ka suwaal abhi tak set nahi hua.";
-        quizForm.classList.add("hidden");
+      if (!latestQuiz) {
+        loading.innerText = "⚠️ No quiz set yet.";
+        return;
+      }
+
+      const quiz = latestQuiz.data();
+      currentQuizId = latestQuiz.id;
+      correctAnswer = quiz.correct;
+      quizMode = quiz.mode;
+      quizOptions = quiz.options || [];
+
+      loading.style.display = "none";
+      quizBox.classList.remove("hidden");
+
+      questionEl.innerText = "🧾 " + quiz.question;
+
+      if (quizMode === "mcq") {
+        optionsBox.classList.remove("hidden");
+        optionsBox.innerHTML = "";
+        quizOptions.forEach((opt, i) => {
+          optionsBox.innerHTML += `
+            <label class="block">
+              <input type="radio" name="option" value="${i}" class="mr-2"> ${opt}
+            </label>`;
+        });
+      } else {
+        textAnswer.classList.remove("hidden");
       }
     }
 
     loadQuiz();
 
-    quizForm.onsubmit = async (e) => {
-      e.preventDefault();
+    submitBtn.onclick = async () => {
       const name = document.getElementById("name").value.trim();
-      const number = document.getElementById("number").value.trim();
+      const phone = document.getElementById("phone").value.trim();
       const address = document.getElementById("address").value.trim();
 
-      let userAnswer = "";
-      let isCorrect = false;
+      if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
 
-      if (currentQuiz.mode === "mcq") {
-        const selected = document.querySelector('input[name="answer"]:checked');
-        userAnswer = selected ? selected.value : "";
-        isCorrect = (userAnswer === currentQuiz.correct);
+      // Prevent double submission
+      const check = query(
+        collection(db, "quizAnswers"),
+        where("questionId", "==", currentQuizId),
+        where("phone", "==", phone)
+      );
+      const existing = await getDocs(check);
+      if (!existing.empty) {
+        statusEl.innerText = "🚫 Aap ne is sawaal ka already jawab diya hai.";
+        return;
+      }
+
+      let userAnswer = "";
+      if (quizMode === "mcq") {
+        const selected = document.querySelector('input[name="option"]:checked');
+        if (!selected) return alert("⚠️ Please select an option.");
+        userAnswer = selected.value;
       } else {
-        userAnswer = document.getElementById("text-answer").value.trim().toLowerCase();
-        const correctText = currentQuiz.correct.toLowerCase();
-        const distance = levenshtein(userAnswer, correctText);
-        isCorrect = (distance <= 2); // allow 2-letter mistake
+        userAnswer = textAnswer.value.trim().toLowerCase();
+        if (!userAnswer) return alert("⚠️ Answer likhna zaroori hai.");
+      }
+
+      let isCorrect = false;
+      if (quizMode === "mcq") {
+        isCorrect = userAnswer === correctAnswer;
+      } else {
+        const normalize = (txt) => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
+        isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
       }
 
       await addDoc(collection(db, "quizAnswers"), {
-        name,
-        number,
-        address,
+        name, phone, address,
         answer: userAnswer,
+        options: quizOptions,
+        questionId: currentQuizId,
         correct: isCorrect,
-        question: currentQuiz.question,
-        timestamp: new Date().toISOString()
+        timestamp: Date.now()
       });
 
-      quizForm.reset();
-      successMsg.classList.remove("hidden");
+      statusEl.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
+      quizBox.innerHTML = "";
     };
-
-    // Levenshtein distance (small typo checker)
-    function levenshtein(a, b) {
-      const dp = Array(a.length + 1).fill().map(() => Array(b.length + 1).fill(0));
-      for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-      for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-      for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-          dp[i][j] = a[i-1] === b[j-1]
-            ? dp[i-1][j-1]
-            : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-        }
-      }
-      return dp[a.length][b.length];
-    }
   </script>
 </body>
 </html>
