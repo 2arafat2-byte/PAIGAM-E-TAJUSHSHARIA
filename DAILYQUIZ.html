@@ -15,9 +15,9 @@
     <aside class="w-64 min-h-screen bg-white dark:bg-gray-800 p-4 shadow">
       <h1 class="text-2xl font-bold mb-6">🔐 Admin Panel</h1>
       <div class="flex flex-col space-y-3">
-        <button disabled onclick="showSection('set-quiz')" class="bg-blue-100 dark:bg-blue-900 text-blue-800 px-4 py-2 rounded shadow">📌 Set Daily Suwaal</button>
-        <button disabled onclick="showSection('view-schedule')" class="bg-green-100 dark:bg-green-900 text-green-800 px-4 py-2 rounded shadow">📅 View Schedule</button>
-        <button disabled onclick="showSection('view-answers')" class="bg-purple-100 dark:bg-purple-900 text-purple-800 px-4 py-2 rounded shadow">✅ View Answers</button>
+        <button id="btn-set" disabled class="bg-blue-100 dark:bg-blue-900 text-blue-800 px-4 py-2 rounded shadow">📌 Set Daily Suwaal</button>
+        <button id="btn-schedule" disabled class="bg-green-100 dark:bg-green-900 text-green-800 px-4 py-2 rounded shadow">📅 View Schedule</button>
+        <button id="btn-answers" disabled class="bg-purple-100 dark:bg-purple-900 text-purple-800 px-4 py-2 rounded shadow">✅ View Answers</button>
       </div>
     </aside>
 
@@ -111,33 +111,37 @@
         status.textContent = `✅ Welcome, ${user.email}`;
         loginBtn.classList.add("hidden");
         logoutBtn.classList.remove("hidden");
-        document.querySelectorAll("aside button").forEach(b => b.disabled = false);
+        ["btn-set", "btn-schedule", "btn-answers"].forEach(id => document.getElementById(id).disabled = false);
       } else {
         status.textContent = "❌ Access Denied";
-        logoutBtn.classList.add("hidden");
         loginBtn.classList.remove("hidden");
-        document.querySelectorAll("aside button").forEach(b => b.disabled = true);
+        logoutBtn.classList.add("hidden");
       }
     });
 
-    window.showSection = (id) => {
+    function showSection(id) {
       ["set-quiz", "view-schedule", "view-answers"].forEach(s => document.getElementById(s).classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
+    }
+
+    document.getElementById("btn-set").onclick = () => showSection("set-quiz");
+    document.getElementById("btn-schedule").onclick = () => {
+      showSection("view-schedule");
+      loadSchedule();
+    };
+    document.getElementById("btn-answers").onclick = () => {
+      showSection("view-answers");
+      loadCorrectAnswers();
     };
 
-    // Toggle between MCQ / Text answer fields
+    // Toggle between MCQ/Text
     const quizType = document.getElementById("quiz-type");
     quizType.onchange = () => {
-      if (quizType.value === "mcq") {
-        document.getElementById("mcq-fields").classList.remove("hidden");
-        document.getElementById("text-answer-field").classList.add("hidden");
-      } else {
-        document.getElementById("mcq-fields").classList.add("hidden");
-        document.getElementById("text-answer-field").classList.remove("hidden");
-      }
+      const isMCQ = quizType.value === "mcq";
+      document.getElementById("mcq-fields").classList.toggle("hidden", !isMCQ);
+      document.getElementById("text-answer-field").classList.toggle("hidden", isMCQ);
     };
 
-    // Submit Quiz
     document.getElementById("quiz-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const mode = quizType.value;
@@ -163,11 +167,10 @@
       }
 
       await addDoc(collection(db, "dailyquiz"), data);
-      alert("✅ Suwaal saved successfully!");
+      alert("✅ Suwaal saved!");
       e.target.reset();
     });
 
-    // View schedule
     async function loadSchedule() {
       const container = document.getElementById("schedule-list");
       container.innerHTML = "<p>Loading...</p>";
@@ -183,7 +186,6 @@
       });
     }
 
-    // View correct answers
     async function loadCorrectAnswers() {
       const list = document.getElementById("answer-list");
       list.innerHTML = "Loading...";
@@ -208,15 +210,6 @@
         list.appendChild(div);
       });
     }
-
-    document.querySelectorAll("aside button")[1].onclick = () => {
-      showSection("view-schedule");
-      loadSchedule();
-    };
-    document.querySelectorAll("aside button")[2].onclick = () => {
-      showSection("view-answers");
-      loadCorrectAnswers();
-    };
   </script>
 </body>
 </html>
