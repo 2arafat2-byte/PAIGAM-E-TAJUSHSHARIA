@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Daily Quiz | Paighaam</title>
+  <title>Admin Panel | Paighaam</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -12,33 +12,80 @@
   </script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
-  <main class="max-w-xl mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4 text-center">📘 Daily Suwaal</h1>
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg">
+      <div class="p-4 font-bold text-xl">🔐 Paighaam Admin Panel</div>
+      <nav class="flex flex-col space-y-2 p-4">
+        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📌 Set Daily Suwaal</button>
+        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
+      </nav>
+    </aside>
 
-    <form id="quiz-form" class="space-y-4 bg-white dark:bg-gray-800 p-4 rounded shadow-md">
-      <div id="question-box" class="mb-2 text-lg font-medium"></div>
-
-      <div id="options-box" class="space-y-2 hidden"></div>
-      <div id="text-answer-box" class="hidden">
-        <input type="text" id="text-answer" class="w-full border px-2 py-1 rounded" placeholder="Type your answer" />
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+      <div class="flex justify-between items-center mb-6">
+        <div id="welcome" class="font-semibold">Checking login...</div>
+        <div class="space-x-2">
+          <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
+          <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
+        </div>
       </div>
 
-      <input type="text" id="name" class="w-full border px-2 py-1 rounded" placeholder="Your Name" required />
-      <input type="text" id="number" class="w-full border px-2 py-1 rounded" placeholder="Your Number" required />
-      <input type="text" id="address" class="w-full border px-2 py-1 rounded" placeholder="Your Address" required />
+      <!-- Sections -->
+      <div id="set-suhaal-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
+        <label class="block mb-2">Choose Mode:</label>
+        <select id="question-mode" class="mb-4 px-2 py-1 border rounded">
+          <option value="mcq">MCQ (Options)</option>
+          <option value="text">Text Answer</option>
+        </select>
 
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">📤 Submit</button>
-    </form>
+        <form id="quiz-form" class="space-y-4">
+          <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
 
-    <div id="success" class="text-green-600 font-medium mt-4 hidden text-center">
-      ✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.
-    </div>
-  </main>
+          <div id="mcq-options">
+            <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
+
+            <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
+              <option value="0">Correct: Option 1</option>
+              <option value="1">Correct: Option 2</option>
+              <option value="2">Correct: Option 3</option>
+              <option value="3">Correct: Option 4</option>
+            </select>
+          </div>
+
+          <div id="text-answer-box" class="hidden">
+            <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
+          </div>
+
+          <input type="datetime-local" id="question-date" class="w-full border px-2 py-1 rounded" required />
+
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
+        </form>
+      </div>
+
+      <div id="schedule-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
+        <div id="schedule-list" class="space-y-2"></div>
+      </div>
+
+      <div id="answers-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">✅ View Answers</h2>
+        <div id="answers-list" class="space-y-2"></div>
+      </div>
+    </main>
+  </div>
 
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -50,110 +97,98 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    const qBox = document.getElementById("question-box");
-    const optionsBox = document.getElementById("options-box");
-    const textBox = document.getElementById("text-answer-box");
+    const logoutBtn = document.getElementById("logout");
+    const welcome = document.getElementById("welcome");
+    const toggleTheme = document.getElementById("toggle-theme");
     const quizForm = document.getElementById("quiz-form");
-    const successMsg = document.getElementById("success");
+    const modeSelect = document.getElementById("question-mode");
+    const mcqOptions = document.getElementById("mcq-options");
+    const textAnswerBox = document.getElementById("text-answer-box");
 
-    let currentQuiz = null;
+    toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
 
-    function todayISO() {
-      const now = new Date();
-      now.setHours(0,0,0,0);
-      return now.toISOString().slice(0, 16); // 'YYYY-MM-DDTHH:mm'
+    modeSelect.onchange = () => {
+      const mode = modeSelect.value;
+      mcqOptions.classList.toggle("hidden", mode !== "mcq");
+      textAnswerBox.classList.toggle("hidden", mode !== "text");
+    };
+
+    function showSection(id) {
+      document.getElementById("set-suhaal-section").classList.add("hidden");
+      document.getElementById("schedule-section").classList.add("hidden");
+      document.getElementById("answers-section").classList.add("hidden");
+      document.getElementById(id).classList.remove("hidden");
     }
 
-    async function loadQuiz() {
-      const snapshot = await getDocs(query(collection(db, "dailyQuiz")));
-      const now = new Date();
-      let found = false;
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const qDate = new Date(data.date);
-        if (
-          qDate.getFullYear() === now.getFullYear() &&
-          qDate.getMonth() === now.getMonth() &&
-          qDate.getDate() === now.getDate()
-        ) {
-          found = true;
-          currentQuiz = data;
-          qBox.innerText = data.question;
+    document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
+    document.getElementById("view-schedule").onclick = () => loadSchedule();
+    document.getElementById("view-answers").onclick = () => loadAnswers();
 
-          if (data.mode === "mcq") {
-            optionsBox.innerHTML = "";
-            data.options.forEach((opt, i) => {
-              optionsBox.innerHTML += `
-                <label class="block">
-                  <input type="radio" name="answer" value="${i}" class="mr-2" required />
-                  ${opt}
-                </label>`;
-            });
-            optionsBox.classList.remove("hidden");
-          } else {
-            textBox.classList.remove("hidden");
-          }
-        }
+    function loadSchedule() {
+      showSection("schedule-section");
+      const list = document.getElementById("schedule-list");
+      list.innerHTML = "";
+      getDocs(query(collection(db, "dailyQuiz"), orderBy("date"))).then(snapshot => {
+        snapshot.forEach(doc => {
+          const q = doc.data();
+          list.innerHTML += `<div class="p-3 border rounded bg-white dark:bg-gray-700">${q.question} <br><small>${q.date}</small></div>`;
+        });
       });
-
-      if (!found) {
-        qBox.innerHTML = "❌ Aaj ka suwaal abhi tak set nahi hua.";
-        quizForm.classList.add("hidden");
-      }
     }
 
-    loadQuiz();
+    function loadAnswers() {
+      showSection("answers-section");
+      const list = document.getElementById("answers-list");
+      list.innerHTML = "";
+      getDocs(collection(db, "quizAnswers")).then(snapshot => {
+        snapshot.forEach(doc => {
+          const a = doc.data();
+          if (a.correct) {
+            list.innerHTML += `<div class="p-3 border rounded bg-green-100 dark:bg-green-800">${a.name} ✅ ${a.answer}</div>`;
+          }
+        });
+      });
+    }
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const number = document.getElementById("number").value.trim();
-      const address = document.getElementById("address").value.trim();
+      const question = document.getElementById("question").value;
+      const date = document.getElementById("question-date").value;
+      const mode = modeSelect.value;
 
-      let userAnswer = "";
-      let isCorrect = false;
+      let data = { question, date, mode };
 
-      if (currentQuiz.mode === "mcq") {
-        const selected = document.querySelector('input[name="answer"]:checked');
-        userAnswer = selected ? selected.value : "";
-        isCorrect = (userAnswer === currentQuiz.correct);
+      if (mode === "mcq") {
+        data.options = Array.from(document.querySelectorAll(".option")).map(input => input.value);
+        data.correct = document.getElementById("correct-option").value;
       } else {
-        userAnswer = document.getElementById("text-answer").value.trim().toLowerCase();
-        const correctText = currentQuiz.correct.toLowerCase();
-        const distance = levenshtein(userAnswer, correctText);
-        isCorrect = (distance <= 2); // allow 2-letter mistake
+        data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
       }
 
-      await addDoc(collection(db, "quizAnswers"), {
-        name,
-        number,
-        address,
-        answer: userAnswer,
-        correct: isCorrect,
-        question: currentQuiz.question,
-        timestamp: new Date().toISOString()
-      });
-
+      await addDoc(collection(db, "dailyQuiz"), data);
+      alert("Suwaal saved ✅");
       quizForm.reset();
-      successMsg.classList.remove("hidden");
     };
 
-    // Levenshtein distance (small typo checker)
-    function levenshtein(a, b) {
-      const dp = Array(a.length + 1).fill().map(() => Array(b.length + 1).fill(0));
-      for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-      for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-      for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-          dp[i][j] = a[i-1] === b[j-1]
-            ? dp[i-1][j-1]
-            : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
-        }
+    logoutBtn.onclick = () => {
+      signOut(auth);
+      location.reload();
+    };
+
+    onAuthStateChanged(auth, user => {
+      if (user && allowedEmails.includes(user.email)) {
+        welcome.innerText = `✅ Welcome, ${user.email}`;
+        logoutBtn.classList.remove("hidden");
+        document.getElementById("set-suhaal-section").classList.remove("hidden");
+      } else {
+        signInWithPopup(auth, provider);
       }
-      return dp[a.length][b.length];
-    }
+    });
   </script>
 </body>
 </html>
