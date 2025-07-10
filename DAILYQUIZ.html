@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title id="page-title">Quiz</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Quiz | Paighaam</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
   <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
-    <h1 id="quiz-title" class="text-2xl font-bold text-center">Loading...</h1>
+    <h1 class="text-2xl font-bold text-center" id="quiz-title">🕌 Tajushshariya Quiz Contest</h1>
 
     <div id="quiz-box" class="space-y-3 hidden">
-      <p id="question" class="font-semibold"></p>
+      <div id="question" class="font-semibold"></div>
 
       <!-- MCQ Options -->
       <div id="options-box" class="space-y-2 hidden"></div>
@@ -25,7 +25,7 @@
       <input type="text" id="address" placeholder="Address" class="w-full border px-3 py-2 rounded" required>
 
       <button id="submit-btn" class="bg-blue-600 text-white w-full py-2 rounded">📤 Submit Answer</button>
-      <p id="status" class="text-center text-sm"></p>
+      <p id="status" class="text-center text-sm mt-2"></p>
     </div>
 
     <p id="loading">⏳ Loading today’s quiz...</p>
@@ -56,9 +56,7 @@
     const textAnswer = document.getElementById("text-answer");
     const submitBtn = document.getElementById("submit-btn");
     const statusEl = document.getElementById("status");
-
-    const quizTitle = document.getElementById("quiz-title");
-    const pageTitle = document.getElementById("page-title");
+    const quizTitleEl = document.getElementById("quiz-title");
 
     let currentQuizId = "";
     let correctAnswer = "";
@@ -88,13 +86,13 @@
       quizMode = quiz.mode;
       quizOptions = quiz.options || [];
 
-      const title = quiz.title || "Quiz";
-      quizTitle.innerText = "📘 " + title;
-      pageTitle.innerText = title;
+      document.title = quiz.title || "Tajushshariya Quiz";
+      quizTitleEl.innerText = quiz.title || "Tajushshariya Quiz";
 
       loading.style.display = "none";
       quizBox.classList.remove("hidden");
-      questionEl.innerText = "🧾 " + quiz.question;
+
+      questionEl.innerHTML = `<div class="text-lg font-bold mb-2">${quiz.title || ""}</div><div>🧾 ${quiz.question}</div>`;
 
       if (quizMode === "mcq") {
         optionsBox.classList.remove("hidden");
@@ -119,7 +117,7 @@
 
       if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
 
-      // Check for duplicate submission
+      // 🔒 Prevent duplicate answers
       const check = query(
         collection(db, "quizAnswers"),
         where("questionId", "==", currentQuizId),
@@ -127,7 +125,7 @@
       );
       const existing = await getDocs(check);
       if (!existing.empty) {
-        statusEl.innerText = "🚫 Aap is suwaal ka already jawab de chuke hain.";
+        statusEl.innerText = "🚫 Aap ne is suwaal ka already jawab diya hai.";
         return;
       }
 
@@ -141,6 +139,7 @@
         if (!userAnswer) return alert("⚠️ Answer likhna zaroori hai.");
       }
 
+      // ✅ Check correct
       let isCorrect = false;
       if (quizMode === "mcq") {
         isCorrect = userAnswer === correctAnswer;
@@ -149,6 +148,7 @@
         isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
       }
 
+      // 📥 Save to Firestore
       await addDoc(collection(db, "quizAnswers"), {
         name, phone, address,
         answer: userAnswer,
@@ -158,7 +158,7 @@
         timestamp: Date.now()
       });
 
-      statusEl.innerText = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
+      statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
       quizBox.innerHTML = "";
     };
   </script>
