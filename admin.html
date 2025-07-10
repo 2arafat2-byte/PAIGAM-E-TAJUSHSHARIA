@@ -1,111 +1,58 @@
-<!-- ADMIN PANEL: Full Final Version (Paste in admin.html) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Admin Panel | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg, #f4f4f4);
+      background-color: var(--bg, #f4f4f4);
       color: var(--text, #000);
-      transition: all 0.3s ease;
       padding: 20px;
+      transition: all 0.3s ease;
     }
     .dark {
-      --bg: #121212;
+      --bg: #111;
       --text: #fff;
     }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
     button {
+      padding: 10px;
+      border: none;
       background: #007bff;
       color: white;
-      padding: 10px 16px;
-      border: none;
       border-radius: 5px;
-      margin: 5px;
       cursor: pointer;
     }
     button:hover {
       opacity: 0.9;
     }
-    #admin-panel, .section { display: none; }
+    #admin-panel {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <h2>🔐 Admin Panel</h2>
   <p id="login-status">Checking login...</p>
-  <button id="login-btn">Sign in with Google</button>
-  <button id="logout-btn" style="display:none;">Logout</button>
+  <button id="login-btn">🔓 Sign in with Google</button>
+  <button id="logout-btn" style="display:none;">🚪 Logout</button>
   <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
 
-  <div id="admin-panel" class="card">
-    <h3>✔️ Welcome Admin</h3>
-    <button onclick="showSection('quiz')">📝 Set Quiz</button>
-    <button onclick="showSection('suwaal')">📨 Suwaalaat</button>
-
-    <div id="quiz" class="section">
-      <h4>📅 Schedule Quiz</h4>
-      <input type="date" id="quiz-date" />
-      <select id="quiz-type">
-        <option value="">-- Select Quiz Type --</option>
-        <option value="typed">Typed Answer</option>
-        <option value="mcq">Multiple Choice</option>
-      </select>
-      <textarea id="quiz-question" placeholder="Enter Question"></textarea>
-      <div id="typed-options" style="display:none;">
-        <input type="text" id="correct-typed" placeholder="Correct Answer (with spelling tolerance)" />
-      </div>
-      <div id="mcq-options" style="display:none;">
-        <input type="text" id="opt-a" placeholder="Option A" />
-        <input type="text" id="opt-b" placeholder="Option B" />
-        <input type="text" id="opt-c" placeholder="Option C" />
-        <input type="text" id="opt-d" placeholder="Option D" />
-        <select id="correct-opt">
-          <option value="">Correct Option</option>
-          <option value="a">A</option>
-          <option value="b">B</option>
-          <option value="c">C</option>
-          <option value="d">D</option>
-        </select>
-      </div>
-      <button onclick="submitQuiz()">💾 Save Quiz</button>
-      <p id="quiz-msg"></p>
-    </div>
-
-    <div id="suwaal" class="section">
-      <h4>📨 Suwaalaat</h4>
-      <div id="suwaal-container"></div>
-      <hr>
-      <input type="text" id="reply-title" readonly />
-      <textarea id="text-reply" placeholder="Type reply..."></textarea>
-      <input type="file" id="audio-file" accept="audio/*" />
-      <input type="file" id="image-file" accept="image/*" />
-      <button onclick="submitReply()">📤 Send Reply</button>
-      <p id="reply-msg"></p>
-    </div>
+  <div id="admin-panel">
+    <h3>✔️ Logged In</h3>
+    <!-- Admin content here -->
   </div>
 
-  <!-- Firebase + FFmpeg -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { createFFmpeg, fetchFile } from './ffmpeg.min.js';
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -118,130 +65,52 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
-    const ffmpeg = createFFmpeg({ log: true });
-
     const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+
     const status = document.getElementById("login-status");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
     const panel = document.getElementById("admin-panel");
 
-    onAuthStateChanged(auth, user => {
+    // Check user status
+    onAuthStateChanged(auth, (user) => {
       if (user && allowed.includes(user.email)) {
-        status.innerText = "✅ Logged in as " + user.email;
+        status.textContent = `✅ Logged in as ${user.email}`;
+        panel.style.display = "block";
         loginBtn.style.display = "none";
         logoutBtn.style.display = "inline-block";
-        panel.style.display = "block";
+      } else if (user) {
+        status.textContent = `❌ Access Denied: ${user.email}`;
       } else {
-        status.innerText = user ? "❌ Access Denied" : "Please sign in.";
-        panel.style.display = "none";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
+        status.textContent = "Please sign in.";
       }
     });
 
-    loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-    logoutBtn.onclick = () => signOut(auth);
-
-    window.showSection = sec => {
-      document.querySelectorAll(".section").forEach(s => s.style.display = "none");
-      document.getElementById(sec).style.display = "block";
-      if (sec === "suwaal") loadSuwaalaat();
+    // Sign in
+    loginBtn.onclick = () => {
+      signInWithPopup(auth, new GoogleAuthProvider())
+        .then(result => {
+          const email = result.user.email;
+          if (!allowed.includes(email)) {
+            alert("Access denied: " + email);
+            signOut(auth);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          status.textContent = "❌ Login failed.";
+        });
     };
 
-    document.getElementById("quiz-type").onchange = e => {
-      document.getElementById("typed-options").style.display = e.target.value === "typed" ? "block" : "none";
-      document.getElementById("mcq-options").style.display = e.target.value === "mcq" ? "block" : "none";
-    };
-
-    window.submitQuiz = async () => {
-      const date = document.getElementById("quiz-date").value;
-      const type = document.getElementById("quiz-type").value;
-      const question = document.getElementById("quiz-question").value;
-      const msg = document.getElementById("quiz-msg");
-      if (!date || !type || !question) return msg.innerText = "⚠️ Fill all fields";
-
-      const id = date;
-      let data = { type, question };
-
-      if (type === "typed") {
-        data.correct = document.getElementById("correct-typed").value;
-      } else if (type === "mcq") {
-        data.options = {
-          a: document.getElementById("opt-a").value,
-          b: document.getElementById("opt-b").value,
-          c: document.getElementById("opt-c").value,
-          d: document.getElementById("opt-d").value,
-        };
-        data.correct = document.getElementById("correct-opt").value;
-      }
-
-      await setDoc(doc(db, "quiz_questions", id), data);
-      msg.innerText = "✅ Quiz Saved";
-    };
-
-    async function loadSuwaalaat() {
-      const container = document.getElementById("suwaal-container");
-      container.innerHTML = "";
-      const snap = await getDocs(collection(db, "user_questions"));
-      snap.forEach(docu => {
-        const d = docu.data();
-        container.innerHTML += `
-          <div class="card">
-            <b>${d.title}</b><br>
-            From: ${d.name}<br>
-            <button onclick="selectReply('${docu.id}', '${d.title.replace(/'/g, "\\'")}')">Reply</button>
-          </div>`;
+    // Logout
+    logoutBtn.onclick = () => {
+      signOut(auth).then(() => {
+        status.textContent = "Signed out.";
+        panel.style.display = "none";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
       });
-    }
-
-    window.selectReply = (id, title) => {
-      document.getElementById("reply-title").value = title;
-      document.getElementById("reply-title").dataset.id = id;
     };
-
-    window.submitReply = async () => {
-      const id = document.getElementById("reply-title").dataset.id;
-      const title = document.getElementById("reply-title").value;
-      const text = document.getElementById("text-reply").value;
-      const audio = document.getElementById("audio-file").files[0];
-      const image = document.getElementById("image-file").files[0];
-      const msg = document.getElementById("reply-msg");
-
-      if (!title || (!text && !audio && !image)) return msg.innerText = "⚠️ Reply content missing";
-
-      msg.innerText = "⏳ Processing...";
-
-      if (!ffmpeg.isLoaded()) await ffmpeg.load();
-
-      let videoBase64 = "";
-
-      if (audio && image) {
-        await ffmpeg.FS("writeFile", "img.jpg", await fetchFile(image));
-        await ffmpeg.FS("writeFile", "audio.mp3", await fetchFile(audio));
-        await ffmpeg.run("-loop", "1", "-i", "img.jpg", "-i", "audio.mp3", "-c:v", "libx264", "-t", "20", "-pix_fmt", "yuv420p", "-shortest", "out.mp4");
-        const data = ffmpeg.FS("readFile", "out.mp4");
-        const blob = new Blob([data.buffer], { type: "video/mp4" });
-        videoBase64 = await blobToBase64(blob);
-      }
-
-      await setDoc(doc(db, "question_answers", id), {
-        title,
-        text,
-        video: videoBase64
-      });
-
-      msg.innerText = "✅ Reply saved!";
-    };
-
-    function blobToBase64(blob) {
-      return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      });
-    }
   </script>
 </body>
 </html>
