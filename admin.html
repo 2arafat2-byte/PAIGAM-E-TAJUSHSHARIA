@@ -61,12 +61,16 @@
             <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
           </div>
 
-          <input type="datetime-local" id="question-date" class="w-full border px-2 py-1 rounded" required />
+          <label>Start Time</label>
+          <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
+
+          <label>End Time</label>
+          <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
+
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
-
-      <!-- Schedule -->
+<!-- Schedule -->
       <div id="schedule-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
         <div id="schedule-list" class="space-y-2"></div>
@@ -95,7 +99,7 @@
     </div>
   </div>
 
-  <!-- Firebase SDK + Script -->
+  <!-- Firebase SDK + Admin Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -124,16 +128,27 @@
     toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
     logoutBtn.onclick = () => { signOut(auth); location.reload(); }
 
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async (user) => {
       if (user && allowedEmails.includes(user.email)) {
         welcome.innerText = `✅ Welcome, ${user.email}`;
         logoutBtn.classList.remove("hidden");
         document.getElementById("sidebar").classList.remove("hidden");
         showSection("set-suhaal-section");
       } else {
-        signInWithPopup(auth, provider);
+        await signInWithPopup(auth, provider);
       }
     });
+
+    function showSection(id) {
+      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(sec => {
+        document.getElementById(sec).classList.add("hidden");
+      });
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
+    document.getElementById("view-schedule").onclick = () => loadSchedule();
+    document.getElementById("view-answers").onclick = () => loadAnswers();
 
     const quizForm = document.getElementById("quiz-form");
     const modeSelect = document.getElementById("question-mode");
@@ -145,24 +160,19 @@
       textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
     };
 
-    function showSection(id) {
-      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(sec => {
-        document.getElementById(sec).classList.add("hidden");
-      });
-      document.getElementById(id).classList.remove("hidden");
-    }
-
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
       const title = document.getElementById("quiz-title").value.trim();
       const imageURL = document.getElementById("image-url").value.trim();
       const question = document.getElementById("question").value.trim();
-      const date = document.getElementById("question-date").value;
+      const startTime = document.getElementById("question-start").value;
+      const endTime = document.getElementById("question-end").value;
       const mode = modeSelect.value;
-      const data = { title, imageURL, question, date, mode };
+
+      const data = { title, imageURL, question, startTime, endTime, mode };
 
       if (mode === "mcq") {
-        const options = Array.from(document.querySelectorAll(".option")).map(i => i.value.trim());
+        const options = Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim());
         data.options = options;
         data.correct = document.getElementById("correct-option").value;
       } else {
@@ -173,12 +183,11 @@
       alert("✅ Suwaal Saved");
       quizForm.reset();
     };
-
-    async function loadSchedule() {
+async function loadSchedule() {
       showSection("schedule-section");
       const list = document.getElementById("schedule-list");
       list.innerHTML = "";
-      const snapshot = await getDocs(query(collection(db, "dailyQuiz"), orderBy("date")));
+      const snapshot = await getDocs(query(collection(db, "dailyQuiz"), orderBy("startTime")));
       snapshot.forEach(docSnap => {
         const q = docSnap.data();
         const id = docSnap.id;
@@ -187,7 +196,7 @@
             <strong>${q.title || "No Title"}</strong><br>
             <img src="${q.imageURL || ""}" class="w-20 h-20 mt-2" /><br>
             ${q.question}<br>
-            <small>${new Date(q.date).toLocaleString()}</small><br>
+            <small>From: ${new Date(q.startTime).toLocaleString()}<br>To: ${new Date(q.endTime).toLocaleString()}</small><br>
             <button onclick="deleteSchedule('${id}')" class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
           </div>`;
       });
