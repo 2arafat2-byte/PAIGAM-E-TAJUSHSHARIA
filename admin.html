@@ -3,143 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Panel | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root {
-      --bg: #f0f0f0;
-      --text: #111;
-      --card: #fff;
-    }
-    body.dark {
-      --bg: #111;
-      --text: #fff;
-      --card: #1e1e1e;
-    }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
+      background-color: var(--bg, #f4f4f4);
+      color: var(--text, #000);
       padding: 20px;
-      transition: 0.3s;
+      transition: all 0.3s ease;
     }
-    .container {
-      max-width: 960px;
-      margin: auto;
-    }
-    .card {
-      background: var(--card);
-      padding: 20px;
-      margin: 10px 0;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+    .dark {
+      --bg: #111;
+      --text: #fff;
     }
     button {
+      padding: 10px;
+      border: none;
       background: #007bff;
       color: white;
-      border: none;
-      padding: 10px 15px;
       border-radius: 5px;
       cursor: pointer;
-      margin-right: 5px;
     }
     button:hover {
       opacity: 0.9;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-    }
-    th {
-      background: #eee;
-    }
-    #admin-panel, .section {
+    #admin-panel {
       display: none;
-    }
-    video {
-      max-width: 100%;
-      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h2>🔐 Admin Panel</h2>
-      <p id="login-status">Checking login...</p>
-      <button id="login-btn">🔓 Sign in with Google</button>
-      <button id="logout-btn" style="display:none;">🚪 Logout</button>
-      <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
-    </div>
+  <h2>🔐 Admin Panel</h2>
+  <p id="login-status">Checking login...</p>
+  <button id="login-btn">Sign in with Google</button>
+  <button id="logout-btn" style="display:none;">Logout</button>
+  <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
 
-    <div id="admin-panel" class="card">
-      <div>
-        <button onclick="showSection('quiz')">📝 Set Quiz</button>
-        <button onclick="showSection('answers')">📋 View Answers</button>
-        <button onclick="showSection('suwaal')">📨 Suwaalaat</button>
-      </div>
-
-      <div id="quiz" class="section">
-        <h3>Set Daily Quiz</h3>
-        <input type="date" id="quiz-date" />
-        <input type="time" id="quiz-time" />
-        <textarea id="quiz-question" placeholder="Enter Question here"></textarea>
-        <input type="text" id="opt-a" placeholder="Option A" />
-        <input type="text" id="opt-b" placeholder="Option B" />
-        <input type="text" id="opt-c" placeholder="Option C" />
-        <input type="text" id="opt-d" placeholder="Option D" />
-        <select id="correct-opt">
-          <option value="">Correct Option</option>
-          <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
-        </select>
-        <button onclick="submitQuiz()">💾 Save</button>
-        <p id="quiz-msg"></p>
-      </div>
-
-      <div id="answers" class="section">
-        <h3>Submitted Answers</h3>
-        <table>
-          <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Answer</th><th>✔?</th></tr></thead>
-          <tbody id="answers-table"></tbody>
-        </table>
-      </div>
-
-      <div id="suwaal" class="section">
-        <h3>Suwaalaat</h3>
-        <table>
-          <thead><tr><th>Title</th><th>Name</th><th>Action</th></tr></thead>
-          <tbody id="suwaal-table"></tbody>
-        </table>
-
-        <div style="margin-top:20px">
-          <input type="text" id="reply-title" readonly />
-          <textarea id="text-reply" placeholder="Type reply..."></textarea>
-          <input type="file" id="audio-file" accept="audio/*" />
-          <input type="file" id="image-file" accept="image/*" />
-          <button onclick="submitReply()">📤 Send Reply</button>
-          <p id="reply-msg"></p>
-        </div>
-      </div>
-    </div>
+  <div id="admin-panel">
+    <h3>✔️ Logged In</h3>
+    <!-- Aapka main content yahaan ayega -->
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { createFFmpeg, fetchFile } from './ffmpeg.min.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -150,122 +57,48 @@
       appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
     };
 
+    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
-    const ffmpeg = createFFmpeg({ log: true });
 
-    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+    const status = document.getElementById("login-status");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("login-status");
     const panel = document.getElementById("admin-panel");
 
+    // Listen to auth changes
     onAuthStateChanged(auth, user => {
-      if (user && allowed.includes(user.email)) {
-        status.innerText = "✅ Welcome, " + user.email;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
-        panel.style.display = "block";
-      } else if (user) {
-        status.innerText = "❌ Access Denied for " + user.email;
+      if (user) {
+        if (allowedEmails.includes(user.email)) {
+          status.innerText = `✅ Welcome, ${user.email}`;
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+          panel.style.display = "block";
+        } else {
+          status.innerText = `❌ Access Denied: ${user.email}`;
+          logoutBtn.style.display = "inline-block";
+          loginBtn.style.display = "none";
+          panel.style.display = "none";
+        }
       } else {
         status.innerText = "Please sign in.";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        panel.style.display = "none";
       }
     });
 
-    loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-    logoutBtn.onclick = () => signOut(auth);
-
-    window.showSection = id => {
-      ["quiz", "answers", "suwaal"].forEach(s => {
-        document.getElementById(s).style.display = (s === id ? "block" : "none");
+    loginBtn.onclick = () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch(err => {
+        console.error(err);
+        status.innerText = "Login failed. Try again.";
       });
-      if (id === "answers") loadAnswers();
-      if (id === "suwaal") loadSuwaal();
     };
 
-    window.submitQuiz = async () => {
-      const date = document.getElementById("quiz-date").value;
-      const time = document.getElementById("quiz-time").value;
-      const id = `${date}T${time}`;
-      const question = document.getElementById("quiz-question").value;
-      const a = document.getElementById("opt-a").value;
-      const b = document.getElementById("opt-b").value;
-      const c = document.getElementById("opt-c").value;
-      const d = document.getElementById("opt-d").value;
-      const correct = document.getElementById("correct-opt").value;
-      if (!date || !time || !question || !a || !b || !c || !d || !correct) {
-        document.getElementById("quiz-msg").innerText = "⚠️ Fill all fields!";
-        return;
-      }
-      await setDoc(doc(db, "quiz_questions", id), {
-        question, option_a: a, option_b: b, option_c: c, option_d: d, correct
-      });
-      document.getElementById("quiz-msg").innerText = "✅ Quiz saved!";
-    };
-
-    async function loadAnswers() {
-      const table = document.getElementById("answers-table");
-      table.innerHTML = "";
-      const snap = await getDocs(query(collection(db, "quiz_answers"), orderBy("date", "desc")));
-      snap.forEach(docu => {
-        const d = docu.data();
-        table.innerHTML += `<tr>
-          <td>${d.date}</td><td>${d.name}</td><td>${d.phone}</td>
-          <td>${d.answer}</td><td>${d.correct ? "✅" : "❌"}</td>
-        </tr>`;
-      });
-    }
-
-    async function loadSuwaal() {
-      const table = document.getElementById("suwaal-table");
-      table.innerHTML = "";
-      const snap = await getDocs(collection(db, "user_questions"));
-      snap.forEach(docu => {
-        const d = docu.data();
-        table.innerHTML += `<tr>
-          <td>${d.title}</td><td>${d.name}</td>
-          <td><button onclick="setReply('${docu.id}', '${d.title.replace(/'/g, "\\'")}')">Reply</button></td>
-        </tr>`;
-      });
-    }
-
-    window.setReply = (id, title) => {
-      document.getElementById("reply-title").value = title;
-      document.getElementById("reply-title").dataset.id = id;
-    };
-
-    window.submitReply = async () => {
-      const id = document.getElementById("reply-title").dataset.id;
-      const title = document.getElementById("reply-title").value;
-      const text = document.getElementById("text-reply").value;
-      const audio = document.getElementById("audio-file").files[0];
-      const image = document.getElementById("image-file").files[0];
-      const msg = document.getElementById("reply-msg");
-      if (!id || (!text && !audio && !image)) {
-        msg.innerText = "⚠️ Fill at least one reply";
-        return;
-      }
-
-      msg.innerText = "⏳ Processing...";
-
-      if (audio && image) {
-        if (!ffmpeg.isLoaded()) await ffmpeg.load();
-        ffmpeg.FS('writeFile', 'a.mp3', await fetchFile(audio));
-        ffmpeg.FS('writeFile', 'i.jpg', await fetchFile(image));
-        await ffmpeg.run('-loop', '1', '-i', 'i.jpg', '-i', 'a.mp3', '-c:v', 'libx264', '-c:a', 'aac', '-shortest', '-pix_fmt', 'yuv420p', 'out.mp4');
-        const out = ffmpeg.FS('readFile', 'out.mp4');
-        var videoBase64 = btoa(String.fromCharCode(...out));
-      }
-
-      await setDoc(doc(db, "question_answers", id), {
-        title,
-        text,
-        video: videoBase64 || "",
-      });
-
-      msg.innerText = "✅ Reply saved!";
+    logoutBtn.onclick = () => {
+      signOut(auth);
     };
   </script>
 </body>
