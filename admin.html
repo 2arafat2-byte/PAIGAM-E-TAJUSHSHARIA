@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Panel | Paighaam</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { darkMode: 'class' };
-  </script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
   <div class="flex">
@@ -62,7 +60,6 @@
           </div>
 
           <input type="datetime-local" id="question-date" class="w-full border px-2 py-1 rounded" required />
-
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
@@ -73,7 +70,11 @@
       </div>
 
       <div id="answers-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">✅ View Answers</h2>
+        <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
+        <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
+          <option value="correct">✅ Correct Answers</option>
+          <option value="wrong">❌ Wrong Answers</option>
+        </select>
         <div id="answers-list" class="space-y-2"></div>
       </div>
     </main>
@@ -83,7 +84,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -139,45 +140,57 @@
       });
     }
 
-    function loadAnswers() {
+    async function loadAnswers() {
       showSection("answers-section");
       const list = document.getElementById("answers-list");
       list.innerHTML = "";
 
-      getDocs(collection(db, "quizAnswers")).then(snapshot => {
-        snapshot.forEach(doc => {
-          const a = doc.data();
-          if (!a.correct) return;
+      const filter = document.getElementById("answer-filter").value;
 
-          let displayAnswer = a.answer;
+      const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
+      snapshot.forEach(async (docSnap) => {
+        const a = docSnap.data();
+        const id = docSnap.id;
+        const matchFilter = (filter === "correct" && a.correct) || (filter === "wrong" && !a.correct);
+        if (!matchFilter) return;
 
-          if (a.options && !isNaN(a.answer)) {
-            const index = parseInt(a.answer);
-            displayAnswer = `Option ${index + 1}: ${a.options[index] || "(invalid option)"}`;
-          }
-
-          list.innerHTML += `
-            <div class="p-4 rounded bg-green-100 dark:bg-green-800 text-sm shadow-md">
-              <div><strong>${a.name}</strong> 
-                <span class="inline-block bg-green-600 text-white px-2 py-0.5 text-xs rounded ml-2">✅ Correct</span>
-              </div>
-              <div class="mt-1">Answer: <span class="font-medium">${displayAnswer}</span></div>
-              <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(a.timestamp).toLocaleString()}</div>
-            </div>`;
-        });
-
-        if (list.innerHTML.trim() === "") {
-          list.innerHTML = "<div class='text-center text-gray-500'>😕 Abhi tak koi sahi jawab nahi mila.</div>";
+        let displayAnswer = a.answer;
+        if (a.options && !isNaN(a.answer)) {
+          const index = parseInt(a.answer);
+          displayAnswer = `Option ${index + 1}: ${a.options[index] || "(invalid option)"}`;
         }
+
+        list.innerHTML += `
+          <div class="p-4 rounded bg-${a.correct ? "green" : "red"}-100 dark:bg-${a.correct ? "green" : "red"}-800 text-sm shadow-md">
+            <div class="flex justify-between items-center">
+              <div>
+                <strong>${a.name}</strong>
+                <span class="inline-block bg-${a.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                  ${a.correct ? "✅ Correct" : "❌ Wrong"}
+                </span>
+              </div>
+              <button onclick="deleteAnswer('${id}')" class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
+            </div>
+            <div class="mt-1">Answer: <span class="font-medium">${displayAnswer}</span></div>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(a.timestamp).toLocaleString()}</div>
+          </div>`;
       });
     }
+
+    window.deleteAnswer = async function(id) {
+      if (confirm("Delete this answer?")) {
+        await deleteDoc(doc(db, "quizAnswers", id));
+        loadAnswers();
+      }
+    }
+
+    document.getElementById("answer-filter").onchange = loadAnswers;
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
       const question = document.getElementById("question").value;
       const date = document.getElementById("question-date").value;
       const mode = modeSelect.value;
-
       let data = { question, date, mode };
 
       if (mode === "mcq") {
@@ -194,8 +207,7 @@
     };
 
     logoutBtn.onclick = () => {
-      signOut(auth);
-      location.reload();
+      signOut(auth); location.reload();
     };
 
     onAuthStateChanged(auth, user => {
