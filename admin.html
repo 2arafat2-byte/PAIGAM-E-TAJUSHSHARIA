@@ -2,28 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Login | Paighaam</title>
+  <title>Admin Panel | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+    }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg, #f4f4f4);
-      color: var(--text, #000);
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
       padding: 20px;
-      transition: all 0.3s ease;
     }
     .dark {
-      --bg: #111;
-      --text: #fff;
+      --bg: #121212;
+      --text: #ffffff;
     }
     button {
       padding: 10px 16px;
       margin: 5px;
       border: none;
-      background: #007bff;
-      color: white;
       border-radius: 5px;
+      background-color: #007bff;
+      color: white;
       cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.9;
     }
     #admin-panel {
       display: none;
@@ -34,18 +41,19 @@
 <body>
   <h2>🔐 Admin Panel</h2>
   <p id="login-status">Checking login...</p>
-  <button id="login-btn">Sign in with Google</button>
-  <button id="logout-btn" style="display:none;">Logout</button>
+  <button id="login-btn">🔓 Sign in with Google</button>
+  <button id="logout-btn" style="display:none;">🚪 Logout</button>
   <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
 
   <div id="admin-panel">
-    <h3>✅ Welcome, Admin!</h3>
-    <p>Login successful. More features will appear here.</p>
+    <h3>🎉 Welcome Admin</h3>
+    <!-- More content can go here -->
+    <p>Login success! Now you can manage the panel.</p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -56,33 +64,33 @@
       appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    const loginBtn = document.getElementById("login-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const status = document.getElementById("login-status");
-    const panel = document.getElementById("admin-panel");
-
     const allowedAdmins = [
       "arrahmanallamalquraan123@gmail.com",
       "imranraza12738@gmail.com"
     ];
 
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const loginStatus = document.getElementById("login-status");
+    const loginBtn = document.getElementById("login-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const panel = document.getElementById("admin-panel");
+
     onAuthStateChanged(auth, user => {
-      if (user && allowedAdmins.includes(user.email)) {
-        status.innerText = `✅ Logged in as ${user.email}`;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
-        panel.style.display = "block";
-      } else if (user) {
-        status.innerText = `❌ Access denied for ${user.email}`;
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-block";
-        panel.style.display = "none";
+      if (user) {
+        if (allowedAdmins.includes(user.email)) {
+          loginStatus.innerText = "✅ Logged in as " + user.email;
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+          panel.style.display = "block";
+        } else {
+          loginStatus.innerText = "❌ Access denied for " + user.email;
+          logoutBtn.style.display = "inline-block";
+          panel.style.display = "none";
+        }
       } else {
-        status.innerText = "Please sign in.";
+        loginStatus.innerText = "Please sign in.";
         loginBtn.style.display = "inline-block";
         logoutBtn.style.display = "none";
         panel.style.display = "none";
@@ -90,21 +98,25 @@
     });
 
     loginBtn.onclick = () => {
+      const provider = new GoogleAuthProvider();
       signInWithPopup(auth, provider)
-        .then(result => console.log("Signed in as:", result.user.email))
+        .then(result => {
+          console.log("Signed in as:", result.user.email);
+        })
         .catch(err => {
           console.error(err);
-          status.innerText = "Login failed.";
+          loginStatus.innerText = "❌ Sign-in failed.";
         });
     };
 
     logoutBtn.onclick = () => {
-      signOut(auth).then(() => {
-        status.innerText = "Signed out.";
-        loginBtn.style.display = "inline-block";
-        logoutBtn.style.display = "none";
-        panel.style.display = "none";
-      });
+      signOut(auth)
+        .then(() => {
+          loginStatus.innerText = "Signed out.";
+          loginBtn.style.display = "inline-block";
+          logoutBtn.style.display = "none";
+          panel.style.display = "none";
+        });
     };
   </script>
 </body>
