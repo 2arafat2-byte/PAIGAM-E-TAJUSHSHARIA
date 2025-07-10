@@ -2,91 +2,128 @@
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Panel | Paighaam</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
-  <div class="flex">
-    <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
-      <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
-      <nav class="flex flex-col space-y-2 p-4">
-        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
-        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
-        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
-      </nav>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-6">
-      <div class="flex justify-between items-center mb-6">
-        <div id="welcome" class="font-semibold">Checking login...</div>
-        <div class="space-x-2">
-          <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
-          <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
+<div class="flex">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
+    <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
+    <nav class="flex flex-col space-y-2 p-4">
+      <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
+      <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+      <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6">
+    <div class="flex justify-between items-center mb-6">
+      <div id="welcome" class="font-semibold">Checking login...</div>
+      <div class="space-x-2">
+        <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
+        <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
+      </div>
+    </div>
+
+    <!-- Set Quiz Section -->
+    <div id="set-suhaal-section" class="hidden">
+      <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
+      <label class="block mb-2">Choose Mode:</label>
+      <select id="question-mode" class="mb-4 px-2 py-1 border rounded">
+        <option value="mcq">MCQ (Options)</option>
+        <option value="text">Text Answer</option>
+      </select>
+
+      <form id="quiz-form" class="space-y-4">
+        <input type="text" id="quiz-title" placeholder="Quiz Title (e.g. Pehla Suwaal...)" class="w-full border px-2 py-1 rounded" required />
+        <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+
+        <div id="mcq-options">
+          <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
+          <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
+          <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
+          <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
+          <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
+            <option value="0">Correct: Option 1</option>
+            <option value="1">Correct: Option 2</option>
+            <option value="2">Correct: Option 3</option>
+            <option value="3">Correct: Option 4</option>
+          </select>
         </div>
-      </div>
 
-      <!-- Set Quiz Section -->
-      <div id="set-suhaal-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
+        <div id="text-answer-box" class="hidden">
+          <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
+        </div>
 
-        <label class="block mb-2">Choose Mode:</label>
-        <select id="question-mode" class="mb-4 px-2 py-1 border rounded">
-          <option value="mcq">MCQ (Options)</option>
-          <option value="text">Text Answer</option>
-        </select>
+        <input type="datetime-local" id="question-date" class="w-full border px-2 py-1 rounded" required />
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
+      </form>
+    </div>
 
-        <form id="quiz-form" class="space-y-4">
-          <input type="text" id="quiz-title" placeholder="Quiz Title (e.g. Pehla Suwaal...)" class="w-full border px-2 py-1 rounded" required />
-          <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+    <!-- Schedule -->
+    <div id="schedule-section" class="hidden">
+      <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
+      <div id="schedule-list" class="space-y-2"></div>
+    </div>
 
-          <div id="mcq-options">
-            <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
-            <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
-            <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
-            <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
+    <!-- View Answers -->
+    <div id="answers-section" class="hidden">
+      <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
+      <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
+        <option value="correct">✅ Correct</option>
+        <option value="wrong">❌ Wrong</option>
+      </select>
+      <div id="answers-list" class="space-y-2"></div>
+    </div>
+  </main>
+</div>
 
-            <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
-              <option value="0">Correct: Option 1</option>
-              <option value="1">Correct: Option 2</option>
-              <option value="2">Correct: Option 3</option>
-              <option value="3">Correct: Option 4</option>
-            </select>
-          </div>
-
-          <div id="text-answer-box" class="hidden">
-            <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
-          </div>
-
-          <input type="datetime-local" id="question-date" class="w-full border px-2 py-1 rounded" required />
-          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
-        </form>
-      </div>
-
-      <!-- Schedule -->
-      <div id="schedule-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
-        <div id="schedule-list" class="space-y-2"></div>
-      </div>
-
-      <!-- View Answers -->
-      <div id="answers-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
-        <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
-          <option value="correct">✅ Correct</option>
-          <option value="wrong">❌ Wrong</option>
-        </select>
-        <div id="answers-list" class="space-y-2"></div>
-      </div>
-    </main>
+<!-- Modal -->
+<div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
+    <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
+    <p><strong>Name:</strong> <span id="modal-name"></span></p>
+    <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
+    <p><strong>Address:</strong> <span id="modal-address"></span></p>
+    <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
   </div>
+</div>
 
-<!-- Firebase + Auth Init Start -->
 <script type="module">
-const quizForm = document.getElementById("quiz-form");
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
+    authDomain: "paigam-ba913.firebaseapp.com",
+    projectId: "paigam-ba913",
+    storageBucket: "paigam-ba913.appspot.com",
+    messagingSenderId: "480474970116",
+    appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+  const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+
+  const logoutBtn = document.getElementById("logout");
+  const welcome = document.getElementById("welcome");
+  const toggleTheme = document.getElementById("toggle-theme");
+  const sidebar = document.getElementById("sidebar");
+
+  const quizForm = document.getElementById("quiz-form");
   const modeSelect = document.getElementById("question-mode");
   const mcqOptions = document.getElementById("mcq-options");
   const textAnswerBox = document.getElementById("text-answer-box");
@@ -95,6 +132,20 @@ const quizForm = document.getElementById("quiz-form");
     mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
     textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
   };
+
+  toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
+  logoutBtn.onclick = () => { signOut(auth); location.reload(); };
+
+  onAuthStateChanged(auth, user => {
+    if (user && allowedEmails.includes(user.email)) {
+      welcome.innerText = `✅ Welcome, ${user.email}`;
+      logoutBtn.classList.remove("hidden");
+      sidebar.classList.remove("hidden");
+      showSection("set-suhaal-section");
+    } else {
+      signInWithPopup(auth, provider);
+    }
+  });
 
   function showSection(id) {
     ["set-suhaal-section", "schedule-section", "answers-section"].forEach(sec => {
@@ -106,6 +157,7 @@ const quizForm = document.getElementById("quiz-form");
   document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
   document.getElementById("view-schedule").onclick = () => loadSchedule();
   document.getElementById("view-answers").onclick = () => loadAnswers();
+  document.getElementById("answer-filter").onchange = loadAnswers;
 
   quizForm.onsubmit = async (e) => {
     e.preventDefault();
@@ -115,21 +167,16 @@ const quizForm = document.getElementById("quiz-form");
     const mode = modeSelect.value;
     const data = { title, question, date, mode };
 
-    if (!title || !question || !date) return alert("⚠️ All fields are required.");
-
     if (mode === "mcq") {
       const options = Array.from(document.querySelectorAll(".option")).map(i => i.value.trim());
-      if (options.some(o => !o)) return alert("⚠️ All options are required.");
       data.options = options;
       data.correct = document.getElementById("correct-option").value;
     } else {
-      const ans = document.getElementById("correct-text-answer").value.trim().toLowerCase();
-      if (!ans) return alert("⚠️ Correct text answer is required.");
-      data.correct = ans;
+      data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
     }
 
     await addDoc(collection(db, "dailyQuiz"), data);
-    alert("✅ Suwaal saved successfully!");
+    alert("✅ Suwaal Saved");
     quizForm.reset();
   };
 
@@ -138,7 +185,6 @@ const quizForm = document.getElementById("quiz-form");
     const list = document.getElementById("schedule-list");
     list.innerHTML = "";
     const snapshot = await getDocs(query(collection(db, "dailyQuiz"), orderBy("date")));
-
     snapshot.forEach(doc => {
       const q = doc.data();
       list.innerHTML += `
@@ -156,13 +202,11 @@ const quizForm = document.getElementById("quiz-form");
     list.innerHTML = "";
     const filter = document.getElementById("answer-filter").value;
     const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
-
     const phoneCount = {};
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
       const id = docSnap.id;
-
       const match = (filter === "correct" && data.correct) || (filter === "wrong" && !data.correct);
       if (!match) return;
 
@@ -191,16 +235,9 @@ const quizForm = document.getElementById("quiz-form");
     });
   }
 
-  window.deleteAnswer = async (id) => {
-    if (confirm("Delete this answer?")) {
-      await deleteDoc(doc(db, "quizAnswers", id));
-      loadAnswers();
-    }
-  };
-
   window.openModal = (name, phone, address, count) => {
     document.getElementById("modal-name").innerText = name;
-    document.getElementById("modal-phone").innerText = phone + ` (${count} answers)`;
+    document.getElementById("modal-phone").innerText = `${phone} (${count} answers)`;
     document.getElementById("modal-address").innerText = address;
     document.getElementById("id-modal").classList.remove("hidden");
     document.getElementById("id-modal").classList.add("flex");
@@ -211,52 +248,12 @@ const quizForm = document.getElementById("quiz-form");
     document.getElementById("id-modal").classList.remove("flex");
   };
 
-  document.getElementById("answer-filter").onchange = loadAnswers;
+  window.deleteAnswer = async (id) => {
+    if (confirm("Delete this answer?")) {
+      await deleteDoc(doc(db, "quizAnswers", id));
+      loadAnswers();
+    }
+  };
 </script>
 </body>
 </html>
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, deleteDoc
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
-    authDomain: "paigam-ba913.firebaseapp.com",
-    projectId: "paigam-ba913",
-    storageBucket: "paigam-ba913.appspot.com",
-    messagingSenderId: "480474970116",
-    appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const provider = new GoogleAuthProvider();
-
-  const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
-
-  const logoutBtn = document.getElementById("logout");
-  const welcome = document.getElementById("welcome");
-  const toggleTheme = document.getElementById("toggle-theme");
-
-  toggleTheme.onclick = () => document.documentElement.classList.toggle("dark");
-
-  logoutBtn.onclick = () => { signOut(auth); location.reload(); }
-
-  onAuthStateChanged(auth, user => {
-    if (user && allowedEmails.includes(user.email)) {
-      welcome.innerText = `✅ Welcome, ${user.email}`;
-      logoutBtn.classList.remove("hidden");
-      document.getElementById("sidebar").classList.remove("hidden");
-      showSection("set-suhaal-section");
-    } else {
-      signInWithPopup(auth, provider);
-    }
-  });
-
-</script>
-<!-- Next Part Script: Handling form, view, delete, modal -->
