@@ -2,79 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel | Paighaam</title>
+  <title>Admin Login | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg, #f7f7f7);
-      color: var(--text, #333);
-      transition: 0.3s ease all;
+      background: var(--bg, #f4f4f4);
+      color: var(--text, #000);
       padding: 20px;
+      transition: all 0.3s ease;
     }
     .dark {
-      --bg: #121212;
+      --bg: #111;
       --text: #fff;
     }
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-      max-width: 800px;
-      margin: auto;
-      margin-bottom: 20px;
-    }
-    input, textarea, select {
-      width: 100%; padding: 10px; margin: 6px 0;
-      border: 1px solid #ccc; border-radius: 6px;
-    }
     button {
-      background: #007bff; color: white;
-      border: none; padding: 10px 16px;
-      border-radius: 6px; margin-top: 10px;
+      padding: 10px 16px;
+      margin: 5px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
       cursor: pointer;
     }
-    table {
-      width: 100%; border-collapse: collapse; margin-top: 10px;
+    #admin-panel {
+      display: none;
+      margin-top: 20px;
     }
-    th, td {
-      padding: 8px; border: 1px solid #ccc; text-align: left;
-    }
-    th { background: #eee; }
-    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🔐 Admin Panel</h2>
-    <p id="login-status">Checking login...</p>
-    <button id="login-btn">Sign in with Google</button>
-    <button id="logout-btn" class="hidden">Logout</button>
-    <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
-  </div>
+  <h2>🔐 Admin Panel</h2>
+  <p id="login-status">Checking login...</p>
+  <button id="login-btn">Sign in with Google</button>
+  <button id="logout-btn" style="display:none;">Logout</button>
+  <button onclick="document.body.classList.toggle('dark')">🌓 Toggle Mode</button>
 
-  <div id="admin-panel" class="card hidden">
-    <h3>📝 Suwaalaat & Reply</h3>
-    <table><thead><tr><th>Title</th><th>Name</th><th>Action</th></tr></thead>
-      <tbody id="suwaal-table"></tbody>
-    </table>
-
-    <div style="margin-top:20px">
-      <input type="text" id="reply-title" readonly />
-      <textarea id="text-reply" placeholder="Type reply..."></textarea>
-      <input type="file" id="audio-file" accept="audio/*" />
-      <input type="file" id="image-file" accept="image/*" />
-      <button onclick="submitReply()">📤 Send Reply</button>
-      <p id="reply-msg"></p>
-    </div>
+  <div id="admin-panel">
+    <h3>✅ Welcome, Admin!</h3>
+    <p>Login successful. More features will appear here.</p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { createFFmpeg, fetchFile } from './ffmpeg.min.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -87,100 +58,54 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
-    const ffmpeg = createFFmpeg({ log: false });
-
-    const allowed = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+    const provider = new GoogleAuthProvider();
 
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
     const status = document.getElementById("login-status");
     const panel = document.getElementById("admin-panel");
 
+    const allowedAdmins = [
+      "arrahmanallamalquraan123@gmail.com",
+      "imranraza12738@gmail.com"
+    ];
+
     onAuthStateChanged(auth, user => {
-      if (user && allowed.includes(user.email)) {
-        status.innerText = "✅ Logged in as " + user.email;
-        loginBtn.classList.add("hidden");
-        logoutBtn.classList.remove("hidden");
-        panel.classList.remove("hidden");
-        loadSuwaal();
+      if (user && allowedAdmins.includes(user.email)) {
+        status.innerText = `✅ Logged in as ${user.email}`;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        panel.style.display = "block";
       } else if (user) {
-        status.innerText = "❌ Access Denied for " + user.email;
+        status.innerText = `❌ Access denied for ${user.email}`;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-block";
+        panel.style.display = "none";
       } else {
         status.innerText = "Please sign in.";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        panel.style.display = "none";
       }
     });
 
-    loginBtn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-    logoutBtn.onclick = () => signOut(auth);
-
-    async function loadSuwaal() {
-      const table = document.getElementById("suwaal-table");
-      table.innerHTML = "";
-      const snap = await getDocs(collection(db, "user_questions"));
-      snap.forEach(docu => {
-        const d = docu.data();
-        table.innerHTML += `<tr>
-          <td>${d.title}</td><td>${d.name}</td>
-          <td><button onclick="setReply('${docu.id}', '${d.title.replace(/'/g, "\\'")}')">✏️ Reply</button></td>
-        </tr>`;
-      });
-    }
-
-    window.setReply = (id, title) => {
-      document.getElementById("reply-title").value = title;
-      document.getElementById("reply-title").dataset.id = id;
+    loginBtn.onclick = () => {
+      signInWithPopup(auth, provider)
+        .then(result => console.log("Signed in as:", result.user.email))
+        .catch(err => {
+          console.error(err);
+          status.innerText = "Login failed.";
+        });
     };
 
-    async function submitReply() {
-      const id = document.getElementById("reply-title").dataset.id;
-      const title = document.getElementById("reply-title").value;
-      const text = document.getElementById("text-reply").value;
-      const audio = document.getElementById("audio-file").files[0];
-      const image = document.getElementById("image-file").files[0];
-      const msg = document.getElementById("reply-msg");
-      msg.innerText = "⏳ Processing...";
-
-      if (!id || (!text && !audio && !image)) {
-        msg.innerText = "⚠️ Provide text/audio/image";
-        return;
-      }
-
-      let videoBase64 = "";
-
-      if (audio && image) {
-        if (!ffmpeg.isLoaded()) await ffmpeg.load();
-        ffmpeg.FS('writeFile', 'img.jpg', await fetchFile(image));
-        ffmpeg.FS('writeFile', 'audio.mp3', await fetchFile(audio));
-
-        await ffmpeg.run('-loop', '1', '-i', 'img.jpg', '-i', 'audio.mp3', '-shortest', '-c:v', 'libx264', '-c:a', 'aac', '-pix_fmt', 'yuv420p', 'out.mp4');
-        const data = ffmpeg.FS('readFile', 'out.mp4');
-        const blob = new Blob([data.buffer], { type: 'video/mp4' });
-
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          videoBase64 = reader.result;
-          await saveToFirestore(id, title, text, videoBase64, msg);
-        };
-        reader.readAsDataURL(blob);
-      } else {
-        await saveToFirestore(id, title, text, "", msg);
-      }
-    }
-
-    async function saveToFirestore(id, title, text, video, msg) {
-      try {
-        await setDoc(doc(db, "question_answers", id), {
-          title, text, video
-        });
-        msg.innerText = "✅ Reply saved!";
-      } catch (e) {
-        console.error(e);
-        msg.innerText = "❌ Failed to save reply.";
-      }
-    }
-
-    window.submitReply = submitReply;
+    logoutBtn.onclick = () => {
+      signOut(auth).then(() => {
+        status.innerText = "Signed out.";
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        panel.style.display = "none";
+      });
+    };
   </script>
 </body>
 </html>
