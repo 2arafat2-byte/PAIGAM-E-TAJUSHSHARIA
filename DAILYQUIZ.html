@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <title>Daily Quiz | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
   <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
+
     <div id="quiz-header" class="flex items-center justify-center space-x-2">
       <img id="quiz-logo" src="" alt="Logo" class="w-12 h-12 hidden" />
       <h1 id="quiz-title" class="text-2xl font-bold text-center">Daily Suwaal</h1>
@@ -38,13 +39,13 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, query, where, getDocs, addDoc
+      getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913",
+      projectId: "paigam-ba913"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -57,6 +58,7 @@
     const textAnswer = document.getElementById("text-answer");
     const submitBtn = document.getElementById("submit-btn");
     const statusEl = document.getElementById("status");
+
     const quizTitle = document.getElementById("quiz-title");
     const quizLogo = document.getElementById("quiz-logo");
 
@@ -66,72 +68,70 @@
     let quizOptions = [];
 
     async function loadQuiz() {
-      try {
-        const now = new Date();
-        const snapshot = await getDocs(collection(db, "dailyQuiz"));
+      const now = new Date();
+      const snapshot = await getDocs(collection(db, "dailyQuiz"));
 
-        let activeQuiz = null;
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const start = data.startTime?.toDate?.() || new Date(data.startTime);
-          const end = data.endTime?.toDate?.() || new Date(data.endTime);
-          if (start <= now && now <= end) {
-            if (!activeQuiz || start > new Date(activeQuiz.data().startTime)) {
-              activeQuiz = doc;
-            }
+      let activeQuiz = null;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const start = new Date(data.startTime);
+        const end = new Date(data.endTime);
+        if (start <= now && now <= end) {
+          if (!activeQuiz || start > new Date(activeQuiz.data().startTime)) {
+            activeQuiz = doc;
           }
+        }
+      });
+
+      if (!activeQuiz) {
+        loading.innerText = "⚠️ Aaj ke liye koi suwaal active nahi hai.";
+        return;
+      }
+
+      const quiz = activeQuiz.data();
+      currentQuizId = activeQuiz.id;
+      correctAnswer = quiz.correct;
+      quizMode = quiz.mode;
+      quizOptions = quiz.options || [];
+
+      quizTitle.innerText = quiz.title || "Daily Suwaal";
+      if (quiz.imageURL) {
+        quizLogo.src = quiz.imageURL;
+        quizLogo.classList.remove("hidden");
+      }
+
+      loading.style.display = "none";
+      quizBox.classList.remove("hidden");
+
+      questionEl.innerText = "🧾 " + quiz.question;
+
+      if (quizMode === "mcq") {
+        optionsBox.classList.remove("hidden");
+        optionsBox.innerHTML = "";
+        quizOptions.forEach((opt, i) => {
+          optionsBox.innerHTML += `
+            <label class="block">
+              <input type="radio" name="option" value="${i}" class="mr-2"> ${opt}
+            </label>`;
         });
-
-        if (!activeQuiz) {
-          loading.innerText = "⚠️ Aaj ke liye koi suwaal active nahi hai.";
-          return;
-        }
-
-        const quiz = activeQuiz.data();
-        currentQuizId = activeQuiz.id;
-        correctAnswer = quiz.correct;
-        quizMode = quiz.mode;
-        quizOptions = quiz.options || [];
-
-        quizTitle.innerText = quiz.title || "Daily Suwaal";
-        if (quiz.imageURL) {
-          quizLogo.src = quiz.imageURL;
-          quizLogo.classList.remove("hidden");
-        }
-
-        loading.style.display = "none";
-        quizBox.classList.remove("hidden");
-
-        questionEl.innerText = "🧾 " + quiz.question;
-
-        if (quizMode === "mcq") {
-          optionsBox.classList.remove("hidden");
-          optionsBox.innerHTML = "";
-          quizOptions.forEach((opt, i) => {
-            optionsBox.innerHTML += `
-              <label class="block">
-                <input type="radio" name="option" value="${i}" class="mr-2"> ${opt}
-              </label>`;
-          });
-        } else {
-          textAnswer.classList.remove("hidden");
-        }
-      } catch (err) {
-        loading.innerText = "❌ Error loading suwaal.";
-        console.error("Error:", err);
+      } else {
+        textAnswer.classList.remove("hidden");
       }
     }
 
     loadQuiz();
 
     submitBtn.onclick = async () => {
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const address = document.getElementById("address").value.trim();
+
+      if (!name || !phone || !address) {
+        alert("⚠️ Please fill all fields.");
+        return;
+      }
+
       try {
-        const name = document.getElementById("name").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const address = document.getElementById("address").value.trim();
-
-        if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
-
         const check = query(
           collection(db, "quizAnswers"),
           where("questionId", "==", currentQuizId),
@@ -146,11 +146,17 @@
         let userAnswer = "";
         if (quizMode === "mcq") {
           const selected = document.querySelector('input[name="option"]:checked');
-          if (!selected) return alert("⚠️ Please select an option.");
+          if (!selected) {
+            alert("⚠️ Please select an option.");
+            return;
+          }
           userAnswer = selected.value;
         } else {
           userAnswer = textAnswer.value.trim().toLowerCase();
-          if (!userAnswer) return alert("⚠️ Answer likhna zaroori hai.");
+          if (!userAnswer) {
+            alert("⚠️ Answer likhna zaroori hai.");
+            return;
+          }
         }
 
         let isCorrect = false;
@@ -167,14 +173,14 @@
           options: quizOptions,
           questionId: currentQuizId,
           correct: isCorrect,
-          timestamp: Date.now()
+          timestamp: serverTimestamp()  // ✅ Use serverTimestamp
         });
 
         statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
         quizBox.innerHTML = "";
       } catch (err) {
-        console.error("Submit Error:", err);
-        alert("❌ Submission failed. Check console or try again.");
+        console.error(err);
+        alert("❌ Submission failed. Please try again.");
       }
     };
   </script>
