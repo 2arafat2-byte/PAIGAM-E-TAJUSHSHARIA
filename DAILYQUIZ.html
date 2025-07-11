@@ -49,8 +49,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -120,6 +119,9 @@
       e.preventDefault();
       if (!currentQuiz) return;
 
+      resultMessage.classList.add("hidden");
+      resultMessage.textContent = "";
+
       submitBtn.disabled = true;
       submitText.textContent = "Submitting...";
       submitSpinner.classList.remove("hidden");
@@ -128,15 +130,28 @@
       const phone = document.getElementById("user-phone").value.trim();
       const address = document.getElementById("user-address").value.trim();
 
-      let answer, correct = false;
+      if (!name || !phone || !address) {
+        showError("❌ Naam, phone aur address zaroori hain.");
+        return;
+      }
+
+      let answer = "";
+      let correct = false;
 
       if (currentQuiz.mode === "mcq") {
         const selected = document.querySelector("input[name='quiz-option']:checked");
-        if (!selected) return;
+        if (!selected) {
+          showError("❌ Koi option select karein.");
+          return;
+        }
         answer = selected.value;
         correct = answer === currentQuiz.correct;
       } else {
         answer = document.getElementById("text-answer").value.trim().toLowerCase();
+        if (!answer) {
+          showError("❌ Jawaab likhna zaroori hai.");
+          return;
+        }
         correct = answer === currentQuiz.correct;
       }
 
@@ -154,17 +169,27 @@
         quizForm.classList.add("hidden");
         resultMessage.classList.remove("hidden");
         resultMessage.textContent = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.";
+        resultMessage.classList.remove("text-red-600");
         resultMessage.classList.add("text-green-600");
       } catch (err) {
-        resultMessage.classList.remove("hidden");
-        resultMessage.textContent = "❌ Kuch ghalti ho gayi, dobara koshish karein.";
-        resultMessage.classList.add("text-red-600");
+        console.error("Firebase error:", err);
+        showError("❌ Server error hua. Dobara koshish karein.");
       }
 
       submitBtn.disabled = false;
       submitText.textContent = "Submit";
       submitSpinner.classList.add("hidden");
     };
+
+    function showError(msg) {
+      submitBtn.disabled = false;
+      submitText.textContent = "Submit";
+      submitSpinner.classList.add("hidden");
+      resultMessage.classList.remove("hidden");
+      resultMessage.textContent = msg;
+      resultMessage.classList.remove("text-green-600");
+      resultMessage.classList.add("text-red-600");
+    }
 
     loadCurrentQuiz();
   </script>
