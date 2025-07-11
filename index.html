@@ -20,6 +20,16 @@
       background: #121212;
       color: #eee;
     }
+    #mainContent{
+      opacity:0;
+      animation:fadeIn 1s ease forwards;
+      animation-delay:3s;
+    }
+    @keyframes fadeIn{
+      to {
+        opacity:1;
+      }
+    }
 
     header {
       background: #fff;
@@ -154,7 +164,7 @@
   </div>
 <div id=tajMain>
   <main>
-    <h2>NEW FEATURES COMING SOON</h2
+    <h2 id=mainContent>NEW FEATURES COMING SOON</h2
   </main>
   <button class="dark-toggle" onclick="toggleDark()">🌙</button>
 
