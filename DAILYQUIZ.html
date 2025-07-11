@@ -74,11 +74,13 @@
     let currentQuiz = null;
 
     async function loadCurrentQuiz() {
-      const now = new Date().toISOString();
       const snap = await getDocs(query(collection(db, "dailyQuiz")));
       snap.forEach(doc => {
         const q = doc.data();
-        if (q.startTime <= now && now <= q.endTime) {
+        const start = new Date(q.startTime);
+        const end = new Date(q.endTime);
+        const now = new Date();
+        if (start <= now && now <= end) {
           currentQuiz = q;
         }
       });
@@ -110,7 +112,7 @@
           textAnswerBox.classList.remove("hidden");
         }
       } else {
-        quizForm.innerHTML = "<div class='text-center text-red-500 font-semibold'>⏳ No quiz available right now.</div>";
+        quizForm.innerHTML = "<div class='text-center text-red-500 font-semibold'>⏳ Is waqt koi quiz available nahi hai.</div>";
       }
     }
 
