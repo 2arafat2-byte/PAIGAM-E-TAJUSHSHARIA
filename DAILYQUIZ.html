@@ -25,10 +25,16 @@
       <input type="tel" id="user-phone" placeholder="Phone Number" class="w-full px-3 py-2 border rounded" required />
       <input type="text" id="user-address" placeholder="Address" class="w-full px-3 py-2 border rounded" required />
 
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:opacity-90">Submit</button>
+      <button type="submit" id="submit-btn" class="w-full bg-blue-600 text-white py-2 rounded hover:opacity-90 transition-all flex items-center justify-center gap-2">
+        <span id="submit-text">Submit</span>
+        <svg id="submit-spinner" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle>
+          <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+      </button>
     </form>
 
-    <div id="result-message" class="hidden text-center text-green-600 font-semibold text-lg"></div>
+    <div id="result-message" class="hidden text-center font-semibold text-lg"></div>
   </div>
 
   <style>
@@ -43,7 +49,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp({
@@ -60,6 +66,10 @@
     const mcqContainer = document.getElementById("mcq-options");
     const textAnswerBox = document.getElementById("text-answer-box");
     const resultMessage = document.getElementById("result-message");
+
+    const submitBtn = document.getElementById("submit-btn");
+    const submitText = document.getElementById("submit-text");
+    const submitSpinner = document.getElementById("submit-spinner");
 
     let currentQuiz = null;
 
@@ -108,6 +118,10 @@
       e.preventDefault();
       if (!currentQuiz) return;
 
+      submitBtn.disabled = true;
+      submitText.textContent = "Submitting...";
+      submitSpinner.classList.remove("hidden");
+
       const name = document.getElementById("user-name").value.trim();
       const phone = document.getElementById("user-phone").value.trim();
       const address = document.getElementById("user-address").value.trim();
@@ -115,7 +129,9 @@
       let answer, correct = false;
 
       if (currentQuiz.mode === "mcq") {
-        answer = document.querySelector("input[name='quiz-option']:checked").value;
+        const selected = document.querySelector("input[name='quiz-option']:checked");
+        if (!selected) return;
+        answer = selected.value;
         correct = answer === currentQuiz.correct;
       } else {
         answer = document.getElementById("text-answer").value.trim().toLowerCase();
@@ -136,10 +152,16 @@
         quizForm.classList.add("hidden");
         resultMessage.classList.remove("hidden");
         resultMessage.textContent = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.";
+        resultMessage.classList.add("text-green-600");
       } catch (err) {
-        console.error(err);
-        alert("❌ Failed to submit. Try again.");
+        resultMessage.classList.remove("hidden");
+        resultMessage.textContent = "❌ Kuch ghalti ho gayi, dobara koshish karein.";
+        resultMessage.classList.add("text-red-600");
       }
+
+      submitBtn.disabled = false;
+      submitText.textContent = "Submit";
+      submitSpinner.classList.add("hidden");
     };
 
     loadCurrentQuiz();
