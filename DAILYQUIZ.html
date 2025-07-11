@@ -36,16 +36,13 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, query, where, getDocs, addDoc
+      getFirestore, collection, query, getDocs, where, addDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913",
-      storageBucket: "paigam-ba913.appspot.com",
-      messagingSenderId: "480474970116",
-      appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+      projectId: "paigam-ba913"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -72,10 +69,13 @@
       const snapshot = await getDocs(collection(db, "dailyQuiz"));
 
       let activeQuiz = null;
+
       snapshot.forEach(doc => {
         const data = doc.data();
+
         const start = new Date(data.startTime);
         const end = new Date(data.endTime);
+
         if (start <= now && now <= end) {
           if (!activeQuiz || start > new Date(activeQuiz.data().startTime)) {
             activeQuiz = doc;
@@ -102,7 +102,6 @@
 
       loading.style.display = "none";
       quizBox.classList.remove("hidden");
-
       questionEl.innerText = "🧾 " + quiz.question;
 
       if (quizMode === "mcq") {
