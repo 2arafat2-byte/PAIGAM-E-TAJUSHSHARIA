@@ -74,10 +74,10 @@
       let activeQuiz = null;
       snapshot.forEach(doc => {
         const data = doc.data();
-        const start = new Date(data.startTime);
-        const end = new Date(data.endTime);
+        const start = data.startTime.toDate(); // ✅ FIXED
+        const end = data.endTime.toDate();     // ✅ FIXED
         if (start <= now && now <= end) {
-          if (!activeQuiz || start > new Date(activeQuiz.data().startTime)) {
+          if (!activeQuiz || start > activeQuiz.data().startTime.toDate()) {
             activeQuiz = doc;
           }
         }
@@ -102,7 +102,6 @@
 
       loading.style.display = "none";
       quizBox.classList.remove("hidden");
-
       questionEl.innerText = "🧾 " + quiz.question;
 
       if (quizMode === "mcq") {
