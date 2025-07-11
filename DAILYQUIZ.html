@@ -17,19 +17,15 @@
 
     <div id="quiz-box" class="space-y-3 hidden">
       <p id="question" class="font-semibold"></p>
-
       <div id="options-box" class="space-y-2 hidden"></div>
-
       <input type="text" id="text-answer" placeholder="Type your answer" class="hidden w-full border px-3 py-2 rounded"/>
-
       <input type="text" id="name" placeholder="Your Name" class="w-full border px-3 py-2 rounded" required>
       <input type="text" id="phone" placeholder="Phone Number" class="w-full border px-3 py-2 rounded" required>
       <input type="text" id="address" placeholder="Address" class="w-full border px-3 py-2 rounded" required>
-
       <button id="submit-btn" class="bg-blue-600 text-white w-full py-2 rounded">📤 Submit Answer</button>
     </div>
 
-    <p id="status" class="text-center text-sm mt-2"></p>
+    <p id="status" class="text-center text-sm mt-2 text-red-500"></p>
     <p id="loading">⏳ Loading today's suwaal...</p>
   </div>
 
@@ -58,7 +54,6 @@
     const textAnswer = document.getElementById("text-answer");
     const submitBtn = document.getElementById("submit-btn");
     const statusEl = document.getElementById("status");
-
     const quizTitle = document.getElementById("quiz-title");
     const quizLogo = document.getElementById("quiz-logo");
 
@@ -68,53 +63,67 @@
     let quizOptions = [];
 
     async function loadQuiz() {
-      const now = new Date();
-      const snapshot = await getDocs(collection(db, "dailyQuiz"));
+      try {
+        const now = new Date();
+        const snapshot = await getDocs(collection(db, "dailyQuiz"));
+        console.log("✅ Documents loaded:", snapshot.size);
 
-      let activeQuiz = null;
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const start = data.startTime.toDate(); // ✅ FIXED
-        const end = data.endTime.toDate();     // ✅ FIXED
-        if (start <= now && now <= end) {
-          if (!activeQuiz || start > activeQuiz.data().startTime.toDate()) {
-            activeQuiz = doc;
+        let activeQuiz = null;
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          try {
+            const start = data.startTime.toDate();
+            const end = data.endTime.toDate();
+            console.log("🕒 Checking quiz:", data.title || data.question, start, end);
+
+            if (start <= now && now <= end) {
+              if (!activeQuiz || start > activeQuiz.data().startTime.toDate()) {
+                activeQuiz = doc;
+              }
+            }
+          } catch (e) {
+            console.warn("⚠️ Error converting timestamps in doc:", doc.id, e);
           }
-        }
-      });
-
-      if (!activeQuiz) {
-        loading.innerText = "⚠️ No active quiz for now.";
-        return;
-      }
-
-      const quiz = activeQuiz.data();
-      currentQuizId = activeQuiz.id;
-      correctAnswer = quiz.correct;
-      quizMode = quiz.mode;
-      quizOptions = quiz.options || [];
-
-      quizTitle.innerText = quiz.title || "Daily Suwaal";
-      if (quiz.imageURL) {
-        quizLogo.src = quiz.imageURL;
-        quizLogo.classList.remove("hidden");
-      }
-
-      loading.style.display = "none";
-      quizBox.classList.remove("hidden");
-      questionEl.innerText = "🧾 " + quiz.question;
-
-      if (quizMode === "mcq") {
-        optionsBox.classList.remove("hidden");
-        optionsBox.innerHTML = "";
-        quizOptions.forEach((opt, i) => {
-          optionsBox.innerHTML += `
-            <label class="block">
-              <input type="radio" name="option" value="${i}" class="mr-2"> ${opt}
-            </label>`;
         });
-      } else {
-        textAnswer.classList.remove("hidden");
+
+        if (!activeQuiz) {
+          loading.innerText = "⚠️ Aaj ke liye koi suwaal active nahi hai.";
+          return;
+        }
+
+        const quiz = activeQuiz.data();
+        currentQuizId = activeQuiz.id;
+        correctAnswer = quiz.correct;
+        quizMode = quiz.mode;
+        quizOptions = quiz.options || [];
+
+        quizTitle.innerText = quiz.title || "Daily Suwaal";
+        if (quiz.imageURL) {
+          quizLogo.src = quiz.imageURL;
+          quizLogo.classList.remove("hidden");
+        }
+
+        loading.style.display = "none";
+        quizBox.classList.remove("hidden");
+        questionEl.innerText = "🧾 " + quiz.question;
+
+        if (quizMode === "mcq") {
+          optionsBox.classList.remove("hidden");
+          optionsBox.innerHTML = "";
+          quizOptions.forEach((opt, i) => {
+            optionsBox.innerHTML += `
+              <label class="block">
+                <input type="radio" name="option" value="${i}" class="mr-2"> ${opt}
+              </label>`;
+          });
+        } else {
+          textAnswer.classList.remove("hidden");
+        }
+
+      } catch (err) {
+        console.error("❌ Error loading quiz:", err);
+        loading.innerText = "❌ Quiz load nahi ho paya. Thodi der baad koshish karein.";
       }
     }
 
@@ -184,8 +193,9 @@
         document.getElementById("address").disabled = true;
         const radios = document.querySelectorAll('input[name="option"]');
         radios.forEach(r => r.disabled = true);
+
       } catch (err) {
-        alert("❌ Error submitting answer. Please try again.");
+        console.error("❌ Error submitting answer:", err);
         statusEl.innerText = "❌ Kuch ghalti ho gayi. Dubara koshish karein.";
       }
     };
