@@ -1,4 +1,3 @@
-<!-- Yahan se full HTML admin panel code start hota hai -->
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -9,17 +8,90 @@
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
-  <!-- ... (same sidebar and UI code as before) ... -->
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
+      <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
+      <nav class="flex flex-col space-y-2 p-4">
+        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
+        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+      <div class="flex justify-between items-center mb-6">
+        <div id="welcome" class="font-semibold">Checking login...</div>
+        <div class="space-x-2">
+          <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
+          <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
+        </div>
+      </div>
+
+      <!-- Set Quiz Section -->
+      <div id="set-suhaal-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
+        <form id="quiz-form" class="space-y-4">
+          <input type="text" id="quiz-title" placeholder="Quiz Title" class="w-full border px-2 py-1 rounded" required />
+          <input type="text" id="image-url" placeholder="Image URL" class="w-full border px-2 py-1 rounded" />
+          <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+
+          <label class="block mt-2">Choose Mode:</label>
+          <select id="question-mode" class="px-2 py-1 border rounded">
+            <option value="mcq">MCQ (Options)</option>
+            <option value="text">Text Answer</option>
+          </select>
+
+          <div id="mcq-options">
+            <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
+            <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
+              <option value="0">Correct: Option 1</option>
+              <option value="1">Correct: Option 2</option>
+              <option value="2">Correct: Option 3</option>
+              <option value="3">Correct: Option 4</option>
+            </select>
+          </div>
+
+          <div id="text-answer-box" class="hidden">
+            <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
+          </div>
+
+          <label>Start Time</label>
+          <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
+          <label>End Time</label>
+          <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
+
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
+        </form>
+      </div>
+
+      <!-- Schedule Section -->
+      <div id="schedule-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
+        <div id="schedule-list" class="space-y-2"></div>
+      </div>
+
+      <!-- View Answers -->
+      <div id="answers-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
+        <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
+          <option value="correct">✅ Correct</option>
+          <option value="wrong">❌ Wrong</option>
+        </select>
+        <div id="answers-list" class="space-y-2"></div>
+      </div>
+    </main>
+  </div>
 
   <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc, Timestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -27,12 +99,45 @@
       projectId: "paigam-ba913"
     });
 
-    const db = getFirestore(app);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
     const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    // ... (same theme, login, sidebar logic) ...
+    const logoutBtn = document.getElementById("logout");
+    const welcome = document.getElementById("welcome");
+    const quizForm = document.getElementById("quiz-form");
+    const modeSelect = document.getElementById("question-mode");
+    const mcqOptions = document.getElementById("mcq-options");
+    const textAnswerBox = document.getElementById("text-answer-box");
+
+    document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
+    logoutBtn.onclick = () => { signOut(auth); location.reload(); }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user && allowedEmails.includes(user.email)) {
+        welcome.innerText = `✅ Welcome, ${user.email}`;
+        logoutBtn.classList.remove("hidden");
+        document.getElementById("sidebar").classList.remove("hidden");
+        showSection("set-suhaal-section");
+      } else {
+        await signInWithPopup(auth, provider);
+      }
+    });
+
+    function showSection(id) {
+      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(s => document.getElementById(s).classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
+    document.getElementById("view-schedule").onclick = () => loadSchedule();
+    document.getElementById("view-answers").onclick = () => loadAnswers();
+
+    modeSelect.onchange = () => {
+      mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
+      textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
+    };
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
@@ -44,8 +149,8 @@
         title: document.getElementById("quiz-title").value.trim(),
         imageURL: document.getElementById("image-url").value.trim(),
         question: document.getElementById("question").value.trim(),
-        startTime: Timestamp.fromDate(new Date(document.getElementById("question-start").value)),
-        endTime: Timestamp.fromDate(new Date(document.getElementById("question-end").value)),
+        startTime: new Date(document.getElementById("question-start").value).toISOString(),
+        endTime: new Date(document.getElementById("question-end").value).toISOString(),
         mode: modeSelect.value
       };
 
@@ -59,14 +164,14 @@
 
       try {
         await addDoc(collection(db, "dailyQuiz"), data);
-        alert("✅ Suwaal Saved Successfully!");
+        alert("✅ Suwaal Saved");
         quizForm.reset();
         mcqOptions.classList.remove("hidden");
         textAnswerBox.classList.add("hidden");
         modeSelect.value = "mcq";
       } catch (err) {
         console.error(err);
-        alert("❌ Error saving suwaal");
+        alert("❌ Error saving question");
       }
 
       submitBtn.disabled = false;
@@ -75,4 +180,3 @@
   </script>
 </body>
 </html>
-<!-- Yahan tak full admin panel HTML fix end hota hai -->
