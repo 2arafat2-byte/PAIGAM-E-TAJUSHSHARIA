@@ -1,15 +1,15 @@
+<!-- 👇👇 Just paste this into your daily-quiz.html file -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Daily Quiz | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
   <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
-
     <div id="quiz-header" class="flex items-center justify-center space-x-2">
       <img id="quiz-logo" src="" alt="Logo" class="w-12 h-12 hidden" />
       <h1 id="quiz-title" class="text-2xl font-bold text-center">Daily Suwaal</h1>
@@ -35,20 +35,17 @@
     <p id="loading">⏳ Loading today's suwaal...</p>
   </div>
 
-  <!-- Firebase + Script -->
+  <!-- Firebase + Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, query, where, getDocs, addDoc
+      getFirestore, collection, query, getDocs, where, addDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
       projectId: "paigam-ba913",
-      storageBucket: "paigam-ba913.appspot.com",
-      messagingSenderId: "480474970116",
-      appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -61,7 +58,6 @@
     const textAnswer = document.getElementById("text-answer");
     const submitBtn = document.getElementById("submit-btn");
     const statusEl = document.getElementById("status");
-
     const quizTitle = document.getElementById("quiz-title");
     const quizLogo = document.getElementById("quiz-logo");
 
@@ -71,15 +67,17 @@
     let quizOptions = [];
 
     async function loadQuiz() {
-      const now = new Date().toISOString();
+      const now = new Date();
       const snapshot = await getDocs(collection(db, "dailyQuiz"));
 
       let activeQuiz = null;
 
       snapshot.forEach(doc => {
         const data = doc.data();
-        if (data.startTime <= now && now <= data.endTime) {
-          if (!activeQuiz || data.startTime > activeQuiz.data().startTime) {
+        const start = new Date(data.startTime);
+        const end = new Date(data.endTime);
+        if (start <= now && now <= end) {
+          if (!activeQuiz || start > new Date(activeQuiz.data().startTime)) {
             activeQuiz = doc;
           }
         }
@@ -104,7 +102,6 @@
 
       loading.style.display = "none";
       quizBox.classList.remove("hidden");
-
       questionEl.innerText = "🧾 " + quiz.question;
 
       if (quizMode === "mcq") {
@@ -128,7 +125,10 @@
       const phone = document.getElementById("phone").value.trim();
       const address = document.getElementById("address").value.trim();
 
-      if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
+      if (!name || !phone || !address) {
+        alert("⚠️ Please fill all fields.");
+        return;
+      }
 
       const check = query(
         collection(db, "quizAnswers"),
@@ -144,11 +144,17 @@
       let userAnswer = "";
       if (quizMode === "mcq") {
         const selected = document.querySelector('input[name="option"]:checked');
-        if (!selected) return alert("⚠️ Please select an option.");
+        if (!selected) {
+          alert("⚠️ Please select an option.");
+          return;
+        }
         userAnswer = selected.value;
       } else {
         userAnswer = textAnswer.value.trim().toLowerCase();
-        if (!userAnswer) return alert("⚠️ Answer likhna zaroori hai.");
+        if (!userAnswer) {
+          alert("⚠️ Answer likhna zaroori hai.");
+          return;
+        }
       }
 
       let isCorrect = false;
