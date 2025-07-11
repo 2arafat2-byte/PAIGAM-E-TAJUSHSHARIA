@@ -87,6 +87,17 @@
     </main>
   </div>
 
+  <!-- Modal -->
+  <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
+      <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
+      <p><strong>Name:</strong> <span id="modal-name"></span></p>
+      <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
+      <p><strong>Address:</strong> <span id="modal-address"></span></p>
+      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
+    </div>
+  </div>
+
   <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -149,8 +160,8 @@
         title: document.getElementById("quiz-title").value.trim(),
         imageURL: document.getElementById("image-url").value.trim(),
         question: document.getElementById("question").value.trim(),
-        startTime: new Date(document.getElementById("question-start").value).toISOString(),
-        endTime: new Date(document.getElementById("question-end").value).toISOString(),
+        startTime: document.getElementById("question-start").value,
+        endTime: document.getElementById("question-end").value,
         mode: modeSelect.value
       };
 
@@ -177,6 +188,95 @@
       submitBtn.disabled = false;
       submitBtn.innerText = "Submit";
     };
+
+    async function loadSchedule() {
+      showSection("schedule-section");
+      const list = document.getElementById("schedule-list");
+      list.innerHTML = "";
+      const snap = await getDocs(query(collection(db, "dailyQuiz"), orderBy("startTime")));
+      snap.forEach(docSnap => {
+        const q = docSnap.data();
+        const id = docSnap.id;
+
+        const div = document.createElement("div");
+        div.className = "p-3 border rounded bg-white dark:bg-gray-700";
+        div.innerHTML = `
+          <strong>${q.title || "No Title"}</strong><br>
+          <img src="${q.imageURL || ""}" class="w-20 h-20 mt-2" /><br>
+          ${q.question}<br>
+          <small>From: ${new Date(q.startTime).toLocaleString()}<br>To: ${new Date(q.endTime).toLocaleString()}</small><br>
+          <button class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+        `;
+        div.querySelector("button").onclick = async (e) => {
+          e.stopPropagation();
+          if (confirm("Delete this quiz schedule?")) {
+            await deleteDoc(doc(db, "dailyQuiz", id));
+            await loadSchedule();
+          }
+        };
+        list.appendChild(div);
+      });
+    }
+
+    async function loadAnswers() {
+      showSection("answers-section");
+      const list = document.getElementById("answers-list");
+      list.innerHTML = "";
+      const filter = document.getElementById("answer-filter").value;
+      const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
+      const phoneCount = {};
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+        if ((filter === "correct" && data.correct) || (filter === "wrong" && !data.correct)) {
+          const answerText = data.options && !isNaN(data.answer)
+            ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
+            : data.answer;
+          const phone = data.phone;
+          phoneCount[phone] = (phoneCount[phone] || 0) + 1;
+          const div = document.createElement("div");
+          div.className = `p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer`;
+          div.onclick = () => openModal(data.name, phone, data.address, phoneCount[phone]);
+          div.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div>
+                <strong>${data.name}</strong>
+                <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                  ${data.correct ? "✅ Correct" : "❌ Wrong"}
+                </span>
+              </div>
+              <button class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
+            </div>
+            <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(data.timestamp).toLocaleString()}</div>
+          `;
+          div.querySelector("button").onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm("Delete this answer?")) {
+              await deleteDoc(doc(db, "quizAnswers", id));
+              loadAnswers();
+            }
+          };
+          list.appendChild(div);
+        }
+      });
+    }
+
+    window.openModal = (name, phone, address, count) => {
+      document.getElementById("modal-name").innerText = name;
+      document.getElementById("modal-phone").innerText = phone + ` (${count} answers)`;
+      document.getElementById("modal-address").innerText = address;
+      document.getElementById("id-modal").classList.remove("hidden");
+      document.getElementById("id-modal").classList.add("flex");
+    };
+
+    window.closeModal = () => {
+      document.getElementById("id-modal").classList.add("hidden");
+      document.getElementById("id-modal").classList.remove("flex");
+    };
+
+    document.getElementById("answer-filter").onchange = loadAnswers;
   </script>
 </body>
 </html>
