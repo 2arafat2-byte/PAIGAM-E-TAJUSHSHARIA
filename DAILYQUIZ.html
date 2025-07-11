@@ -18,10 +18,8 @@
     <div id="quiz-box" class="space-y-3 hidden">
       <p id="question" class="font-semibold"></p>
 
-      <!-- MCQ Options -->
       <div id="options-box" class="space-y-2 hidden"></div>
 
-      <!-- Text Answer -->
       <input type="text" id="text-answer" placeholder="Type your answer" class="hidden w-full border px-3 py-2 rounded"/>
 
       <input type="text" id="name" placeholder="Your Name" class="w-full border px-3 py-2 rounded" required>
@@ -35,7 +33,6 @@
     <p id="loading">⏳ Loading today's suwaal...</p>
   </div>
 
-  <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
@@ -129,57 +126,69 @@
       const phone = document.getElementById("phone").value.trim();
       const address = document.getElementById("address").value.trim();
 
-      if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
-
-      const check = query(
-        collection(db, "quizAnswers"),
-        where("questionId", "==", currentQuizId),
-        where("phone", "==", phone)
-      );
-      const existing = await getDocs(check);
-      if (!existing.empty) {
-        statusEl.innerText = "🚫 Aap ne is suwaal ka already jawab diya hai.";
+      if (!name || !phone || !address) {
+        alert("⚠️ Please fill all fields.");
         return;
       }
 
-      let userAnswer = "";
-      if (quizMode === "mcq") {
-        const selected = document.querySelector('input[name="option"]:checked');
-        if (!selected) return alert("⚠️ Please select an option.");
-        userAnswer = selected.value;
-      } else {
-        userAnswer = textAnswer.value.trim().toLowerCase();
-        if (!userAnswer) return alert("⚠️ Answer likhna zaroori hai.");
+      try {
+        const check = query(
+          collection(db, "quizAnswers"),
+          where("questionId", "==", currentQuizId),
+          where("phone", "==", phone)
+        );
+        const existing = await getDocs(check);
+        if (!existing.empty) {
+          statusEl.innerText = "🚫 Aap ne is suwaal ka already jawab diya hai.";
+          return;
+        }
+
+        let userAnswer = "";
+        if (quizMode === "mcq") {
+          const selected = document.querySelector('input[name="option"]:checked');
+          if (!selected) {
+            alert("⚠️ Please select an option.");
+            return;
+          }
+          userAnswer = selected.value;
+        } else {
+          userAnswer = textAnswer.value.trim().toLowerCase();
+          if (!userAnswer) {
+            alert("⚠️ Answer likhna zaroori hai.");
+            return;
+          }
+        }
+
+        let isCorrect = false;
+        if (quizMode === "mcq") {
+          isCorrect = userAnswer === correctAnswer;
+        } else {
+          const normalize = txt => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
+          isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
+        }
+
+        await addDoc(collection(db, "quizAnswers"), {
+          name, phone, address,
+          answer: userAnswer,
+          options: quizOptions,
+          questionId: currentQuizId,
+          correct: isCorrect,
+          timestamp: Date.now()
+        });
+
+        statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
+        submitBtn.disabled = true;
+        submitBtn.innerText = "✅ Submitted";
+        textAnswer.disabled = true;
+        document.getElementById("name").disabled = true;
+        document.getElementById("phone").disabled = true;
+        document.getElementById("address").disabled = true;
+        const radios = document.querySelectorAll('input[name="option"]');
+        radios.forEach(r => r.disabled = true);
+      } catch (err) {
+        alert("❌ Error submitting answer. Please try again.");
+        statusEl.innerText = "❌ Kuch ghalti ho gayi. Dubara koshish karein.";
       }
-
-      let isCorrect = false;
-      if (quizMode === "mcq") {
-        isCorrect = userAnswer === correctAnswer;
-      } else {
-        const normalize = txt => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
-        isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
-      }
-
-      await addDoc(collection(db, "quizAnswers"), {
-        name, phone, address,
-        answer: userAnswer,
-        options: quizOptions,
-        questionId: currentQuizId,
-        correct: isCorrect,
-        timestamp: Date.now()
-      });
-
-      statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
-
-      // Disable form
-      submitBtn.disabled = true;
-      submitBtn.innerText = "✅ Submitted";
-      document.getElementById("name").disabled = true;
-      document.getElementById("phone").disabled = true;
-      document.getElementById("address").disabled = true;
-      textAnswer.disabled = true;
-      const options = document.querySelectorAll('input[name="option"]');
-      options.forEach(opt => opt.disabled = true);
     };
   </script>
 </body>
