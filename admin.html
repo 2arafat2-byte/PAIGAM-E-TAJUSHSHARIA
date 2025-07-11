@@ -14,6 +14,8 @@
       <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
       <nav class="flex flex-col space-y-2 p-4">
         <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
+        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
       </nav>
     </aside>
 
@@ -34,13 +36,11 @@
           <input type="text" id="quiz-title" placeholder="Quiz Title" class="w-full border px-2 py-1 rounded" required />
           <input type="text" id="image-url" placeholder="Image URL" class="w-full border px-2 py-1 rounded" />
           <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
-
           <label class="block">Choose Mode:</label>
           <select id="question-mode" class="px-2 py-1 border rounded">
             <option value="mcq">MCQ (Options)</option>
             <option value="text">Text Answer</option>
           </select>
-
           <div id="mcq-options">
             <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
             <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
@@ -53,22 +53,24 @@
               <option value="3">Correct: Option 4</option>
             </select>
           </div>
-
           <div id="text-answer-box" class="hidden">
-            <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
+            <input type="text" id="correct-text-answer" placeholder="Correct text answer (sentence allowed)" class="w-full border px-2 py-1 rounded" />
           </div>
-
           <label>Start Time</label>
           <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
           <label>End Time</label>
           <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
-
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
+
+      <!-- Other Sections (optional placeholder) -->
+      <div id="schedule-section" class="hidden"></div>
+      <div id="answers-section" class="hidden"></div>
     </main>
   </div>
 
+  <!-- Firebase Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -110,9 +112,11 @@
     });
 
     function showSection(id) {
-      ["set-suhaal-section"].forEach(s => document.getElementById(s).classList.add("hidden"));
+      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(s => document.getElementById(s).classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
     }
+
+    document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
 
     modeSelect.onchange = () => {
       mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
@@ -132,14 +136,7 @@
       const startTime = document.getElementById("question-start").value;
       const endTime = document.getElementById("question-end").value;
 
-      let data = {
-        title,
-        imageURL,
-        question,
-        startTime,
-        endTime,
-        mode
-      };
+      let data = { title, imageURL, question, startTime, endTime, mode };
 
       if (mode === "mcq") {
         const options = Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim());
