@@ -2,24 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Test Daily Quiz</title>
+  <title>Daily Quiz | Paighaam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
-<body class="bg-gray-100 text-gray-900 min-h-screen flex items-center justify-center p-4">
-  <div class="max-w-xl w-full bg-white shadow-md rounded-lg p-6 space-y-4">
-    
-    <div class="text-center">
-      <h1 class="text-2xl font-bold">Daily Suwaal (Test)</h1>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
+
+    <div id="quiz-header" class="flex items-center justify-center space-x-2">
+      <img id="quiz-logo" src="" alt="Logo" class="w-12 h-12 hidden" />
+      <h1 id="quiz-title" class="text-2xl font-bold text-center">Daily Suwaal</h1>
     </div>
 
-    <div id="quiz-box" class="space-y-3">
-      <p id="question" class="font-semibold">🧾 Quran me kitni surah hai?</p>
+    <div id="quiz-box" class="space-y-3 hidden">
+      <p id="question" class="font-semibold"></p>
 
-      <!-- Change mode here -->
-      <script>const mode = "mcq"; // change to "text" for text mode</script>
+      <!-- MCQ Options -->
+      <div id="options-box" class="space-y-2 hidden"></div>
 
-      <div id="options-box" class="space-y-2"></div>
+      <!-- Text Answer -->
       <input type="text" id="text-answer" placeholder="Type your answer" class="hidden w-full border px-3 py-2 rounded"/>
 
       <input type="text" id="name" placeholder="Your Name" class="w-full border px-3 py-2 rounded" required>
@@ -29,56 +31,145 @@
       <button id="submit-btn" class="bg-blue-600 text-white w-full py-2 rounded">📤 Submit Answer</button>
       <p id="status" class="text-center text-sm mt-2"></p>
     </div>
+
+    <p id="loading">⏳ Loading today's suwaal...</p>
   </div>
 
-  <script>
-    const correctAnswer = mode === "mcq" ? "1" : "114";
-    const options = ["112", "114", "116", "118"];
+  <!-- Firebase + Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore, collection, query, where, getDocs, addDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
+      authDomain: "paigam-ba913.firebaseapp.com",
+      projectId: "paigam-ba913",
+      storageBucket: "paigam-ba913.appspot.com",
+      messagingSenderId: "480474970116",
+      appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const quizBox = document.getElementById("quiz-box");
+    const loading = document.getElementById("loading");
+    const questionEl = document.getElementById("question");
     const optionsBox = document.getElementById("options-box");
     const textAnswer = document.getElementById("text-answer");
+    const submitBtn = document.getElementById("submit-btn");
+    const statusEl = document.getElementById("status");
 
-    if (mode === "mcq") {
-      options.forEach((opt, i) => {
-        optionsBox.innerHTML += `
-          <label class="block">
-            <input type="radio" name="option" value="${i}" class="mr-2"> ${opt}
-          </label>`;
+    const quizTitle = document.getElementById("quiz-title");
+    const quizLogo = document.getElementById("quiz-logo");
+
+    let currentQuizId = "";
+    let correctAnswer = "";
+    let quizMode = "";
+    let quizOptions = [];
+
+    async function loadQuiz() {
+      const now = new Date().toISOString();
+      const snapshot = await getDocs(collection(db, "dailyQuiz"));
+
+      let activeQuiz = null;
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.startTime <= now && now <= data.endTime) {
+          if (!activeQuiz || data.startTime > activeQuiz.data().startTime) {
+            activeQuiz = doc;
+          }
+        }
       });
-    } else {
-      optionsBox.classList.add("hidden");
-      textAnswer.classList.remove("hidden");
+
+      if (!activeQuiz) {
+        loading.innerText = "⚠️ Aaj ke liye koi suwaal active nahi hai.";
+        return;
+      }
+
+      const quiz = activeQuiz.data();
+      currentQuizId = activeQuiz.id;
+      correctAnswer = quiz.correct;
+      quizMode = quiz.mode;
+      quizOptions = quiz.options || [];
+
+      quizTitle.innerText = quiz.title || "Daily Suwaal";
+      if (quiz.imageURL) {
+        quizLogo.src = quiz.imageURL;
+        quizLogo.classList.remove("hidden");
+      }
+
+      loading.style.display = "none";
+      quizBox.classList.remove("hidden");
+
+      questionEl.innerText = "🧾 " + quiz.question;
+
+      if (quizMode === "mcq") {
+        optionsBox.classList.remove("hidden");
+        optionsBox.innerHTML = "";
+        quizOptions.forEach((opt, i) => {
+          optionsBox.innerHTML += `
+            <label class="block">
+              <input type="radio" name="option" value="${i}" class="mr-2"> ${opt}
+            </label>`;
+        });
+      } else {
+        textAnswer.classList.remove("hidden");
+      }
     }
 
-    document.getElementById("submit-btn").onclick = () => {
+    loadQuiz();
+
+    submitBtn.onclick = async () => {
       const name = document.getElementById("name").value.trim();
       const phone = document.getElementById("phone").value.trim();
       const address = document.getElementById("address").value.trim();
-      const statusEl = document.getElementById("status");
 
-      if (!name || !phone || !address) {
-        alert("⚠️ Fill all fields");
+      if (!name || !phone || !address) return alert("⚠️ Please fill all fields.");
+
+      const check = query(
+        collection(db, "quizAnswers"),
+        where("questionId", "==", currentQuizId),
+        where("phone", "==", phone)
+      );
+      const existing = await getDocs(check);
+      if (!existing.empty) {
+        statusEl.innerText = "🚫 Aap ne is suwaal ka already jawab diya hai.";
         return;
       }
 
       let userAnswer = "";
-      if (mode === "mcq") {
+      if (quizMode === "mcq") {
         const selected = document.querySelector('input[name="option"]:checked');
-        if (!selected) return alert("⚠️ Please select an option");
+        if (!selected) return alert("⚠️ Please select an option.");
         userAnswer = selected.value;
       } else {
         userAnswer = textAnswer.value.trim().toLowerCase();
-        if (!userAnswer) return alert("⚠️ Answer required");
+        if (!userAnswer) return alert("⚠️ Answer likhna zaroori hai.");
       }
 
       let isCorrect = false;
-      if (mode === "mcq") {
+      if (quizMode === "mcq") {
         isCorrect = userAnswer === correctAnswer;
       } else {
         const normalize = txt => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
         isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
       }
 
+      await addDoc(collection(db, "quizAnswers"), {
+        name, phone, address,
+        answer: userAnswer,
+        options: quizOptions,
+        questionId: currentQuizId,
+        correct: isCorrect,
+        timestamp: Date.now()
+      });
+
       statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
+      quizBox.innerHTML = "";
     };
   </script>
 </body>
