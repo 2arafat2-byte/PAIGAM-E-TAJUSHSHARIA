@@ -29,9 +29,9 @@
       <input type="text" id="address" placeholder="Address" class="w-full border px-3 py-2 rounded" required>
 
       <button id="submit-btn" class="bg-blue-600 text-white w-full py-2 rounded">📤 Submit Answer</button>
-      <p id="status" class="text-center text-sm mt-2"></p>
     </div>
 
+    <p id="status" class="text-center text-sm mt-2"></p>
     <p id="loading">⏳ Loading today's suwaal...</p>
   </div>
 
@@ -170,7 +170,16 @@
       });
 
       statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
-      quizBox.innerHTML = "";
+
+      // Disable form
+      submitBtn.disabled = true;
+      submitBtn.innerText = "✅ Submitted";
+      document.getElementById("name").disabled = true;
+      document.getElementById("phone").disabled = true;
+      document.getElementById("address").disabled = true;
+      textAnswer.disabled = true;
+      const options = document.querySelectorAll('input[name="option"]');
+      options.forEach(opt => opt.disabled = true);
     };
   </script>
 </body>
