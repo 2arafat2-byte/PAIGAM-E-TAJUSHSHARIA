@@ -18,7 +18,7 @@
     <form id="quiz-form" class="space-y-4">
       <div id="mcq-options" class="space-y-2 hidden"></div>
       <div id="text-answer-box" class="hidden">
-        <input type="text" id="text-answer" placeholder="Your answer..." class="w-full px-3 py-2 border rounded" required />
+        <input type="text" id="text-answer" placeholder="Your answer..." class="w-full px-3 py-2 border rounded" />
       </div>
 
       <input type="text" id="user-name" placeholder="Your Name" class="w-full px-3 py-2 border rounded" required />
@@ -58,6 +58,7 @@
     });
 
     const db = getFirestore(app);
+
     const quizForm = document.getElementById("quiz-form");
     const quizTitle = document.getElementById("quiz-title");
     const quizQuestion = document.getElementById("quiz-question");
@@ -74,11 +75,13 @@
 
     async function loadCurrentQuiz() {
       const snap = await getDocs(query(collection(db, "dailyQuiz")));
+      const now = new Date();
+      currentQuiz = null;
+
       snap.forEach(doc => {
         const q = doc.data();
         const start = new Date(q.startTime);
         const end = new Date(q.endTime);
-        const now = new Date();
         if (start <= now && now <= end) {
           currentQuiz = q;
         }
@@ -87,6 +90,7 @@
       if (currentQuiz) {
         quizTitle.textContent = currentQuiz.title || "Daily Suwaal";
         quizQuestion.textContent = currentQuiz.question;
+
         if (currentQuiz.imageURL) {
           quizLogo.src = currentQuiz.imageURL;
           quizLogo.classList.remove("hidden");
@@ -107,20 +111,32 @@
             mcqContainer.appendChild(label);
           });
           mcqContainer.classList.remove("hidden");
+          textAnswerBox.classList.add("hidden");
         } else {
           textAnswerBox.classList.remove("hidden");
+          mcqContainer.classList.add("hidden");
         }
       } else {
-        quizForm.innerHTML = "<div class='text-center text-red-500 font-semibold'>⏳ Is waqt koi quiz available nahi hai.</div>";
+        quizForm.classList.add("hidden");
+        resultMessage.classList.remove("hidden");
+        resultMessage.textContent = "⏳ Is waqt koi active quiz nahi hai ya time khatam ho gaya hai.";
+        resultMessage.classList.add("text-red-600");
       }
     }
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
-      if (!currentQuiz) return;
 
+      resultMessage.classList.remove("text-red-600", "text-green-600");
       resultMessage.classList.add("hidden");
       resultMessage.textContent = "";
+
+      if (!currentQuiz) {
+        resultMessage.classList.remove("hidden");
+        resultMessage.classList.add("text-red-600");
+        resultMessage.textContent = "❌ Koi quiz available nahi hai ya time over ho gaya.";
+        return;
+      }
 
       submitBtn.disabled = true;
       submitText.textContent = "Submitting...";
@@ -169,7 +185,6 @@
         quizForm.classList.add("hidden");
         resultMessage.classList.remove("hidden");
         resultMessage.textContent = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.";
-        resultMessage.classList.remove("text-red-600");
         resultMessage.classList.add("text-green-600");
       } catch (err) {
         console.error("Firebase error:", err);
@@ -187,7 +202,6 @@
       submitSpinner.classList.add("hidden");
       resultMessage.classList.remove("hidden");
       resultMessage.textContent = msg;
-      resultMessage.classList.remove("text-green-600");
       resultMessage.classList.add("text-red-600");
     }
 
