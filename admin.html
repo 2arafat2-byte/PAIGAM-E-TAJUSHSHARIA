@@ -33,14 +33,10 @@
       <div id="set-suhaal-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
         <form id="quiz-form" class="space-y-4">
-          <input type="text" id="quiz-title" placeholder="Quiz Title" class="w-full border px-2 py-1 rounded" required />
-          <input type="text" id="image-url" placeholder="Image URL" class="w-full border px-2 py-1 rounded" />
+          <input type="text" id="quiz-title" placeholder="Quiz Title (e.g. Pehla Suwaal)" class="w-full border px-2 py-1 rounded" required />
+          <input type="text" id="image-url" placeholder="Image URL (for logo)" class="w-full border px-2 py-1 rounded" />
           <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
-          <label class="block">Choose Mode:</label>
-          <select id="question-mode" class="px-2 py-1 border rounded">
-            <option value="mcq">MCQ (Options)</option>
-            <option value="text">Text Answer</option>
-          </select>
+
           <div id="mcq-options">
             <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
             <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
@@ -53,28 +49,51 @@
               <option value="3">Correct: Option 4</option>
             </select>
           </div>
-          <div id="text-answer-box" class="hidden">
-            <input type="text" id="correct-text-answer" placeholder="Correct text answer (sentence allowed)" class="w-full border px-2 py-1 rounded" />
-          </div>
+
           <label>Start Time</label>
           <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
+
           <label>End Time</label>
           <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
+
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
 
-      <!-- Other Sections (optional placeholder) -->
-      <div id="schedule-section" class="hidden"></div>
-      <div id="answers-section" class="hidden"></div>
+      <!-- Schedule -->
+      <div id="schedule-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
+        <div id="schedule-list" class="space-y-2"></div>
+      </div>
+
+      <!-- View Answers -->
+      <div id="answers-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
+        <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
+          <option value="correct">✅ Correct</option>
+          <option value="wrong">❌ Wrong</option>
+        </select>
+        <div id="answers-list" class="space-y-2"></div>
+      </div>
     </main>
   </div>
 
-  <!-- Firebase Script -->
+  <!-- Modal -->
+  <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
+      <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
+      <p><strong>Name:</strong> <span id="modal-name"></span></p>
+      <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
+      <p><strong>Address:</strong> <span id="modal-address"></span></p>
+      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
+    </div>
+  </div>
+
+  <!-- Firebase + Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -93,9 +112,6 @@
     const logoutBtn = document.getElementById("logout");
     const welcome = document.getElementById("welcome");
     const quizForm = document.getElementById("quiz-form");
-    const modeSelect = document.getElementById("question-mode");
-    const mcqOptions = document.getElementById("mcq-options");
-    const textAnswerBox = document.getElementById("text-answer-box");
 
     document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
     logoutBtn.onclick = () => { signOut(auth); location.reload(); }
@@ -117,11 +133,8 @@
     }
 
     document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
-
-    modeSelect.onchange = () => {
-      mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
-      textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
-    };
+    document.getElementById("view-schedule").onclick = () => loadSchedule();
+    document.getElementById("view-answers").onclick = () => loadAnswers();
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
@@ -129,51 +142,122 @@
       submitBtn.disabled = true;
       submitBtn.innerText = "Saving...";
 
-      const mode = modeSelect.value;
-      const title = document.getElementById("quiz-title").value.trim();
-      const imageURL = document.getElementById("image-url").value.trim();
-      const question = document.getElementById("question").value.trim();
-      const startTime = document.getElementById("question-start").value;
-      const endTime = document.getElementById("question-end").value;
+      const data = {
+        title: document.getElementById("quiz-title").value.trim(),
+        imageURL: document.getElementById("image-url").value.trim(),
+        question: document.getElementById("question").value.trim(),
+        startTime: document.getElementById("question-start").value,
+        endTime: document.getElementById("question-end").value,
+        mode: "mcq",
+        options: Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim()),
+        correct: document.getElementById("correct-option").value
+      };
 
-      let data = { title, imageURL, question, startTime, endTime, mode };
-
-      if (mode === "mcq") {
-        const options = Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim());
-        const correct = document.getElementById("correct-option").value;
-        if (options.some(opt => opt === "")) {
-          alert("❌ Please fill all MCQ options.");
-          submitBtn.disabled = false;
-          submitBtn.innerText = "Submit";
-          return;
-        }
-        data.options = options;
-        data.correct = correct;
-      } else if (mode === "text") {
-        const correctText = document.getElementById("correct-text-answer").value.trim();
-        if (!correctText) {
-          alert("❌ Please enter the correct text answer.");
-          submitBtn.disabled = false;
-          submitBtn.innerText = "Submit";
-          return;
-        }
-        data.correct = correctText.toLowerCase();
-        data.options = [];
+      if (data.options.some(opt => opt === "")) {
+        alert("❌ Please fill all options.");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit";
+        return;
       }
 
       try {
         await addDoc(collection(db, "dailyQuiz"), data);
         alert("✅ Suwaal Saved");
         quizForm.reset();
-        modeSelect.dispatchEvent(new Event("change"));
       } catch (err) {
         console.error(err);
-        alert("❌ Error saving question.");
+        alert("❌ Error saving question");
       }
 
       submitBtn.disabled = false;
       submitBtn.innerText = "Submit";
     };
+
+    async function loadSchedule() {
+      showSection("schedule-section");
+      const list = document.getElementById("schedule-list");
+      list.innerHTML = "";
+      const snap = await getDocs(query(collection(db, "dailyQuiz"), orderBy("startTime")));
+      snap.forEach(docSnap => {
+        const q = docSnap.data();
+        const id = docSnap.id;
+        list.innerHTML += `
+          <div class="p-3 border rounded bg-white dark:bg-gray-700">
+            <strong>${q.title || "No Title"}</strong><br>
+            <img src="${q.imageURL || ""}" class="w-20 h-20 mt-2" /><br>
+            ${q.question}<br>
+            <small>From: ${new Date(q.startTime).toLocaleString()}<br>To: ${new Date(q.endTime).toLocaleString()}</small><br>
+            <button onclick="event.stopPropagation(); deleteSchedule('${id}')" class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+          </div>`;
+      });
+    }
+
+    window.deleteSchedule = async (id) => {
+      if (confirm("Delete this quiz schedule?")) {
+        await deleteDoc(doc(db, "dailyQuiz", id));
+        await loadSchedule();
+      }
+    };
+
+    async function loadAnswers() {
+      showSection("answers-section");
+      const list = document.getElementById("answers-list");
+      list.innerHTML = "";
+      const filter = document.getElementById("answer-filter").value;
+      const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
+      const phoneCount = {};
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+        if ((filter === "correct" && data.correct) || (filter === "wrong" && !data.correct)) {
+          const answerText = data.options && !isNaN(data.answer)
+            ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
+            : data.answer;
+
+          const phone = data.phone;
+          phoneCount[phone] = (phoneCount[phone] || 0) + 1;
+
+          list.innerHTML += `
+            <div class="p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer"
+              onclick="openModal('${data.name}', '${phone}', '${data.address}', ${phoneCount[phone]})">
+              <div class="flex justify-between items-center">
+                <div>
+                  <strong>${data.name}</strong>
+                  <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                    ${data.correct ? "✅ Correct" : "❌ Wrong"}
+                  </span>
+                </div>
+                <button onclick="event.stopPropagation(); deleteAnswer('${id}')" class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
+              </div>
+              <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
+              <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(data.timestamp).toLocaleString()}</div>
+            </div>`;
+        }
+      });
+    }
+
+    window.deleteAnswer = async (id) => {
+      if (confirm("Delete this answer?")) {
+        await deleteDoc(doc(db, "quizAnswers", id));
+        loadAnswers();
+      }
+    };
+
+    window.openModal = (name, phone, address, count) => {
+      document.getElementById("modal-name").innerText = name;
+      document.getElementById("modal-phone").innerText = phone + ` (${count} answers)`;
+      document.getElementById("modal-address").innerText = address;
+      document.getElementById("id-modal").classList.remove("hidden");
+      document.getElementById("id-modal").classList.add("flex");
+    };
+
+    window.closeModal = () => {
+      document.getElementById("id-modal").classList.add("hidden");
+      document.getElementById("id-modal").classList.remove("flex");
+    };
+
+    document.getElementById("answer-filter").onchange = loadAnswers;
   </script>
 </body>
 </html>
