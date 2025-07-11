@@ -22,7 +22,7 @@
     <!-- Main Content -->
     <main class="flex-1 p-6">
       <div class="flex justify-between items-center mb-6">
-        <div id="welcome" class="font-semibold animate-pulse">Checking login...</div>
+        <div id="welcome" class="font-semibold">Checking login...</div>
         <div class="space-x-2">
           <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
           <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
@@ -33,9 +33,15 @@
       <div id="set-suhaal-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
         <form id="quiz-form" class="space-y-4">
-          <input type="text" id="quiz-title" placeholder="Quiz Title (e.g. Pehla Suwaal)" class="w-full border px-2 py-1 rounded" required />
-          <input type="text" id="image-url" placeholder="Image URL (for logo)" class="w-full border px-2 py-1 rounded" />
+          <input type="text" id="quiz-title" placeholder="Quiz Title" class="w-full border px-2 py-1 rounded" required />
+          <input type="text" id="image-url" placeholder="Image URL" class="w-full border px-2 py-1 rounded" />
           <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+
+          <label class="block mt-2">Choose Mode:</label>
+          <select id="question-mode" class="px-2 py-1 border rounded">
+            <option value="mcq">MCQ (Options)</option>
+            <option value="text">Text Answer</option>
+          </select>
 
           <div id="mcq-options">
             <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
@@ -50,9 +56,12 @@
             </select>
           </div>
 
+          <div id="text-answer-box" class="hidden">
+            <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
+          </div>
+
           <label>Start Time</label>
           <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
-
           <label>End Time</label>
           <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
 
@@ -60,7 +69,7 @@
         </form>
       </div>
 
-      <!-- Schedule -->
+      <!-- Schedule Section -->
       <div id="schedule-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
         <div id="schedule-list" class="space-y-2"></div>
@@ -98,10 +107,7 @@
     const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913",
-      storageBucket: "paigam-ba913.appspot.com",
-      messagingSenderId: "480474970116",
-      appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
+      projectId: "paigam-ba913"
     });
 
     const auth = getAuth(app);
@@ -112,6 +118,9 @@
     const logoutBtn = document.getElementById("logout");
     const welcome = document.getElementById("welcome");
     const quizForm = document.getElementById("quiz-form");
+    const modeSelect = document.getElementById("question-mode");
+    const mcqOptions = document.getElementById("mcq-options");
+    const textAnswerBox = document.getElementById("text-answer-box");
 
     document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
     logoutBtn.onclick = () => { signOut(auth); location.reload(); }
@@ -136,6 +145,11 @@
     document.getElementById("view-schedule").onclick = () => loadSchedule();
     document.getElementById("view-answers").onclick = () => loadAnswers();
 
+    modeSelect.onchange = () => {
+      mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
+      textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
+    };
+
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
       const submitBtn = quizForm.querySelector("button[type='submit']");
@@ -148,22 +162,24 @@
         question: document.getElementById("question").value.trim(),
         startTime: document.getElementById("question-start").value,
         endTime: document.getElementById("question-end").value,
-        mode: "mcq",
-        options: Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim()),
-        correct: document.getElementById("correct-option").value
+        mode: modeSelect.value
       };
 
-      if (data.options.some(opt => opt === "")) {
-        alert("❌ Please fill all options.");
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Submit";
-        return;
+      if (data.mode === "mcq") {
+        data.options = Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim());
+        data.correct = document.getElementById("correct-option").value;
+      } else {
+        data.options = [];
+        data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
       }
 
       try {
         await addDoc(collection(db, "dailyQuiz"), data);
         alert("✅ Suwaal Saved");
         quizForm.reset();
+        mcqOptions.classList.remove("hidden");
+        textAnswerBox.classList.add("hidden");
+        modeSelect.value = "mcq";
       } catch (err) {
         console.error(err);
         alert("❌ Error saving question");
@@ -181,23 +197,26 @@
       snap.forEach(docSnap => {
         const q = docSnap.data();
         const id = docSnap.id;
-        list.innerHTML += `
-          <div class="p-3 border rounded bg-white dark:bg-gray-700">
-            <strong>${q.title || "No Title"}</strong><br>
-            <img src="${q.imageURL || ""}" class="w-20 h-20 mt-2" /><br>
-            ${q.question}<br>
-            <small>From: ${new Date(q.startTime).toLocaleString()}<br>To: ${new Date(q.endTime).toLocaleString()}</small><br>
-            <button onclick="event.stopPropagation(); deleteSchedule('${id}')" class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
-          </div>`;
+
+        const div = document.createElement("div");
+        div.className = "p-3 border rounded bg-white dark:bg-gray-700";
+        div.innerHTML = `
+          <strong>${q.title || "No Title"}</strong><br>
+          <img src="${q.imageURL || ""}" class="w-20 h-20 mt-2" /><br>
+          ${q.question}<br>
+          <small>From: ${new Date(q.startTime).toLocaleString()}<br>To: ${new Date(q.endTime).toLocaleString()}</small><br>
+          <button class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+        `;
+        div.querySelector("button").onclick = async (e) => {
+          e.stopPropagation();
+          if (confirm("Delete this quiz schedule?")) {
+            await deleteDoc(doc(db, "dailyQuiz", id));
+            await loadSchedule();
+          }
+        };
+        list.appendChild(div);
       });
     }
-
-    window.deleteSchedule = async (id) => {
-      if (confirm("Delete this quiz schedule?")) {
-        await deleteDoc(doc(db, "dailyQuiz", id));
-        await loadSchedule();
-      }
-    };
 
     async function loadAnswers() {
       showSection("answers-section");
@@ -214,35 +233,35 @@
           const answerText = data.options && !isNaN(data.answer)
             ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
             : data.answer;
-
           const phone = data.phone;
           phoneCount[phone] = (phoneCount[phone] || 0) + 1;
-
-          list.innerHTML += `
-            <div class="p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer"
-              onclick="openModal('${data.name}', '${phone}', '${data.address}', ${phoneCount[phone]})">
-              <div class="flex justify-between items-center">
-                <div>
-                  <strong>${data.name}</strong>
-                  <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
-                    ${data.correct ? "✅ Correct" : "❌ Wrong"}
-                  </span>
-                </div>
-                <button onclick="event.stopPropagation(); deleteAnswer('${id}')" class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
+          const div = document.createElement("div");
+          div.className = `p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer`;
+          div.onclick = () => openModal(data.name, phone, data.address, phoneCount[phone]);
+          div.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div>
+                <strong>${data.name}</strong>
+                <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                  ${data.correct ? "✅ Correct" : "❌ Wrong"}
+                </span>
               </div>
-              <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
-              <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(data.timestamp).toLocaleString()}</div>
-            </div>`;
+              <button class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
+            </div>
+            <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(data.timestamp).toLocaleString()}</div>
+          `;
+          div.querySelector("button").onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm("Delete this answer?")) {
+              await deleteDoc(doc(db, "quizAnswers", id));
+              loadAnswers();
+            }
+          };
+          list.appendChild(div);
         }
       });
     }
-
-    window.deleteAnswer = async (id) => {
-      if (confirm("Delete this answer?")) {
-        await deleteDoc(doc(db, "quizAnswers", id));
-        loadAnswers();
-      }
-    };
 
     window.openModal = (name, phone, address, count) => {
       document.getElementById("modal-name").innerText = name;
