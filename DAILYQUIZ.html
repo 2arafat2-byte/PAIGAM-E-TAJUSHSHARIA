@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center p-4">
   <div class="max-w-xl w-full bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 space-y-4">
-
+    
     <div id="quiz-header" class="flex items-center justify-center space-x-2">
       <img id="quiz-logo" src="" alt="Logo" class="w-12 h-12 hidden" />
       <h1 id="quiz-title" class="text-2xl font-bold text-center">Daily Suwaal</h1>
@@ -18,10 +18,7 @@
     <div id="quiz-box" class="space-y-3 hidden">
       <p id="question" class="font-semibold"></p>
 
-      <!-- MCQ Options -->
       <div id="options-box" class="space-y-2 hidden"></div>
-
-      <!-- Text Answer -->
       <input type="text" id="text-answer" placeholder="Type your answer" class="hidden w-full border px-3 py-2 rounded"/>
 
       <input type="text" id="name" placeholder="Your Name" class="w-full border px-3 py-2 rounded" required>
@@ -39,13 +36,16 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp
+      getFirestore, collection, query, where, getDocs, addDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913"
+      projectId: "paigam-ba913",
+      storageBucket: "paigam-ba913.appspot.com",
+      messagingSenderId: "480474970116",
+      appId: "1:480474970116:web:4bbee23fe8234f66b1dd51"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -84,7 +84,7 @@
       });
 
       if (!activeQuiz) {
-        loading.innerText = "⚠️ Aaj ke liye koi suwaal active nahi hai.";
+        loading.innerText = "⚠️ No active quiz for now.";
         return;
       }
 
@@ -131,57 +131,52 @@
         return;
       }
 
-      try {
-        const check = query(
-          collection(db, "quizAnswers"),
-          where("questionId", "==", currentQuizId),
-          where("phone", "==", phone)
-        );
-        const existing = await getDocs(check);
-        if (!existing.empty) {
-          statusEl.innerText = "🚫 Aap ne is suwaal ka already jawab diya hai.";
+      const check = query(
+        collection(db, "quizAnswers"),
+        where("questionId", "==", currentQuizId),
+        where("phone", "==", phone)
+      );
+      const existing = await getDocs(check);
+      if (!existing.empty) {
+        statusEl.innerText = "🚫 Aap ne is suwaal ka already jawab diya hai.";
+        return;
+      }
+
+      let userAnswer = "";
+      if (quizMode === "mcq") {
+        const selected = document.querySelector('input[name="option"]:checked');
+        if (!selected) {
+          alert("⚠️ Please select an option.");
           return;
         }
-
-        let userAnswer = "";
-        if (quizMode === "mcq") {
-          const selected = document.querySelector('input[name="option"]:checked');
-          if (!selected) {
-            alert("⚠️ Please select an option.");
-            return;
-          }
-          userAnswer = selected.value;
-        } else {
-          userAnswer = textAnswer.value.trim().toLowerCase();
-          if (!userAnswer) {
-            alert("⚠️ Answer likhna zaroori hai.");
-            return;
-          }
+        userAnswer = selected.value;
+      } else {
+        userAnswer = textAnswer.value.trim().toLowerCase();
+        if (!userAnswer) {
+          alert("⚠️ Answer likhna zaroori hai.");
+          return;
         }
-
-        let isCorrect = false;
-        if (quizMode === "mcq") {
-          isCorrect = userAnswer === correctAnswer;
-        } else {
-          const normalize = txt => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
-          isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
-        }
-
-        await addDoc(collection(db, "quizAnswers"), {
-          name, phone, address,
-          answer: userAnswer,
-          options: quizOptions,
-          questionId: currentQuizId,
-          correct: isCorrect,
-          timestamp: serverTimestamp()  // ✅ Use serverTimestamp
-        });
-
-        statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
-        quizBox.innerHTML = "";
-      } catch (err) {
-        console.error(err);
-        alert("❌ Submission failed. Please try again.");
       }
+
+      let isCorrect = false;
+      if (quizMode === "mcq") {
+        isCorrect = userAnswer === correctAnswer;
+      } else {
+        const normalize = txt => txt.replace(/[^a-z0-9]/gi, '').toLowerCase();
+        isCorrect = normalize(userAnswer).includes(normalize(correctAnswer));
+      }
+
+      await addDoc(collection(db, "quizAnswers"), {
+        name, phone, address,
+        answer: userAnswer,
+        options: quizOptions,
+        questionId: currentQuizId,
+        correct: isCorrect,
+        timestamp: Date.now()
+      });
+
+      statusEl.innerText = "✅ Aap ka jawab record ho gaya hai chahe sahi ho ya galat. In shaa Allah baad me bata denge.";
+      quizBox.innerHTML = "";
     };
   </script>
 </body>
