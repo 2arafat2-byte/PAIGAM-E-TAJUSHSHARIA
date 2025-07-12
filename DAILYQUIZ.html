@@ -1,16 +1,26 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Daily Suwaal | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
+  <style>
+    .animate-fadeIn {
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex items-center justify-center px-4">
-  <div class="max-w-xl w-full space-y-6 animate-fadeIn">
+
+  <div id="quiz-container" class="max-w-xl w-full space-y-6 animate-fadeIn hidden">
     <div class="text-center">
-      <img id="quiz-logo" src="" alt="Quiz Logo" class="mx-auto w-24 h-24 rounded-full mb-4 hidden">
+      <img id="quiz-logo" src="" alt="Quiz Logo" class="mx-auto w-24 h-24 rounded-full mb-4 hidden" />
       <h1 id="quiz-title" class="text-2xl font-bold mb-2">Daily Suwaal</h1>
       <p id="quiz-question" class="text-lg font-medium"></p>
     </div>
@@ -37,74 +47,90 @@
     <div id="result-message" class="hidden text-center font-semibold text-lg"></div>
   </div>
 
-  <style>
-    .animate-fadeIn {
-      animation: fadeIn 1s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+  <div id="no-quiz-message" class="max-w-xl w-full text-center text-red-600 font-semibold hidden">
+    ⏳ Is waqt koi active quiz nahi hai ya time khatam ho gaya hai.
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const app = initializeApp({
+    // Firebase config
+    const firebaseConfig = {
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
       authDomain: "paigam-ba913.firebaseapp.com",
       projectId: "paigam-ba913"
-    });
+    };
 
+    const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const quizForm = document.getElementById("quiz-form");
+    const quizContainer = document.getElementById("quiz-container");
+    const noQuizMessage = document.getElementById("no-quiz-message");
+
     const quizTitle = document.getElementById("quiz-title");
     const quizQuestion = document.getElementById("quiz-question");
     const quizLogo = document.getElementById("quiz-logo");
-    const mcqContainer = document.getElementById("mcq-options");
+    const mcqOptions = document.getElementById("mcq-options");
     const textAnswerBox = document.getElementById("text-answer-box");
-    const resultMessage = document.getElementById("result-message");
+    const quizForm = document.getElementById("quiz-form");
 
     const submitBtn = document.getElementById("submit-btn");
     const submitText = document.getElementById("submit-text");
     const submitSpinner = document.getElementById("submit-spinner");
+    const resultMessage = document.getElementById("result-message");
 
     let currentQuiz = null;
 
+    // Helper: convert Firestore timestamp or string to Date object
+    function toDate(value) {
+      if (!value) return null;
+      if (value.toDate) return value.toDate(); // Firestore Timestamp
+      return new Date(value); // string or date
+    }
+
     async function loadCurrentQuiz() {
+      // Hide all first
+      quizContainer.classList.add("hidden");
+      noQuizMessage.classList.add("hidden");
+      resultMessage.classList.add("hidden");
+      resultMessage.textContent = "";
+
       const snap = await getDocs(query(collection(db, "dailyQuiz")));
       const now = new Date();
       currentQuiz = null;
 
-      for (let doc of snap.docs) {
+      snap.forEach(doc => {
         const q = doc.data();
-        const start = new Date(q.startTime);
-        const end = new Date(q.endTime);
 
-        console.log(`Start: ${start.toISOString()}, End: ${end.toISOString()}, Now: ${now.toISOString()}`);
+        const start = toDate(q.startTime);
+        const end = toDate(q.endTime);
 
-        if (start <= now && now <= end) {
+        if (start && end && start <= now && now <= end) {
           currentQuiz = q;
-          break;
         }
-      }
+      });
 
       if (currentQuiz) {
+        // Show quiz container
+        quizContainer.classList.remove("hidden");
+
         quizTitle.textContent = currentQuiz.title || "Daily Suwaal";
-        quizQuestion.textContent = currentQuiz.question;
+        quizQuestion.textContent = currentQuiz.question || "";
 
         if (currentQuiz.imageURL) {
           quizLogo.src = currentQuiz.imageURL;
           quizLogo.classList.remove("hidden");
+        } else {
+          quizLogo.classList.add("hidden");
         }
 
         if (currentQuiz.mode === "mcq") {
-          mcqContainer.innerHTML = "";
+          mcqOptions.innerHTML = "";
           currentQuiz.options.forEach((opt, idx) => {
             const label = document.createElement("label");
-            label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border";
+            label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border cursor-pointer";
             const radio = document.createElement("input");
             radio.type = "radio";
             radio.name = "quiz-option";
@@ -112,32 +138,29 @@
             radio.required = true;
             label.appendChild(radio);
             label.appendChild(document.createTextNode(opt));
-            mcqContainer.appendChild(label);
+            mcqOptions.appendChild(label);
           });
-          mcqContainer.classList.remove("hidden");
+          mcqOptions.classList.remove("hidden");
           textAnswerBox.classList.add("hidden");
         } else {
           textAnswerBox.classList.remove("hidden");
-          mcqContainer.classList.add("hidden");
+          mcqOptions.classList.add("hidden");
         }
       } else {
-        quizForm.classList.add("hidden");
-        resultMessage.classList.remove("hidden");
-        resultMessage.textContent = "⏳ Is waqt koi active quiz nahi hai ya time khatam ho gaya hai.";
-        resultMessage.classList.add("text-red-600");
+        // Show no quiz message
+        noQuizMessage.classList.remove("hidden");
       }
     }
 
-    quizForm.onsubmit = async (e) => {
+    quizForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      resultMessage.classList.remove("text-red-600", "text-green-600");
+
       resultMessage.classList.add("hidden");
       resultMessage.textContent = "";
+      resultMessage.classList.remove("text-red-600", "text-green-600");
 
       if (!currentQuiz) {
-        resultMessage.classList.remove("hidden");
-        resultMessage.classList.add("text-red-600");
-        resultMessage.textContent = "❌ Koi quiz available nahi hai ya time over ho gaya.";
+        noQuizMessage.classList.remove("hidden");
         return;
       }
 
@@ -182,9 +205,10 @@
           answer,
           correct,
           options: currentQuiz.options || [],
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
+        quizForm.reset();
         quizForm.classList.add("hidden");
         resultMessage.classList.remove("hidden");
         resultMessage.textContent = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.";
@@ -197,7 +221,7 @@
       submitBtn.disabled = false;
       submitText.textContent = "Submit";
       submitSpinner.classList.add("hidden");
-    };
+    });
 
     function showError(msg) {
       submitBtn.disabled = false;
@@ -210,5 +234,6 @@
 
     loadCurrentQuiz();
   </script>
+
 </body>
 </html>
