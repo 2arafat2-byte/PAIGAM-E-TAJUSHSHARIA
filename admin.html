@@ -3,271 +3,162 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Panel | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
-  <div class="flex">
-    <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
-      <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
-      <nav class="flex flex-col space-y-2 p-4">
-        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
-        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
-        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
-      </nav>
-    </aside>
+<div class="flex">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
+    <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
+    <nav class="flex flex-col space-y-2 p-4">
+      <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
+      <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+      <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
+    </nav>
+  </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-6">
-      <div class="flex justify-between items-center mb-6">
-        <div id="welcome" class="font-semibold">Checking login...</div>
-        <div class="space-x-2">
-          <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
-          <button id="console-btn" class="bg-gray-700 text-white px-4 py-2 rounded">💻 Console</button>
-          <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
-        </div>
+  <!-- Main Content -->
+  <main class="flex-1 p-6">
+    <div class="flex justify-between items-center mb-6">
+      <div id="welcome" class="font-semibold">Checking login...</div>
+      <div class="space-x-2">
+        <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌗 Toggle</button>
+        <button id="console-toggle" class="bg-gray-600 text-white px-4 py-2 rounded">🖥 Console</button>
+        <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
       </div>
+    </div>
 
-      <!-- Set Quiz Section -->
-      <div id="set-suhaal-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
-        <form id="quiz-form" class="space-y-4">
-          <input type="text" id="quiz-title" placeholder="Quiz Title" class="w-full border px-2 py-1 rounded" required />
-          <input type="text" id="image-url" placeholder="Image URL" class="w-full border px-2 py-1 rounded" />
-          <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
-          <label class="block mt-2">Choose Mode:</label>
-          <select id="question-mode" class="px-2 py-1 border rounded">
-            <option value="mcq">MCQ (Options)</option>
-            <option value="text">Text Answer</option>
-          </select>
-          <div id="mcq-options">
-            <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
-            <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
-            <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
-            <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
-            <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
-              <option value="0">Correct: Option 1</option>
-              <option value="1">Correct: Option 2</option>
-              <option value="2">Correct: Option 3</option>
-              <option value="3">Correct: Option 4</option>
-            </select>
-          </div>
-          <div id="text-answer-box" class="hidden">
-            <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
-          </div>
-          <label>Start Time</label>
-          <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
-          <label>End Time</label>
-          <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
-          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
-        </form>
-      </div>
-<!-- View Answers Section -->
-      <div id="answers-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
-        <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
+    <!-- View Answers -->
+    <div id="answers-section" class="hidden">
+      <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
+      <div class="flex items-center space-x-2 mb-4">
+        <select id="answer-filter" class="px-2 py-1 border rounded">
           <option value="correct">✅ Correct</option>
           <option value="wrong">❌ Wrong</option>
-          <option value="top10">🏆 10 Correct Users</option>
+          <option value="ten-correct">🏆 10 Correct Only</option>
         </select>
-        <button id="download-btn" class="mb-4 px-4 py-2 bg-green-600 text-white rounded">⬇️ Download PDF</button>
-        <div id="answers-list" class="space-y-2"></div>
+        <button id="download-pdf" class="bg-green-600 text-white px-3 py-1 rounded hidden">📥 Download PDF</button>
       </div>
-    </main>
-  </div>
-
-  <!-- Modal for user info -->
-  <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
-      <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
-      <p><strong>Name:</strong> <span id="modal-name"></span></p>
-      <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
-      <p><strong>Address:</strong> <span id="modal-address"></span></p>
-      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
+      <div id="answers-list" class="space-y-2"></div>
     </div>
-  </div>
+  </main>
+</div>
 
-  <!-- Firebase & Script -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import jsPDF from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.es.min.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const app = initializeApp({
-      apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
-      authDomain: "paigam-ba913.firebaseapp.com",
-      projectId: "paigam-ba913"
+  const app = initializeApp({
+    apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
+    authDomain: "paigam-ba913.firebaseapp.com",
+    projectId: "paigam-ba913"
+  });
+
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+  const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+
+  const logoutBtn = document.getElementById("logout");
+  const welcome = document.getElementById("welcome");
+  const filterSelect = document.getElementById("answer-filter");
+  const answerList = document.getElementById("answers-list");
+  const downloadBtn = document.getElementById("download-pdf");
+
+  document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
+  document.getElementById("console-toggle").onclick = () => {
+    alert("Open Chrome browser → Tap 3 dots → 'Desktop site' → Long press reload → 'Inspect' enabled via DevTools (or use desktop)");
+  };
+  logoutBtn.onclick = () => { signOut(auth); location.reload(); };
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user && allowedEmails.includes(user.email)) {
+      welcome.innerText = `✅ Welcome, ${user.email}`;
+      logoutBtn.classList.remove("hidden");
+      document.getElementById("sidebar").classList.remove("hidden");
+      loadAnswers();
+    } else {
+      await signInWithPopup(auth, provider);
+    }
+  });
+
+  filterSelect.onchange = loadAnswers;
+  downloadBtn.onclick = generatePDF;
+
+  async function loadAnswers() {
+    const filter = filterSelect.value;
+    answerList.innerHTML = "";
+    downloadBtn.classList.add("hidden");
+
+    const snap = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
+    const phoneCorrectCount = {};
+    const answersData = [];
+
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      const phone = data.phone;
+      if (data.correct) {
+        phoneCorrectCount[phone] = (phoneCorrectCount[phone] || 0) + 1;
+      }
+      answersData.push({ id: docSnap.id, ...data });
     });
 
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
-    const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
+    const filtered = answersData.filter(data => {
+      if (filter === "correct") return data.correct;
+      if (filter === "wrong") return !data.correct;
+      if (filter === "ten-correct") return phoneCorrectCount[data.phone] === 10 && data.correct;
+      return false;
+    });
 
-    const logoutBtn = document.getElementById("logout");
-    const welcome = document.getElementById("welcome");
-    const modeSelect = document.getElementById("question-mode");
-    const mcqOptions = document.getElementById("mcq-options");
-    const textAnswerBox = document.getElementById("text-answer-box");
-    const quizForm = document.getElementById("quiz-form");
+    if (filter === "ten-correct" && filtered.length > 0) {
+      downloadBtn.classList.remove("hidden");
+    }
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user && allowedEmails.includes(user.email)) {
-        welcome.innerText = `✅ Welcome, ${user.email}`;
-        logoutBtn.classList.remove("hidden");
-        document.getElementById("sidebar").classList.remove("hidden");
-        showSection("set-suhaal-section");
-      } else {
-        await signInWithPopup(auth, provider);
+    filtered.forEach(data => {
+      const div = document.createElement("div");
+      div.className = `p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm`;
+      const answerText = data.options && !isNaN(data.answer)
+        ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
+        : data.answer;
+      div.innerHTML = `
+        <strong>${data.name}</strong> - ${data.phone} (${data.address})<br>
+        ${data.correct ? "✅ Correct" : "❌ Wrong"} | Answer: ${answerText}<br>
+        <small>${new Date(data.timestamp).toLocaleString()}</small>
+      `;
+      answerList.appendChild(div);
+    });
+  }
+
+  async function generatePDF() {
+    const snap = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
+    const phoneCorrectCount = {};
+    const dataMap = {};
+
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+      if (d.correct) {
+        phoneCorrectCount[d.phone] = (phoneCorrectCount[d.phone] || 0) + 1;
+        dataMap[d.phone] = d; // last entry with this phone
       }
     });
 
-    logoutBtn.onclick = () => { signOut(auth); location.reload(); };
-    document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
-    document.getElementById("console-btn").onclick = () => { alert("Developer console kholne ke liye:\n\n📱 Mobile: 3 dot > Desktop site > long press > Inspect\n💻 PC: F12 ya Ctrl+Shift+I"); };
+    const users = Object.keys(phoneCorrectCount).filter(p => phoneCorrectCount[p] === 10).map(p => dataMap[p]);
 
-    function showSection(id) {
-      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(s => document.getElementById(s).classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
-    }
-
-    document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
-    document.getElementById("view-schedule").onclick = () => loadSchedule();
-    document.getElementById("view-answers").onclick = () => loadAnswers();
-
-    modeSelect.onchange = () => {
-      mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
-      textAnswerBox.classList.toggle("hidden", modeSelect.value !== "text");
-    };
-
-    quizForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const submitBtn = quizForm.querySelector("button[type='submit']");
-      submitBtn.disabled = true;
-      submitBtn.innerText = "Saving...";
-
-      const data = {
-        title: document.getElementById("quiz-title").value.trim(),
-        imageURL: document.getElementById("image-url").value.trim(),
-        question: document.getElementById("question").value.trim(),
-        startTime: document.getElementById("question-start").value,
-        endTime: document.getElementById("question-end").value,
-        mode: modeSelect.value
-      };
-
-      if (data.mode === "mcq") {
-        data.options = Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim());
-        data.correct = document.getElementById("correct-option").value;
-      } else {
-        data.options = [];
-        data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
-      }
-
-      try {
-        await addDoc(collection(db, "dailyQuiz"), data);
-        alert("✅ Suwaal Saved");
-        quizForm.reset();
-        mcqOptions.classList.remove("hidden");
-        textAnswerBox.classList.add("hidden");
-        modeSelect.value = "mcq";
-      } catch {
-        alert("❌ Error saving question");
-      }
-
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Submit";
-    };
-
-    async function loadAnswers() {
-      showSection("answers-section");
-      const filter = document.getElementById("answer-filter").value;
-      const list = document.getElementById("answers-list");
-      list.innerHTML = "";
-
-      const snap = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
-      const phoneCount = {};
-      const userMap = {};
-
-      snap.forEach(docSnap => {
-        const data = docSnap.data();
-        const phone = data.phone;
-        phoneCount[phone] = (phoneCount[phone] || 0) + (data.correct ? 1 : 0);
-        if (!userMap[phone]) {
-          userMap[phone] = { name: data.name, phone, address: data.address, correct: 0 };
-        }
-        if (data.correct) userMap[phone].correct++;
-      });
-
-      const filtered = snap.docs.filter(docSnap => {
-        const data = docSnap.data();
-        if (filter === "correct") return data.correct;
-        if (filter === "wrong") return !data.correct;
-        if (filter === "top10") return userMap[data.phone]?.correct >= 10;
-      });
-
-      filtered.forEach(docSnap => {
-        const data = docSnap.data();
-        const id = docSnap.id;
-        const answerText = data.options && !isNaN(data.answer)
-          ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
-          : data.answer;
-
-        const div = document.createElement("div");
-        div.className = `p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer`;
-        div.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div><strong>${data.name}</strong> <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">${data.correct ? "✅ Correct" : "❌ Wrong"}</span></div>
-            <button class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
-          </div>
-          <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
-          <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(data.timestamp).toLocaleString()}</div>
-        `;
-        div.onclick = () => openModal(data.name, data.phone, data.address, userMap[data.phone]?.correct || 1);
-        div.querySelector("button").onclick = async (e) => {
-          e.stopPropagation();
-          if (confirm("Delete this answer?")) {
-            await deleteDoc(doc(db, "quizAnswers", id));
-            loadAnswers();
-          }
-        };
-        list.appendChild(div);
-      });
-
-      document.getElementById("download-btn").onclick = () => {
-        const doc = new jsPDF();
-        let y = 10;
-        doc.setFontSize(14);
-        doc.text("🏆 Users with 10+ Correct Answers", 10, y);
-        y += 10;
-        let i = 1;
-        Object.values(userMap).forEach(u => {
-          if (u.correct >= 10) {
-            doc.text(`${i++}. ${u.name} | ${u.phone} | ${u.address}`, 10, y);
-            y += 10;
-          }
-        });
-        if (i === 1) doc.text("No users found.", 10, y);
-        doc.save("top10_users.pdf");
-      };
-    }
-
-    window.openModal = (name, phone, address, count) => {
-      document.getElementById("modal-name").innerText = name;
-      document.getElementById("modal-phone").innerText = phone + ` (${count} correct)`;
-      document.getElementById("modal-address").innerText = address;
-      document.getElementById("id-modal").classList.remove("hidden");
-      document.getElementById("id-modal").classList.add("flex");
-    };
-
-    window.closeModal = () => {
-      document.getElementById("id-modal").classList.add("hidden");
-      document.getElementById("id-modal").classList.remove("flex");
-    };
-
-    document.getElementById("answer-filter").onchange = loadAnswers;
-  </script>
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text("🏆 10 Correct Users", 10, 10);
+    let y = 20;
+    users.forEach((u, i) => {
+      doc.text(`${i + 1}. ${u.name}, ${u.phone}, ${u.address}`, 10, y);
+      y += 10;
+    });
+    doc.save("10-correct-users.pdf");
+  }
+</script>
 </body>
 </html>
