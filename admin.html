@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Panel | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
   <div class="flex">
+    <!-- Sidebar -->
     <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
       <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
       <nav class="flex flex-col space-y-2 p-4">
-        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded">📝 Set Daily Suwaal</button>
-        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded">📅 View Schedule</button>
-        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded">✅ View 10 Correct</button>
+        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
+        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
       </nav>
     </aside>
 
+    <!-- Main Content -->
     <main class="flex-1 p-6">
       <div class="flex justify-between items-center mb-6">
         <div id="welcome" class="font-semibold">Checking login...</div>
@@ -28,17 +29,20 @@
         </div>
       </div>
 
+      <!-- Set Quiz Section -->
       <div id="set-suhaal-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
         <form id="quiz-form" class="space-y-4">
           <input type="text" id="quiz-title" placeholder="Quiz Title" class="w-full border px-2 py-1 rounded" required />
           <input type="text" id="image-url" placeholder="Image URL" class="w-full border px-2 py-1 rounded" />
           <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+
           <label class="block mt-2">Choose Mode:</label>
           <select id="question-mode" class="px-2 py-1 border rounded">
             <option value="mcq">MCQ (Options)</option>
             <option value="text">Text Answer</option>
           </select>
+
           <div id="mcq-options">
             <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
             <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
@@ -51,36 +55,57 @@
               <option value="3">Correct: Option 4</option>
             </select>
           </div>
+
           <div id="text-answer-box" class="hidden">
             <input type="text" id="correct-text-answer" placeholder="Correct text answer" class="w-full border px-2 py-1 rounded" />
           </div>
+
           <label>Start Time</label>
           <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
           <label>End Time</label>
           <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
+
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
 
+      <!-- Schedule Section -->
       <div id="schedule-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
         <div id="schedule-list" class="space-y-2"></div>
       </div>
 
+      <!-- View Answers -->
       <div id="answers-section" class="hidden">
-        <h2 class="text-xl font-semibold mb-4">✅ 10 Correct Answers</h2>
-        <button id="download-pdf" class="mb-4 bg-indigo-600 text-white px-4 py-2 rounded hidden">
-          📄 Download PDF
-        </button>
+        <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
+        <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
+          <option value="correct">✅ Correct</option>
+          <option value="wrong">❌ Wrong</option>
+          <option value="exact10">🎯 Exactly 10 Correct</option>
+        </select>
+        <button id="download-pdf" class="mb-4 bg-indigo-600 text-white px-4 py-2 rounded hidden">📄 Download PDF</button>
         <div id="answers-list" class="space-y-2"></div>
       </div>
     </main>
   </div>
 
+  <!-- Modal -->
+  <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
+      <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
+      <p><strong>Name:</strong> <span id="modal-name"></span></p>
+      <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
+      <p><strong>Address:</strong> <span id="modal-address"></span></p>
+      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded">Close</button>
+    </div>
+  </div>
+
+  <!-- Firebase + JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
     const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -99,6 +124,9 @@
     const modeSelect = document.getElementById("question-mode");
     const mcqOptions = document.getElementById("mcq-options");
     const textAnswerBox = document.getElementById("text-answer-box");
+    const downloadBtn = document.getElementById("download-pdf");
+
+    let exactTenCorrect = [];
 
     document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
     logoutBtn.onclick = () => { signOut(auth); location.reload(); }
@@ -122,6 +150,17 @@
     document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
     document.getElementById("view-schedule").onclick = () => loadSchedule();
     document.getElementById("view-answers").onclick = () => loadAnswers();
+    document.getElementById("answer-filter").onchange = loadAnswers;
+    downloadBtn.onclick = () => {
+      const doc = new jsPDF();
+      doc.text("🎯 Users with Exactly 10 Correct Answers", 20, 20);
+      let y = 30;
+      exactTenCorrect.forEach((u, i) => {
+        doc.text(`${i + 1}. ${u.name}, ${u.phone}, ${u.address}`, 20, y);
+        y += 10;
+      });
+      doc.save("exactly-10-correct-users.pdf");
+    };
 
     modeSelect.onchange = () => {
       mcqOptions.classList.toggle("hidden", modeSelect.value !== "mcq");
@@ -151,12 +190,17 @@
         data.correct = document.getElementById("correct-text-answer").value.trim().toLowerCase();
       }
 
-      await addDoc(collection(db, "dailyQuiz"), data);
-      alert("✅ Suwaal Saved");
-      quizForm.reset();
-      mcqOptions.classList.remove("hidden");
-      textAnswerBox.classList.add("hidden");
-      modeSelect.value = "mcq";
+      try {
+        await addDoc(collection(db, "dailyQuiz"), data);
+        alert("✅ Suwaal Saved");
+        quizForm.reset();
+        mcqOptions.classList.remove("hidden");
+        textAnswerBox.classList.add("hidden");
+        modeSelect.value = "mcq";
+      } catch (err) {
+        alert("❌ Error saving question");
+      }
+
       submitBtn.disabled = false;
       submitBtn.innerText = "Submit";
     };
@@ -188,53 +232,81 @@
       });
     }
 
-    let exactTenCorrect = [];
-
     async function loadAnswers() {
       showSection("answers-section");
       const list = document.getElementById("answers-list");
+      list.innerHTML = "";
+      const filter = document.getElementById("answer-filter").value;
       const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
-      const phoneCorrectCount = {};
-      const allAnswers = [];
+      const phoneCount = {}, userCorrectMap = {};
 
       snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.correct) {
-          phoneCorrectCount[data.phone] = (phoneCorrectCount[data.phone] || 0) + 1;
+        const d = docSnap.data();
+        const phone = d.phone;
+        if (d.correct) {
+          userCorrectMap[phone] = (userCorrectMap[phone] || 0) + 1;
         }
-        allAnswers.push({ id: docSnap.id, ...data });
       });
 
-      exactTenCorrect = allAnswers.filter(a => a.correct && phoneCorrectCount[a.phone] === 10);
+      exactTenCorrect = [];
 
-      list.innerHTML = "";
-      exactTenCorrect.forEach(data => {
-        const div = document.createElement("div");
-        div.className = `p-4 rounded bg-green-100 dark:bg-green-800 shadow-md text-sm`;
-        div.innerHTML = `
-          <div><strong>${data.name}</strong> — ${data.phone}</div>
-          <div>${data.address}</div>
-          <div class="text-xs text-gray-600 dark:text-gray-300">${new Date(data.timestamp).toLocaleString()}</div>
-        `;
-        list.appendChild(div);
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        const id = docSnap.id;
+        const is10Correct = userCorrectMap[d.phone] === 10;
+
+        if (
+          (filter === "correct" && d.correct) ||
+          (filter === "wrong" && !d.correct) ||
+          (filter === "exact10" && is10Correct)
+        ) {
+          const answerText = d.options && !isNaN(d.answer)
+            ? `Option ${parseInt(d.answer) + 1}: ${d.options[d.answer]}`
+            : d.answer;
+
+          const div = document.createElement("div");
+          div.className = `p-4 rounded bg-${d.correct ? "green" : "red"}-100 dark:bg-${d.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer`;
+          div.onclick = () => openModal(d.name, d.phone, d.address);
+
+          div.innerHTML = `
+            <div class="flex justify-between items-center">
+              <div>
+                <strong>${d.name}</strong>
+                <span class="inline-block bg-${d.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                  ${d.correct ? "✅ Correct" : "❌ Wrong"}
+                </span>
+              </div>
+            </div>
+            <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
+            <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(d.timestamp).toLocaleString()}</div>
+          `;
+
+          list.appendChild(div);
+
+          if (filter === "exact10" && is10Correct) {
+            exactTenCorrect.push({
+              name: d.name,
+              phone: d.phone,
+              address: d.address
+            });
+          }
+        }
       });
 
-      document.getElementById("download-pdf").classList.toggle("hidden", exactTenCorrect.length === 0);
+      downloadBtn.classList.toggle("hidden", exactTenCorrect.length === 0);
     }
 
-    document.getElementById("download-pdf").onclick = () => {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.text("10 Correct Answers", 20, 20);
-      let y = 30;
-      exactTenCorrect.forEach((u, i) => {
-        doc.text(`${i + 1}. ${u.name}`, 20, y);
-        doc.text(`📞 ${u.phone}`, 20, y + 7);
-        doc.text(`🏠 ${u.address}`, 20, y + 14);
-        y += 25;
-        if (y > 270) { doc.addPage(); y = 20; }
-      });
-      doc.save("10-correct-users.pdf");
+    window.openModal = (name, phone, address) => {
+      document.getElementById("modal-name").innerText = name;
+      document.getElementById("modal-phone").innerText = phone;
+      document.getElementById("modal-address").innerText = address;
+      document.getElementById("id-modal").classList.remove("hidden");
+      document.getElementById("id-modal").classList.add("flex");
+    };
+
+    window.closeModal = () => {
+      document.getElementById("id-modal").classList.add("hidden");
+      document.getElementById("id-modal").classList.remove("flex");
     };
   </script>
 </body>
