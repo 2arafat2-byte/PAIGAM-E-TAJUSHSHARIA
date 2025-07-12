@@ -68,8 +68,7 @@
           <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
         </form>
       </div>
-
-      <!-- Schedule Section -->
+<!-- Schedule Section -->
       <div id="schedule-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
         <div id="schedule-list" class="space-y-2"></div>
@@ -81,6 +80,7 @@
         <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
           <option value="correct">✅ Correct</option>
           <option value="wrong">❌ Wrong</option>
+          <option value="top">🏆 Top Performers (10+ correct)</option>
         </select>
         <div id="answers-list" class="space-y-2"></div>
       </div>
@@ -197,7 +197,6 @@
       snap.forEach(docSnap => {
         const q = docSnap.data();
         const id = docSnap.id;
-
         const div = document.createElement("div");
         div.className = "p-3 border rounded bg-white dark:bg-gray-700";
         div.innerHTML = `
@@ -225,26 +224,50 @@
       const filter = document.getElementById("answer-filter").value;
       const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
       const phoneCount = {};
+      const correctCount = {};
+
+      // Count correct answers by phone
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const phone = data.phone;
+        if (data.correct) {
+          correctCount[phone] = (correctCount[phone] || 0) + 1;
+        }
+      });
 
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
         const id = docSnap.id;
-        if ((filter === "correct" && data.correct) || (filter === "wrong" && !data.correct)) {
+        const phone = data.phone;
+        const isCorrect = data.correct;
+
+        const shouldShow =
+          (filter === "correct" && isCorrect) ||
+          (filter === "wrong" && !isCorrect) ||
+          (filter === "top" && correctCount[phone] >= 10);
+
+        if (shouldShow) {
           const answerText = data.options && !isNaN(data.answer)
             ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
             : data.answer;
-          const phone = data.phone;
+
           phoneCount[phone] = (phoneCount[phone] || 0) + 1;
+
           const div = document.createElement("div");
-          div.className = `p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer`;
+          div.className = `p-4 rounded bg-${isCorrect ? "green" : "red"}-100 dark:bg-${isCorrect ? "green" : "red"}-800 shadow-md text-sm cursor-pointer`;
           div.onclick = () => openModal(data.name, phone, data.address, phoneCount[phone]);
           div.innerHTML = `
             <div class="flex justify-between items-center">
               <div>
                 <strong>${data.name}</strong>
-                <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
-                  ${data.correct ? "✅ Correct" : "❌ Wrong"}
+                <span class="inline-block bg-${isCorrect ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                  ${isCorrect ? "✅ Correct" : "❌ Wrong"}
                 </span>
+                ${
+                  filter === "top"
+                    ? `<span class="ml-2 text-xs text-yellow-400 font-bold">(✔️ ${correctCount[phone]} correct)</span>`
+                    : ""
+                }
               </div>
               <button class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
             </div>
