@@ -1,4 +1,3 @@
-<!-- START OF ADMIN PANEL -->
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
@@ -8,44 +7,81 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all font-sans">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-all">
   <div class="flex">
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-xl hidden">
-      <div class="p-5 text-2xl font-bold border-b dark:border-gray-700">🔐 Admin Panel</div>
-      <nav class="flex flex-col space-y-3 p-4">
-        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90 transition">📝 Set Daily Suwaal</button>
-        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90 transition">📅 View Schedule</button>
-        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90 transition">✅ View Answers</button>
+    <aside id="sidebar" class="w-64 min-h-screen bg-white dark:bg-gray-800 shadow-lg hidden">
+      <div class="p-4 font-bold text-xl">🔐 Admin Panel</div>
+      <nav class="flex flex-col space-y-2 p-4">
+        <button id="set-suhaal" class="bg-blue-700 text-white px-4 py-2 rounded hover:opacity-90">📝 Set Daily Suwaal</button>
+        <button id="view-schedule" class="bg-green-700 text-white px-4 py-2 rounded hover:opacity-90">📅 View Schedule</button>
+        <button id="view-answers" class="bg-purple-700 text-white px-4 py-2 rounded hover:opacity-90">✅ View Answers</button>
       </nav>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-6 space-y-6">
-      <div class="flex justify-between items-center">
-        <div id="welcome" class="font-semibold text-lg">Checking login...</div>
+    <main class="flex-1 p-6">
+      <div class="flex justify-between items-center mb-6">
+        <div id="welcome" class="font-semibold">Checking login...</div>
         <div class="space-x-2">
-          <button id="toggle-theme" class="bg-yellow-400 text-black px-4 py-2 rounded">🌓 Toggle</button>
+          <button id="toggle-theme" class="bg-yellow-500 text-black px-4 py-2 rounded">🌓 Toggle</button>
           <button id="logout" class="bg-red-600 text-white px-4 py-2 rounded hidden">Logout</button>
         </div>
       </div>
 
+      <!-- Set Quiz Section -->
+      <div id="set-suhaal-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📝 Set Daily Suwaal</h2>
+        <form id="quiz-form" class="space-y-4">
+          <input type="text" id="quiz-title" placeholder="Quiz Title" class="w-full border px-2 py-1 rounded" required />
+          <input type="text" id="image-url" placeholder="Image URL" class="w-full border px-2 py-1 rounded" />
+          <input type="text" id="question" placeholder="Enter question" class="w-full border px-2 py-1 rounded" required />
+
+          <div id="mcq-options">
+            <input type="text" placeholder="Option 1" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 2" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 3" class="option w-full border px-2 py-1 rounded" required />
+            <input type="text" placeholder="Option 4" class="option w-full border px-2 py-1 rounded" required />
+            <select id="correct-option" class="border px-2 py-1 rounded w-full mt-2">
+              <option value="0">Correct: Option 1</option>
+              <option value="1">Correct: Option 2</option>
+              <option value="2">Correct: Option 3</option>
+              <option value="3">Correct: Option 4</option>
+            </select>
+          </div>
+
+          <label>Start Time</label>
+          <input type="datetime-local" id="question-start" class="w-full border px-2 py-1 rounded" required />
+
+          <label>End Time</label>
+          <input type="datetime-local" id="question-end" class="w-full border px-2 py-1 rounded" required />
+
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
+        </form>
+      </div>
+
+      <!-- Schedule -->
+      <div id="schedule-section" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">📅 Schedule</h2>
+        <div id="schedule-list" class="space-y-2"></div>
+      </div>
+
       <!-- View Answers -->
-      <section id="answers-section" class="hidden">
+      <div id="answers-section" class="hidden">
         <h2 class="text-xl font-semibold mb-4">🧾 View Answers</h2>
-        <select id="answer-filter" class="mb-4 px-3 py-2 border rounded bg-white dark:bg-gray-700 dark:text-white">
+        <select id="answer-filter" class="mb-4 px-2 py-1 border rounded">
           <option value="correct">✅ Correct</option>
           <option value="wrong">❌ Wrong</option>
-          <option value="top10">🏆 10+ Correct Answers</option>
+          <option value="top">🏆 10+ Correct Users</option>
         </select>
-        <div id="answers-list" class="space-y-4"></div>
-      </section>
+        <div id="answers-list" class="space-y-2"></div>
+      </div>
     </main>
   </div>
 
   <!-- Modal -->
   <div id="id-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-96 text-center">
+    <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-6 w-80 text-center">
       <h2 class="text-lg font-bold mb-2">🪪 User ID Card</h2>
       <p><strong>Name:</strong> <span id="modal-name"></span></p>
       <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
@@ -58,7 +94,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, orderBy, query, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const app = initializeApp({
       apiKey: "AIzaSyCSv-3o20aF6vASK_8FhZnC7xWjQMkr28U",
@@ -71,126 +107,161 @@
     const provider = new GoogleAuthProvider();
     const allowedEmails = ["arrahmanallamalquraan123@gmail.com", "imranraza12738@gmail.com"];
 
-    const welcome = document.getElementById("welcome");
     const logoutBtn = document.getElementById("logout");
+    const welcome = document.getElementById("welcome");
+    const quizForm = document.getElementById("quiz-form");
+
     document.getElementById("toggle-theme").onclick = () => document.documentElement.classList.toggle("dark");
-    logoutBtn.onclick = () => { signOut(auth); location.reload(); };
+    logoutBtn.onclick = () => { signOut(auth); location.reload(); }
 
     onAuthStateChanged(auth, async (user) => {
       if (user && allowedEmails.includes(user.email)) {
         welcome.innerText = `✅ Welcome, ${user.email}`;
         logoutBtn.classList.remove("hidden");
         document.getElementById("sidebar").classList.remove("hidden");
-        showSection("answers-section");
-        loadAnswers();
+        showSection("set-suhaal-section");
       } else {
         await signInWithPopup(auth, provider);
       }
     });
 
     function showSection(id) {
-      ["answers-section"].forEach(s => document.getElementById(s)?.classList.add("hidden"));
-      document.getElementById(id)?.classList.remove("hidden");
+      ["set-suhaal-section", "schedule-section", "answers-section"].forEach(s => document.getElementById(s).classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
     }
 
+    document.getElementById("set-suhaal").onclick = () => showSection("set-suhaal-section");
+    document.getElementById("view-schedule").onclick = () => loadSchedule();
     document.getElementById("view-answers").onclick = () => loadAnswers();
 
-    // Modal logic
+    quizForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = quizForm.querySelector("button[type='submit']");
+      btn.disabled = true;
+      btn.innerText = "Saving...";
+      const data = {
+        title: document.getElementById("quiz-title").value.trim(),
+        imageURL: document.getElementById("image-url").value.trim(),
+        question: document.getElementById("question").value.trim(),
+        startTime: document.getElementById("question-start").value,
+        endTime: document.getElementById("question-end").value,
+        mode: "mcq",
+        options: Array.from(document.querySelectorAll(".option")).map(opt => opt.value.trim()),
+        correct: document.getElementById("correct-option").value
+      };
+      try {
+        await addDoc(collection(db, "dailyQuiz"), data);
+        alert("✅ Suwaal Saved");
+        quizForm.reset();
+      } catch (err) {
+        alert("❌ Error saving question");
+      }
+      btn.disabled = false;
+      btn.innerText = "Submit";
+    };
+
+    async function loadSchedule() {
+      showSection("schedule-section");
+      const list = document.getElementById("schedule-list");
+      list.innerHTML = "";
+      const snap = await getDocs(query(collection(db, "dailyQuiz"), orderBy("startTime")));
+      snap.forEach(docSnap => {
+        const q = docSnap.data();
+        const id = docSnap.id;
+        const div = document.createElement("div");
+        div.className = "p-3 border rounded bg-white dark:bg-gray-700";
+        div.innerHTML = `
+          <strong>${q.title || "No Title"}</strong><br>
+          <img src="${q.imageURL || ""}" class="w-20 h-20 mt-2" /><br>
+          ${q.question}<br>
+          <small>From: ${new Date(q.startTime).toLocaleString()}<br>To: ${new Date(q.endTime).toLocaleString()}</small><br>
+          <button class="mt-2 bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+        `;
+        div.querySelector("button").onclick = async (e) => {
+          e.stopPropagation();
+          if (confirm("Delete this quiz schedule?")) {
+            await deleteDoc(doc(db, "dailyQuiz", id));
+            await loadSchedule();
+          }
+        };
+        list.appendChild(div);
+      });
+    }
+
+    async function loadAnswers() {
+      showSection("answers-section");
+      const list = document.getElementById("answers-list");
+      list.innerHTML = "";
+      const filter = document.getElementById("answer-filter").value;
+      const snap = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
+      const userCorrectCount = {};
+
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        const phone = data.phone;
+        if (data.correct) {
+          userCorrectCount[phone] = (userCorrectCount[phone] || 0) + 1;
+        }
+      });
+
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+        const phone = data.phone;
+        const name = data.name;
+        const answerText = data.options && !isNaN(data.answer)
+          ? `Option ${parseInt(data.answer) + 1}: ${data.options[data.answer]}`
+          : data.answer;
+
+        const shouldShow = (
+          (filter === "correct" && data.correct) ||
+          (filter === "wrong" && !data.correct) ||
+          (filter === "top" && userCorrectCount[phone] >= 10)
+        );
+
+        if (!shouldShow) return;
+
+        const div = document.createElement("div");
+        div.className = `p-4 rounded bg-${data.correct ? "green" : "red"}-100 dark:bg-${data.correct ? "green" : "red"}-800 shadow-md text-sm cursor-pointer`;
+        div.onclick = () => openModal(name, phone, data.address, userCorrectCount[phone] || 0);
+        div.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div>
+              <strong>${name}</strong>
+              <span class="inline-block bg-${data.correct ? "green" : "red"}-600 text-white px-2 py-0.5 text-xs rounded ml-2">
+                ${data.correct ? "✅ Correct" : "❌ Wrong"}
+              </span>
+            </div>
+            <button class="text-red-600 hover:underline text-sm">🗑️ Delete</button>
+          </div>
+          <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
+          <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(data.timestamp).toLocaleString()}</div>
+        `;
+        div.querySelector("button").onclick = async (e) => {
+          e.stopPropagation();
+          if (confirm("Delete this answer?")) {
+            await deleteDoc(doc(db, "quizAnswers", id));
+            loadAnswers();
+          }
+        };
+        list.appendChild(div);
+      });
+    }
+
     window.openModal = (name, phone, address, count) => {
       document.getElementById("modal-name").innerText = name;
-      document.getElementById("modal-phone").innerText = `${phone} (${count} answers)`;
+      document.getElementById("modal-phone").innerText = phone + ` (${count} correct)`;
       document.getElementById("modal-address").innerText = address;
       document.getElementById("id-modal").classList.remove("hidden");
       document.getElementById("id-modal").classList.add("flex");
     };
+
     window.closeModal = () => {
       document.getElementById("id-modal").classList.add("hidden");
       document.getElementById("id-modal").classList.remove("flex");
     };
 
     document.getElementById("answer-filter").onchange = loadAnswers;
-
-    async function loadAnswers() {
-      const filter = document.getElementById("answer-filter").value;
-      const list = document.getElementById("answers-list");
-      list.innerHTML = "";
-
-      const snapshot = await getDocs(query(collection(db, "quizAnswers"), orderBy("timestamp", "desc")));
-      const userAnswers = {};
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const phone = data.phone;
-
-        if (!userAnswers[phone]) {
-          userAnswers[phone] = {
-            name: data.name,
-            phone: data.phone,
-            address: data.address,
-            correctCount: 0,
-            answers: []
-          };
-        }
-
-        if (data.correct) {
-          userAnswers[phone].correctCount += 1;
-        }
-
-        userAnswers[phone].answers.push({ ...data, id: docSnap.id });
-      });
-
-      if (filter === "top10") {
-        Object.values(userAnswers)
-          .filter(u => u.correctCount >= 10)
-          .forEach(u => {
-            list.innerHTML += `
-              <div class="p-4 rounded-lg bg-green-100 dark:bg-green-800 shadow hover:shadow-lg transition cursor-pointer" onclick="openModal('${u.name}', '${u.phone}', '${u.address}', ${u.correctCount})">
-                <div class="flex justify-between items-center">
-                  <div><strong>${u.name}</strong></div>
-                  <span class="bg-green-600 text-white text-xs px-2 py-1 rounded">✅ Correct: ${u.correctCount}</span>
-                </div>
-                <div class="text-sm text-gray-700 dark:text-gray-200 mt-1">${u.phone}</div>
-              </div>
-            `;
-          });
-      } else {
-        Object.values(userAnswers).forEach(u => {
-          u.answers.forEach(a => {
-            const match = (filter === "correct" && a.correct) || (filter === "wrong" && !a.correct);
-            if (!match) return;
-            const answerText = a.options && !isNaN(a.answer)
-              ? `Option ${parseInt(a.answer) + 1}: ${a.options[a.answer]}`
-              : a.answer;
-
-            const color = a.correct ? "green" : "red";
-            const bgColor = a.correct ? "green-100" : "red-100";
-            const darkBg = a.correct ? "green-800" : "red-800";
-            const tag = a.correct ? "✅ Correct" : "❌ Wrong";
-
-            list.innerHTML += `
-              <div class="p-4 rounded bg-${bgColor} dark:bg-${darkBg} shadow-md text-sm cursor-pointer"
-                   onclick="openModal('${a.name}', '${a.phone}', '${a.address}', ${u.correctCount})">
-                <div class="flex justify-between items-center">
-                  <div>
-                    <strong>${a.name}</strong>
-                    <span class="inline-block bg-${color}-600 text-white px-2 py-0.5 text-xs rounded ml-2">${tag}</span>
-                  </div>
-                  <button onclick="event.stopPropagation(); deleteAnswer('${a.id}')" class="text-red-600 hover:underline text-sm">🗑️</button>
-                </div>
-                <div class="mt-1">Answer: <span class="font-medium">${answerText}</span></div>
-                <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">${new Date(a.timestamp).toLocaleString()}</div>
-              </div>`;
-          });
-        });
-      }
-    }
-
-    window.deleteAnswer = async (id) => {
-      if (confirm("Delete this answer?")) {
-        await deleteDoc(doc(db, "quizAnswers", id));
-        loadAnswers();
-      }
-    };
   </script>
 </body>
 </html>
-<!-- END OF ADMIN PANEL -->
