@@ -80,10 +80,8 @@
 
       snap.forEach(doc => {
         const q = doc.data();
-        // ✅ Correct Timestamp handling
-        const start = q.startTime.toDate();
-        const end = q.endTime.toDate();
-
+        const start = new Date(q.startTime);
+        const end = new Date(q.endTime);
         if (start <= now && now <= end) {
           currentQuiz = q;
         }
@@ -101,13 +99,13 @@
         if (currentQuiz.mode === "mcq") {
           mcqContainer.innerHTML = "";
           currentQuiz.options.forEach((opt, idx) => {
+            const label = document.createElement("label");
+            label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border";
             const radio = document.createElement("input");
             radio.type = "radio";
             radio.name = "quiz-option";
             radio.value = idx;
             radio.required = true;
-            const label = document.createElement("label");
-            label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border";
             label.appendChild(radio);
             label.appendChild(document.createTextNode(opt));
             mcqContainer.appendChild(label);
