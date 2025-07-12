@@ -78,14 +78,18 @@
       const now = new Date();
       currentQuiz = null;
 
-      snap.forEach(doc => {
+      for (let doc of snap.docs) {
         const q = doc.data();
         const start = new Date(q.startTime);
         const end = new Date(q.endTime);
+
+        console.log(`Start: ${start.toISOString()}, End: ${end.toISOString()}, Now: ${now.toISOString()}`);
+
         if (start <= now && now <= end) {
           currentQuiz = q;
+          break;
         }
-      });
+      }
 
       if (currentQuiz) {
         quizTitle.textContent = currentQuiz.title || "Daily Suwaal";
@@ -126,7 +130,6 @@
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
-
       resultMessage.classList.remove("text-red-600", "text-green-600");
       resultMessage.classList.add("hidden");
       resultMessage.textContent = "";
