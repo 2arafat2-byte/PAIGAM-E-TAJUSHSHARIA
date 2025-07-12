@@ -37,9 +37,6 @@
     <div id="result-message" class="hidden text-center font-semibold text-lg"></div>
   </div>
 
-  <!-- Debug Console -->
-  <div id="debug-box" class="fixed bottom-2 left-2 right-2 max-h-40 overflow-y-auto text-xs bg-black text-green-400 p-2 rounded font-mono z-50"></div>
-
   <style>
     .animate-fadeIn {
       animation: fadeIn 1s ease-in-out;
@@ -74,75 +71,56 @@
     const submitText = document.getElementById("submit-text");
     const submitSpinner = document.getElementById("submit-spinner");
 
-    function logDebug(message) {
-      const box = document.getElementById("debug-box");
-      if (box) {
-        const entry = document.createElement("div");
-        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        box.appendChild(entry);
-        box.scrollTop = box.scrollHeight;
-      }
-      console.log(message);
-    }
-
     let currentQuiz = null;
 
     async function loadCurrentQuiz() {
-      try {
-        const snap = await getDocs(query(collection(db, "dailyQuiz")));
-        const now = new Date();
-        currentQuiz = null;
+      const snap = await getDocs(query(collection(db, "dailyQuiz")));
+      const now = new Date();
+      currentQuiz = null;
 
-        snap.forEach(doc => {
-          const q = doc.data();
-          const start = new Date(q.startTime);
-          const end = new Date(q.endTime);
-          logDebug(`Checking quiz: Start=${start}, Now=${now}, End=${end}`);
-          if (start <= now && now <= end) {
-            currentQuiz = q;
-            logDebug("✅ Quiz matched and loaded.");
-          }
-        });
-
-        if (currentQuiz) {
-          quizTitle.textContent = currentQuiz.title || "Daily Suwaal";
-          quizQuestion.textContent = currentQuiz.question;
-
-          if (currentQuiz.imageURL) {
-            quizLogo.src = currentQuiz.imageURL;
-            quizLogo.classList.remove("hidden");
-          }
-
-          if (currentQuiz.mode === "mcq") {
-            mcqContainer.innerHTML = "";
-            currentQuiz.options.forEach((opt, idx) => {
-              const label = document.createElement("label");
-              label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border";
-              const radio = document.createElement("input");
-              radio.type = "radio";
-              radio.name = "quiz-option";
-              radio.value = idx;
-              radio.required = true;
-              label.appendChild(radio);
-              label.appendChild(document.createTextNode(opt));
-              mcqContainer.appendChild(label);
-            });
-            mcqContainer.classList.remove("hidden");
-            textAnswerBox.classList.add("hidden");
-          } else {
-            textAnswerBox.classList.remove("hidden");
-            mcqContainer.classList.add("hidden");
-          }
-
-        } else {
-          logDebug("❌ No active quiz found.");
-          quizForm.classList.add("hidden");
-          resultMessage.classList.remove("hidden");
-          resultMessage.textContent = "⏳ Is waqt koi active quiz nahi hai ya time khatam ho gaya hai.";
-          resultMessage.classList.add("text-red-600");
+      snap.forEach(doc => {
+        const q = doc.data();
+        const start = new Date(q.startTime);
+        const end = new Date(q.endTime);
+        if (start <= now && now <= end) {
+          currentQuiz = q;
         }
-      } catch (err) {
-        logDebug("🔥 Firebase error in loadCurrentQuiz: " + err.message);
+      });
+
+      if (currentQuiz) {
+        quizTitle.textContent = currentQuiz.title || "Daily Suwaal";
+        quizQuestion.textContent = currentQuiz.question;
+
+        if (currentQuiz.imageURL) {
+          quizLogo.src = currentQuiz.imageURL;
+          quizLogo.classList.remove("hidden");
+        }
+
+        if (currentQuiz.mode === "mcq") {
+          mcqContainer.innerHTML = "";
+          currentQuiz.options.forEach((opt, idx) => {
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.name = "quiz-option";
+            radio.value = idx;
+            radio.required = true;
+            const label = document.createElement("label");
+            label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border";
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(opt));
+            mcqContainer.appendChild(label);
+          });
+          mcqContainer.classList.remove("hidden");
+          textAnswerBox.classList.add("hidden");
+        } else {
+          textAnswerBox.classList.remove("hidden");
+          mcqContainer.classList.add("hidden");
+        }
+      } else {
+        quizForm.classList.add("hidden");
+        resultMessage.classList.remove("hidden");
+        resultMessage.textContent = "⏳ Is waqt koi active quiz nahi hai ya time khatam ho gaya hai.";
+        resultMessage.classList.add("text-red-600");
       }
     }
 
@@ -208,9 +186,7 @@
         resultMessage.classList.remove("hidden");
         resultMessage.textContent = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.";
         resultMessage.classList.add("text-green-600");
-        logDebug("✅ Answer submitted");
       } catch (err) {
-        logDebug("🔥 Firebase error in submit: " + err.message);
         showError("❌ Server error hua. Dobara koshish karein.");
       }
 
