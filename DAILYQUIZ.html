@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Daily Suwaal | Paighaam</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
@@ -14,7 +14,6 @@
       <h1 id="quiz-title" class="text-2xl font-bold mb-2">Daily Suwaal</h1>
       <p id="quiz-question" class="text-lg font-medium"></p>
     </div>
-
     <form id="quiz-form" class="space-y-4">
       <div id="mcq-options" class="space-y-2 hidden"></div>
       <div id="text-answer-box" class="hidden">
@@ -124,9 +123,17 @@
       }
     }
 
+    function showError(msg) {
+      submitBtn.disabled = false;
+      submitText.textContent = "Submit";
+      submitSpinner.classList.add("hidden");
+      resultMessage.classList.remove("hidden");
+      resultMessage.textContent = msg;
+      resultMessage.classList.add("text-red-600");
+    }
+
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
-
       resultMessage.classList.remove("text-red-600", "text-green-600");
       resultMessage.classList.add("hidden");
       resultMessage.textContent = "";
@@ -168,16 +175,28 @@
           showError("❌ Jawaab likhna zaroori hai.");
           return;
         }
-        correct = answer === (currentQuiz.correct || "").toLowerCase();
+        correct = answer === currentQuiz.correct;
       }
 
       try {
+        const answersSnap = await getDocs(collection(db, "quizAnswers"));
+        const alreadyAnswered = answersSnap.docs.find(doc => {
+          const data = doc.data();
+          const time = new Date(data.timestamp);
+          return (
+            data.phone === phone &&
+            time >= new Date(currentQuiz.startTime) &&
+            time <= new Date(currentQuiz.endTime)
+          );
+        });
+
+        if (alreadyAnswered) {
+          showError("❌ Aap pehle hi jawab de chuke hain.");
+          return;
+        }
+
         await addDoc(collection(db, "quizAnswers"), {
-          name,
-          phone,
-          address,
-          answer,
-          correct,
+          name, phone, address, answer, correct,
           options: currentQuiz.options || [],
           timestamp: new Date().toISOString()
         });
@@ -194,15 +213,6 @@
       submitText.textContent = "Submit";
       submitSpinner.classList.add("hidden");
     };
-
-    function showError(msg) {
-      submitBtn.disabled = false;
-      submitText.textContent = "Submit";
-      submitSpinner.classList.add("hidden");
-      resultMessage.classList.remove("hidden");
-      resultMessage.textContent = msg;
-      resultMessage.classList.add("text-red-600");
-    }
 
     loadCurrentQuiz();
   </script>
