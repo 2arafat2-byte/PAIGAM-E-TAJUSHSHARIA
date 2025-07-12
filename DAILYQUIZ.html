@@ -16,7 +16,10 @@
     </div>
 
     <form id="quiz-form" class="space-y-4">
-      <div id="mcq-options" class="space-y-2"></div>
+      <div id="mcq-options" class="space-y-2 hidden"></div>
+      <div id="text-answer-box" class="hidden">
+        <input type="text" id="text-answer" placeholder="Your answer..." class="w-full px-3 py-2 border rounded" />
+      </div>
 
       <input type="text" id="user-name" placeholder="Your Name" class="w-full px-3 py-2 border rounded" required />
       <input type="tel" id="user-phone" placeholder="Phone Number" class="w-full px-3 py-2 border rounded" required />
@@ -61,6 +64,7 @@
     const quizQuestion = document.getElementById("quiz-question");
     const quizLogo = document.getElementById("quiz-logo");
     const mcqContainer = document.getElementById("mcq-options");
+    const textAnswerBox = document.getElementById("text-answer-box");
     const resultMessage = document.getElementById("result-message");
 
     const submitBtn = document.getElementById("submit-btn");
@@ -78,7 +82,7 @@
         const q = doc.data();
         const start = new Date(q.startTime);
         const end = new Date(q.endTime);
-        if (start <= now && now <= end && q.mode === "mcq") {
+        if (start <= now && now <= end) {
           currentQuiz = q;
         }
       });
@@ -92,20 +96,26 @@
           quizLogo.classList.remove("hidden");
         }
 
-        mcqContainer.innerHTML = "";
-        currentQuiz.options.forEach((opt, idx) => {
-          const radio = document.createElement("input");
-          radio.type = "radio";
-          radio.name = "quiz-option";
-          radio.value = idx;
-          radio.required = true;
-
-          const label = document.createElement("label");
-          label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border cursor-pointer";
-          label.appendChild(radio);
-          label.appendChild(document.createTextNode(opt));
-          mcqContainer.appendChild(label);
-        });
+        if (currentQuiz.mode === "mcq") {
+          mcqContainer.innerHTML = "";
+          currentQuiz.options.forEach((opt, idx) => {
+            const label = document.createElement("label");
+            label.className = "flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded border";
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.name = "quiz-option";
+            radio.value = idx;
+            radio.required = true;
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(opt));
+            mcqContainer.appendChild(label);
+          });
+          mcqContainer.classList.remove("hidden");
+          textAnswerBox.classList.add("hidden");
+        } else {
+          textAnswerBox.classList.remove("hidden");
+          mcqContainer.classList.add("hidden");
+        }
       } else {
         quizForm.classList.add("hidden");
         resultMessage.classList.remove("hidden");
@@ -116,8 +126,17 @@
 
     quizForm.onsubmit = async (e) => {
       e.preventDefault();
+
+      resultMessage.classList.remove("text-red-600", "text-green-600");
       resultMessage.classList.add("hidden");
       resultMessage.textContent = "";
+
+      if (!currentQuiz) {
+        resultMessage.classList.remove("hidden");
+        resultMessage.classList.add("text-red-600");
+        resultMessage.textContent = "❌ Koi quiz available nahi hai ya time over ho gaya.";
+        return;
+      }
 
       submitBtn.disabled = true;
       submitText.textContent = "Submitting...";
@@ -127,14 +146,30 @@
       const phone = document.getElementById("user-phone").value.trim();
       const address = document.getElementById("user-address").value.trim();
 
-      const selected = document.querySelector("input[name='quiz-option']:checked");
-      if (!selected || !name || !phone || !address) {
-        showError("❌ Saare fields fill karna zaroori hai.");
+      if (!name || !phone || !address) {
+        showError("❌ Naam, phone aur address zaroori hain.");
         return;
       }
 
-      const answer = selected.value;
-      const correct = answer === currentQuiz.correct;
+      let answer = "";
+      let correct = false;
+
+      if (currentQuiz.mode === "mcq") {
+        const selected = document.querySelector("input[name='quiz-option']:checked");
+        if (!selected) {
+          showError("❌ Koi option select karein.");
+          return;
+        }
+        answer = selected.value;
+        correct = answer === currentQuiz.correct;
+      } else {
+        answer = document.getElementById("text-answer").value.trim().toLowerCase();
+        if (!answer) {
+          showError("❌ Jawaab likhna zaroori hai.");
+          return;
+        }
+        correct = answer === (currentQuiz.correct || "").toLowerCase();
+      }
 
       try {
         await addDoc(collection(db, "quizAnswers"), {
@@ -143,17 +178,16 @@
           address,
           answer,
           correct,
-          options: currentQuiz.options,
+          options: currentQuiz.options || [],
           timestamp: new Date().toISOString()
         });
 
         quizForm.classList.add("hidden");
         resultMessage.classList.remove("hidden");
-        resultMessage.classList.remove("text-red-600");
-        resultMessage.classList.add("text-green-600");
         resultMessage.textContent = "✅ Aap ka jawaab record ho gaya hai chahe sahi ho ya galat, in shaa Allah baad me bata denge.";
+        resultMessage.classList.add("text-green-600");
       } catch (err) {
-        console.error("Firebase Error:", err);
+        console.error("Firebase error:", err);
         showError("❌ Server error hua. Dobara koshish karein.");
       }
 
@@ -167,9 +201,8 @@
       submitText.textContent = "Submit";
       submitSpinner.classList.add("hidden");
       resultMessage.classList.remove("hidden");
-      resultMessage.classList.remove("text-green-600");
-      resultMessage.classList.add("text-red-600");
       resultMessage.textContent = msg;
+      resultMessage.classList.add("text-red-600");
     }
 
     loadCurrentQuiz();
